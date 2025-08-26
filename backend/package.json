@@ -1,0 +1,15 @@
+{
+  "name": "ku-connect-backend",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "Avengers Disassemble",
+  "type": "commonjs",
+  "main": "server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
