@@ -8,5 +8,8 @@ export function useAuth() {
     name: "Sunthorn",
     role: "student",
   });
-  return { user };
+  return {
+    user,
+    isAuthenticated: !!user,
+  };
 }
