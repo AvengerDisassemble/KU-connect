@@ -5,3 +5,4 @@ build/
 *.log
 context/
 /src/generated/prisma
+/prisma/dev.db
