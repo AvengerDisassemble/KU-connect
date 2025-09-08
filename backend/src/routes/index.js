@@ -6,6 +6,7 @@ const express = require('express')
 
 const router = express.Router()
 
-// Example: router.use('/users', require('./users'))
+// Why: Register example route for demonstration and testing
+router.use(require('./example'))
 
 module.exports = router
