@@ -11,5 +11,11 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.15.0",
+    "install": "^0.13.0",
+    "npm": "^11.6.0",
+    "prisma": "^6.15.0"
   }
 }
