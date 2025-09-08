@@ -9,7 +9,13 @@ const prisma = new PrismaClient()
 const express = require('express')
 const router = express.Router()
 
-// Function to create an example professor type user in the database if not exists
+/**
+ * Creates an example professor-type user in the database for demonstration/testing purposes.
+ * If a user with username 'prof.johndoe' does not exist, creates one with a related Professor record.
+ * No user input is required; all values are hardcoded for test use.
+ *
+ * @returns {Promise<void>} Resolves when the user is created or already exists.
+ */
 async function createExampleProfessorUser() {
     try {
         const existingUser = await prisma.user.findUnique({
@@ -52,6 +58,7 @@ router.get('/', async (req, res) => {
     }
 })
 
+// Why: Demonstrates an endpoint to create the example professor user
 router.get('/create-professor', async (req, res) => {
     try {
         await createExampleProfessorUser()
