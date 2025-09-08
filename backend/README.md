@@ -19,3 +19,6 @@ You can access the api via
 ```
 http://localhost:3000/api/ + The path
 ```
+
+## Notes
+The more indepth document will be written in the wiki.
