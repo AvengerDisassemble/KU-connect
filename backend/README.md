@@ -4,11 +4,12 @@
 ```bash
 npm i
 ```
-2. Generate the prisma files:
+2. Copy the .env.example file to a .env file.
+3. Generate the prisma files:
 ```bash
+npx prisma migrate dev
 npx prisma generate
 ```
-3. Copy the .env.example file to a .env file.
 4. Execute the command:
 ```bash
 npm run start
