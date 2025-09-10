@@ -1,0 +1,37 @@
+Project Background
+We’re building KU Connect, a job platform where students manage profiles & applications, employers manage verified postings, admins moderate, and professors view insights.
+
+File Structure
+/project-root
+│
+├── /src                       # Application source code
+│   ├── /config                # Configuration files (e.g., DB, environment)
+│   ├── /controllers           # Controllers to handle API requests & responses
+│   ├── /routes                # Route definitions and endpoint organization
+│   ├── /models                # Database models / schemas
+│   ├── /services              # Business logic and service layer
+│   ├── /middlewares           # Express middlewares (auth, validation, error handling)
+│   ├── /utils                 # Utility functions and helpers
+│   ├── /validators            # Input validation schemas
+│   └── app.js                 # App initialization (Express app setup)
+│
+├── /tests                     # Automated tests (unit, integration)
+├── .env                       # Environment variables
+├── server.js                  # Server startup and HTTP server (entry point)
+├── package.json
+└── README.md
+
+Stack & Constraints
+Backend: Express + JavaScript + Prisma ORM with Postgres. Auth via JWT. RESTful JSON APIs.
+
+Coding style
+You must follow this coding style strictly
+1. The coding style must follow the JavaScript Standard Style (https://standardjs.com/rules).
+2. The docstring standard will follow the JSDoc Standard (https://jsdoc.app/).
+3. Other than in docstring, don't comment what something does, comment why.
+
+Also Provided
+The domain digram and database diagram is in the context folder.
+
+Your Role
+Act as an expert Express + Prisma backend architect.

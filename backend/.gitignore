@@ -3,6 +3,5 @@ dist/
 build/
 .env
 *.log
-context/
 /src/generated/prisma
 /prisma/dev.db
