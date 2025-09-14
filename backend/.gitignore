@@ -1,0 +1,7 @@
+node_modules/
+dist/
+build/
+.env
+*.log
+/src/generated/prisma
+/prisma/dev.db

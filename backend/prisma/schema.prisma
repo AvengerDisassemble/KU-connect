@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+// Test SQLite datasource for local/test usage
+datasource test_db {
+  provider = "sqlite"
+  url      = env("TEST_DATABASE_URL")
+}
+
+// datasource db {
+//   provider = "postgresql"
+//   url      = env("DATABASE_URL")
+// }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  surname   String
+  password  String
+  username  String   @unique
+  verified  Boolean
+  professor Professor?
+  admin     Admin?
+  student   Student?
+  hr        HR?
+}
+
+model Professor {
+  id         Int    @id @default(autoincrement())
+  userId     Int    @unique
+  department String
+  user       User   @relation(fields: [userId], references: [id])
+}
+
+model Admin {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id])
+}
+
+model Student {
+  id         Int        @id @default(autoincrement())
+  userId     Int        @unique
+  degreeType DegreeType @relation(fields: [degreeTypeId], references: [id])
+  degreeTypeId Int
+  address    String
+  user       User       @relation(fields: [userId], references: [id])
+  interests  StudentInterest[]
+  resumes    Resume[]
+}
+
+model HR {
+  id          Int    @id @default(autoincrement())
+  userId      Int    @unique
+  companyName String
+  address     String
+  user        User   @relation(fields: [userId], references: [id])
+}
+
+model DegreeType {
+  id    Int    @id @default(autoincrement())
+  name  String
+  students Student[]
+}
+
+model Job {
+  id                     Int      @id @default(autoincrement())
+  title                  String
+  description            String
+  location               String
+  application_deadline   DateTime
+  email                  String
+  phone_number           String
+  other_contact_information String
+  requirements           String
+  interests              StudentInterest[]
+  resumes                Resume[]
+}
+
+model StudentInterest {
+  id        Int     @id @default(autoincrement())
+  student   Student @relation(fields: [studentId], references: [id])
+  studentId Int
+  job       Job     @relation(fields: [jobId], references: [id])
+  jobId     Int
+}
+
+model Resume {
+  id        Int     @id @default(autoincrement())
+  student   Student @relation(fields: [studentId], references: [id])
+  studentId Int
+  job       Job     @relation(fields: [jobId], references: [id])
+  jobId     Int
+  link      String
+}
