@@ -6,39 +6,47 @@
 
 const request = require('supertest')
 const express = require('express')
+
+// Mock the Prisma module before importing the route
+const mockFindMany = jest.fn()
 jest.mock('../../../../src/generated/prisma', () => {
   return {
     PrismaClient: jest.fn().mockImplementation(() => ({
       user: {
-        findMany: jest.fn()
+        findMany: mockFindMany
       }
     }))
   }
 })
-const { PrismaClient } = require('../../../../src/generated/prisma')
+
 const exampleDbRouter = require('../../../../src/routes/example-database-usage/index')
 
 describe('example-database-usage route', () => {
-  let app, prismaMock
+  let app
   beforeAll(() => {
     app = express()
     app.use(express.json())
     app.use('/', exampleDbRouter)
-    prismaMock = new PrismaClient()
+  })
+
+  beforeEach(() => {
+    jest.clearAllMocks()
   })
 
   it('GET / should return users from prisma', async () => {
     const users = [{ id: 1, username: 'prof.johndoe' }]
-    prismaMock.user.findMany.mockResolvedValue(users)
+    mockFindMany.mockResolvedValue(users)
     const res = await request(app).get('/')
     expect(res.status).toBe(200)
     expect(res.body).toEqual(users)
+    expect(mockFindMany).toHaveBeenCalledTimes(1)
   })
 
   it('GET / should handle prisma error', async () => {
-    prismaMock.user.findMany.mockRejectedValue(new Error('fail'))
+    mockFindMany.mockRejectedValue(new Error('Database failure'))
     const res = await request(app).get('/')
     expect(res.status).toBe(500)
     expect(res.body).toEqual({ error: 'Internal Server Error' })
+    expect(mockFindMany).toHaveBeenCalledTimes(1)
   })
 })
