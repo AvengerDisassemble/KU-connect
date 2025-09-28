@@ -1,29 +1,26 @@
 import { Search, Bell, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Link } from "react-router-dom";
+import Logo from "@/assets/logo.png";
 
 const Header = () => {
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
-      {/* Logo */}
-      <div className="flex items-center gap-8">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm">KU</span>
-          </div>
-          <span className="font-bold text-xl">Connect</span>
-        </div>
-        
-        {/* Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <a href="#" className="text-foreground hover:text-primary font-medium">Home</a>
-          <a href="#" className="text-foreground hover:text-primary font-medium">Browse Jobs</a>
-          <a href="#" className="text-primary font-medium">Profile</a>
-        </nav>
-      </div>
+      {/* Left: Logo */}
+      <Link to="/" className="flex items-center gap-2">
+        <img src={Logo} alt="KU Connect Logo" className="h-12 w-auto" />
+      </Link>
 
-      {/* Right section */}
+      {/* Center: Navigation */}
+      <nav className="hidden md:flex items-center gap-6">
+        <Link to="/student" className="text-foreground hover:text-primary text-sm font-medium">Home</Link>
+        <Link to="/student/browsejobs" className="text-foreground hover:text-primary text-sm font-medium">Browse Jobs</Link>
+        <Link to="/student/profile" className="text-foreground hover:text-primary text-sm font-medium">Profile</Link>
+      </nav>
+
+      {/* Right: Search, Notifications, User, Mobile Menu */}
       <div className="flex items-center gap-4">
         {/* Search */}
         <div className="relative hidden md:block">
@@ -41,7 +38,11 @@ const Header = () => {
 
         {/* User Profile */}
         <div className="flex items-center gap-2">
-          <Badge className="bg-primary text-primary-foreground">TU</Badge>
+        <Avatar className="bg-primary w-9 h-9 rounded-full">
+          <AvatarFallback className="text-primary text-sm font-medium">
+            TU
+          </AvatarFallback>
+        </Avatar>
           <span className="hidden md:block font-medium">Test User</span>
         </div>
 
