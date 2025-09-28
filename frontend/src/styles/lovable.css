@@ -135,5 +135,10 @@
 /* Base styles */
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  body { @apply bg-background text-foreground; 
+        @apply font-sans antialiased;
+  }
+  html {
+    @apply scroll-smooth;
+  }
 }

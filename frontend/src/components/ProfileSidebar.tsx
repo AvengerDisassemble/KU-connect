@@ -9,7 +9,7 @@ interface ProfileSidebarProps {
 
 const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
   return (
-    <aside className="w-72 bg-card border-r border-border p-6">
+    <aside className="w-72 bg-card border-r border-border min-h-screen rounded-2xl p-6">
       {/* Profile Avatar and Info */}
       <div className="text-center mb-8">
         <div className="relative inline-block mb-4">

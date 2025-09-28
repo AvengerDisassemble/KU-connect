@@ -1,10 +1,54 @@
-import { Edit, Download, MoreHorizontal } from "lucide-react";
+import { Pencil, Download, MoreHorizontal, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useState } from "react";
+import { toast } from "sonner";
+
+const profileSchema = z.object({
+  employmentStatus: z.string().min(1, "Employment status is required"),
+  fullName: z.string().min(1, "Full name is required").max(100, "Name must be less than 100 characters"),
+  location: z.string().min(1, "Location is required"),
+  major: z.string().optional(),
+  graduationDate: z.string().optional(),
+  gpa: z.string().optional(),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 const ProfileTab = () => {
+  const [isEditing, setIsEditing] = useState(false);
+  
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      employmentStatus: "Student",
+      fullName: "Phantawat Organ",
+      location: "Bangkok, Thailand",
+      major: "Software Engineering",
+      graduationDate: "May 2025",
+      gpa: "3.75",
+    },
+  });
+
+  const onSubmit = (data: ProfileFormData) => {
+    console.log("Profile data:", data);
+    setIsEditing(false);
+  
+    toast.success("Profile Updated", {
+      description: "Your profile information has been saved successfully.",
+      duration: 3000, // optional, default set in <Toaster />
+    });
+  };
+  const handleCancel = () => {
+    form.reset();
+    setIsEditing(false);
+  };
+
   return (
     <div className="max-w-4xl">
       {/* Header */}
@@ -17,9 +61,41 @@ const ProfileTab = () => {
       {/* My Information Section */}
       <Card className="mb-8">
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <CardTitle className="text-xl">My information</CardTitle>
-            <Edit className="w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-xl">My information</CardTitle>
+              {!isEditing && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditing(true)}
+                  className="h-8 w-8"
+                >
+                  <Pencil className="w-4 h-4 text-muted-foreground" />
+                </Button>
+              )}
+            </div>
+            {isEditing && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCancel}
+                  className="flex items-center gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={form.handleSubmit(onSubmit)}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Save
+                </Button>
+              </div>
+            )}
           </div>
           <CardDescription>
             Get the best job matches and a more relevant community experience.
@@ -27,81 +103,138 @@ const ProfileTab = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {/* Row 1: Employment Status & Full Name */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="employment-status" className="text-sm font-medium">
-                Employment status <span className="text-red-500">*</span>
-              </Label>
-              <Input 
-                id="employment-status"
-                value="Student" 
-                className="bg-background border-border"
-                readOnly
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="full-name" className="text-sm font-medium">
-                Full name
-              </Label>
-              <Input 
-                id="full-name"
-                value="Phantawat Organ" 
-                className="bg-background border-border"
-              />
-            </div>
-          </div>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Row 1: Employment Status & Full Name */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="employmentStatus"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Employment status <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          className="bg-background border-border"
+                          readOnly={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Full name <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          className="bg-background border-border"
+                          readOnly={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          {/* Row 2: Location & Major */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="location" className="text-sm font-medium">
-                Location <span className="text-red-500">*</span>
-              </Label>
-              <Input 
-                id="location"
-                value="Bangkok, Thailand" 
-                className="bg-background border-border"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="major" className="text-sm font-medium">
-                Major
-              </Label>
-              <Input 
-                id="major"
-                value="Software Engineering" 
-                className="bg-background border-border"
-              />
-            </div>
-          </div>
+              {/* Row 2: Location & Major */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Location <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          className="bg-background border-border"
+                          readOnly={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="major"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Major
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          className="bg-background border-border"
+                          readOnly={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          {/* Row 3: Graduation Date & GPA */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="graduation-date" className="text-sm font-medium">
-                Graduation Date/ Expected Graduation
-              </Label>
-              <Input 
-                id="graduation-date"
-                value="May 2025" 
-                className="bg-background border-border"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="gpa" className="text-sm font-medium">
-                GPA
-              </Label>
-              <Input 
-                id="gpa"
-                value="3.75" 
-                className="bg-background border-border"
-              />
-            </div>
-          </div>
+              {/* Row 3: Graduation Date & GPA */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="graduationDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Graduation Date/ Expected Graduation
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          className="bg-background border-border"
+                          readOnly={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="gpa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        GPA
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field}
+                          className="bg-background border-border"
+                          readOnly={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
 
