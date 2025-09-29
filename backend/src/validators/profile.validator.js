@@ -5,31 +5,46 @@
 
 const Joi = require('joi')
 
+const industryValues = ['TECHNOLOGY', 'FINANCE', 'EDUCATION', 'HEALTHCARE', 'OTHER'];
+const companySizeValues = ['ONE_TO_TEN', 'ELEVEN_TO_FIFTY', 'FIFTY_ONE_TO_TWO_HUNDRED', 'TWO_HUNDRED_PLUS'];
+
+/**
+ * Validation schema for creating a user profile
+ */
+const baseUserSchema = {
+  role: Joi.string().valid('student', 'hr').required(),
+  username: Joi.string().alphanum().min(3).max(30).required(),
+  password: Joi.string().min(6).required(),
+  name: Joi.string().max(100).required(),
+  surname: Joi.string().max(100).required(),
+  email: Joi.string().email().required(),
+  phoneNumber: Joi.string().pattern(/^[0-9+\-()\s]+$/).optional().allow(null, ''),
+}
+
 /**
  * Validation schema for creating a student profile
  */
 const createStudentSchema = Joi.object({
+  ...baseUserSchema,
   role: Joi.string().valid('student').required(),
-  username: Joi.string().min(3).max(50).required(),
-  password: Joi.string().min(6).required(),
-  name: Joi.string().min(1).max(100).required(),
-  surname: Joi.string().min(1).max(100).required(),
-  degreeTypeId: Joi.number().integer().positive().required(),
-  address: Joi.string().min(1).max(500).required()
-})
+  degreeTypeId: Joi.number().integer().required(),
+  address: Joi.string().max(255).required(),
+  gpa: Joi.number().min(0).max(4).precision(2).optional(),
+  expectedGraduationYear: Joi.number().integer().min(new Date().getFullYear()).max(new Date().getFullYear() + 20).optional()
+});
 
 /**
  * Validation schema for creating an employer profile
  */
 const createEmployerSchema = Joi.object({
+  ...baseUserSchema,
   role: Joi.string().valid('hr').required(),
-  username: Joi.string().min(3).max(50).required(),
-  password: Joi.string().min(6).required(),
-  name: Joi.string().min(1).max(100).required(),
-  surname: Joi.string().min(1).max(100).required(),
-  companyName: Joi.string().min(1).max(200).required(),
-  address: Joi.string().min(1).max(500).required()
-})
+  companyName: Joi.string().max(255).required(),
+  address: Joi.string().max(255).required(),
+  industry: Joi.string().valid(...industryValues).required(),
+  companySize: Joi.string().valid(...companySizeValues).required(),
+  website: Joi.string().uri().optional().allow(null, '')
+});
 
 /**
  * Validation schema for updating a student profile
