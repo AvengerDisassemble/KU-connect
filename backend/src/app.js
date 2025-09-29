@@ -5,17 +5,24 @@
 // In your app.js file, add:
 
 const express = require('express')
+const morgan = require('morgan')
+const cors = require('cors')
+require('dotenv').config()
+
 const app = express()
-const profileRoutes = require('../src/routes/profile')
-const degreeTypeRoutes = require('../src/routes/degreeType')  
+const profileRoutes = require('../src/routes/profile.routes')
+const degreeTypeRoutes = require('../src/routes/degreeType.routes')  
 
 // Middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
+app.use(morgan('dev'))
+app.use(cors())
 
 // Mount profile routes
-app.use('/', profileRoutes)
-app.use('/', degreeTypeRoutes)
+
+app.use('/api/', profileRoutes)
+app.use('/api/', degreeTypeRoutes)
 
 // Error handling middleware (should be last)
 app.use((err, req, res, next) => {
