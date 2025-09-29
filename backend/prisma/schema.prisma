@@ -20,46 +20,67 @@ datasource test_db {
 //   url      = env("DATABASE_URL")
 // }
 
+enum Role {
+  STUDENT
+  PROFESSOR
+  EMPLOYER
+  ADMIN
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  surname   String
-  password  String
-  username  String   @unique
-  verified  Boolean
-  professor Professor?
-  admin     Admin?
-  student   Student?
-  hr        HR?
+  id           String         @id @default(cuid())
+  name         String
+  surname      String
+  password     String
+  email        String         @unique
+  username     String?        @unique
+  role         Role
+  verified     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  professor    Professor?
+  admin        Admin?
+  student      Student?
+  hr           HR?
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Professor {
   id         Int    @id @default(autoincrement())
-  userId     Int    @unique
+  userId     String @unique
   department String
   user       User   @relation(fields: [userId], references: [id])
 }
 
 model Admin {
-  id     Int  @id @default(autoincrement())
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
+  id     Int    @id @default(autoincrement())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model Student {
-  id         Int        @id @default(autoincrement())
-  userId     Int        @unique
-  degreeType DegreeType @relation(fields: [degreeTypeId], references: [id])
+  id           Int                 @id @default(autoincrement())
+  userId       String              @unique
+  degreeType   DegreeType          @relation(fields: [degreeTypeId], references: [id])
   degreeTypeId Int
-  address    String
-  user       User       @relation(fields: [userId], references: [id])
-  interests  StudentInterest[]
-  resumes    Resume[]
+  address      String
+  user         User                @relation(fields: [userId], references: [id])
+  interests    StudentInterest[]
+  resumes      Resume[]
 }
 
 model HR {
   id          Int    @id @default(autoincrement())
-  userId      Int    @unique
+  userId      String @unique
   companyName String
   address     String
   user        User   @relation(fields: [userId], references: [id])
