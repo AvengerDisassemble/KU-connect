@@ -195,7 +195,7 @@ async function updateEmployerProfile(userId, data) {
  * @returns {Promise<Object|null>} User profile with role data
  */
 async function getProfileById(userId) {
-  return prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { id: parseInt(userId) },
     include: {
       student: { include: { degreeType: true } },
@@ -213,15 +213,17 @@ async function getProfileById(userId) {
       delete user[key]
     }
   })
+
   return user
 }
+
 
 /**
  * Lists all profiles
  * @returns {Promise<Array>} Array of all user profiles
  */
-async function listProfiles () {
-  return prisma.user.findMany({
+async function listProfiles() {
+  const profiles = await prisma.user.findMany({
     include: {
       student: {
         include: {
@@ -233,6 +235,17 @@ async function listProfiles () {
       admin: true
     }
   })
+
+  // Remove role objects that are null
+  profiles.forEach((profile) => {
+    Object.keys(profile).forEach((key) => {
+      if (['student', 'hr', 'professor', 'admin'].includes(key) && !profile[key]) {
+        delete profile[key]
+      }
+    })
+  })
+
+  return profiles
 }
 
 module.exports = {
