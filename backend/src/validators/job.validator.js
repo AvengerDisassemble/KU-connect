@@ -11,29 +11,30 @@ const Joi = require('joi');
  * Validation schema for creating a job posting
  */
 const createJobSchema = Joi.object({
-    hrId: Joi.number().integer().required(),
-    title: Joi.string().max(255).required(),
-    description: Joi.string().required(),
-    location: Joi.string().max(255).required(),
-    application_deadline: Joi.date().test('is-future').required(),
+    userId: Joi.number().integer().required(),
+    title: Joi.string().trim().required(),
+    description: Joi.string().trim().required(),
+    location: Joi.string().trim().required(),
+    application_deadline: Joi.date().iso().greater('now').required(),
     email: Joi.string().email().required(),
-    phone_number: Joi.string().pattern(/^[0-9+\-()\s]+$/).optional().allow(null, ''),
-    other_contact_information: Joi.string().max(255).optional().allow(null, ''),
-    requirements: Joi.string().optional().allow(null, '')
+    phone_number: Joi.string().required(),
+    other_contact_information: Joi.string().allow(null, ''),
+    requirements: Joi.string().trim().required()
 })
 
 /**
  * Validation schema for updating a job posting
  */
 const updateJobSchema = Joi.object({
-    title: Joi.string().max(255).optional(),
-    description: Joi.string().optional(),
-    location: Joi.string().max(255).optional(),
-    application_deadline: Joi.date().test('is-future').optional(),
-    email: Joi.string().email().optional(),
-    phone_number: Joi.string().pattern(/^[0-9+\-()\s]+$/).optional().allow(null, ''),
-    other_contact_information: Joi.string().max(255).optional().allow(null, ''),
-    requirements: Joi.string().optional().allow(null, '')
+    userId: Joi.number().integer().required(),
+    title: Joi.string().trim(),
+    description: Joi.string().trim(),
+    location: Joi.string().trim(),
+    application_deadline: Joi.date().iso().greater('now'),
+    email: Joi.string().email(),
+    phone_number: Joi.string(),
+    other_contact_information: Joi.string().allow(null, ''),
+    requirements: Joi.string().trim()
 })
 
 module.exports = {
