@@ -17,6 +17,16 @@ describe('Authentication Endpoints', () => {
         }
       }
     })
+
+    // Seed required degree types for testing
+    await prisma.degreeType.upsert({
+      where: { id: 1 },
+      update: {},
+      create: {
+        id: 1,
+        name: 'Computer Science'
+      }
+    })
   })
 
   afterAll(async () => {
@@ -29,6 +39,11 @@ describe('Authentication Endpoints', () => {
         email: {
           contains: 'test'
         }
+      }
+    })
+    await prisma.degreeType.deleteMany({
+      where: {
+        id: 1
       }
     })
     await prisma.$disconnect()
