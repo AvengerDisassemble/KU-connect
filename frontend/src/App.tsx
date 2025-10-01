@@ -8,6 +8,10 @@ import StudentDashboardPage from "@/pages/student/DashboardPage";
 import EmployerDashboardPage from "@/pages/employer/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/DashboardPage";
+import JobPostingPage from "./pages/employer/JobPostingPage";
+import JobListingPage from "./pages/employer/JobListingPage";
+import EmployerSettingPage from "./pages/employer/SettingPage";
+
 
 const App: React.FC = () => {
   return (
@@ -22,6 +26,10 @@ const App: React.FC = () => {
           <Route path="/admin" element={<Guard role="admin"><AdminDashboardPage /></Guard>} />
           <Route path="/professor" element={<Guard role="professor"><ProfessorDashboardPage /></Guard>} />
 
+          <Route path="/employer/job-postings/create" element={<JobPostingPage />} />
+          <Route path="/employer/job-postings" element={<JobListingPage />} />
+          <Route path="/employer/settings" element={<EmployerSettingPage />} />
+          
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
