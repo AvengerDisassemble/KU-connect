@@ -4,6 +4,9 @@
  */
 
 const Joi = require('joi')
+const prisma = require('../models/prisma')
+
+// Allowed enum values for industry and company size
 
 const industryValues = [
   'IT_HARDWARE_AND_DEVICES',
@@ -67,6 +70,7 @@ const baseUpdateSchema = {
   username: Joi.string().alphanum().min(3).max(30).optional(),
   name: Joi.string().max(100).optional(),
   surname: Joi.string().max(100).optional(),
+  email: Joi.string().email().optional(),
   phoneNumber: Joi.string().pattern(/^[0-9+\-()\s]+$/).optional().allow(null, ''),
 }
 
@@ -76,7 +80,7 @@ const baseUpdateSchema = {
 const updateStudentSchema = Joi.object({
   userId: Joi.number().integer().positive().required(),
   ...baseUpdateSchema,
-  address: Joi.string().max(500).optional(),
+  address: Joi.string().max(255).optional(),
   degreeTypeId: Joi.number().integer().positive().optional(),
   gpa: Joi.number().min(0).max(4).precision(2).optional(),
   expectedGraduationYear: Joi.number()

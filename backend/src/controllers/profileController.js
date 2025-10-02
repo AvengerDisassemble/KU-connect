@@ -14,7 +14,7 @@ const profileService = require('../services/profileService')
 async function createProfile (req, res) {
   try {
     const { role, ...profileData } = req.body
-    
+
     let result
     if (role === 'student') {
       result = await profileService.createStudentUser(profileData)
@@ -25,29 +25,33 @@ async function createProfile (req, res) {
         error: 'Invalid role. Must be "student" or "hr"'
       })
     }
-    
+
     res.status(201).json(result)
   } catch (error) {
-    // Handle unique constraint violations
+    // Handle unique constraint violations (Prisma P2002)
     if (error.code === 'P2002') {
+      // Prisma error.meta.target is an array of fields that caused the violation
+      const fields = error.meta && error.meta.target ? error.meta.target : []
+      const fieldList = fields.length > 0 ? fields.join(', ') : 'A unique field'
       return res.status(409).json({
-        error: 'Username already exists'
+        error: `${fieldList} already exists`
       })
     }
-    
-    // Handle foreign key constraints
+
+    // Handle foreign key constraints (Prisma P2003)
     if (error.code === 'P2003') {
       return res.status(400).json({
         error: 'Invalid reference ID provided'
       })
     }
-    
+
     console.error('Profile creation error:', error)
     res.status(500).json({
       error: 'Failed to create profile'
     })
   }
 }
+
 
 /**
  * Updates an existing profile
