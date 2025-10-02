@@ -15,13 +15,6 @@ router.get('/', profileController.listProfiles)
 // Get profile by ID
 router.get('/:userId', profileController.getProfile)
 
-// Create new profile
-router.post(
-  '/',
-  validate(profileValidators.createProfile),
-  profileController.createProfile
-)
-
 // Update profile
 router.patch(
   '/',

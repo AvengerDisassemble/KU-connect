@@ -26,48 +26,9 @@ const companySizeValues = [
 ]
 
 /**
- * Validation schema for creating a user profile
- */
-const baseUserSchema = {
-  role: Joi.string().valid('student', 'hr').required(),
-  username: Joi.string().alphanum().min(3).max(30).required(),
-  password: Joi.string().min(6).required(),
-  name: Joi.string().max(100).required(),
-  surname: Joi.string().max(100).required(),
-  email: Joi.string().email().required(),
-  phoneNumber: Joi.string().pattern(/^[0-9+\-()\s]+$/).optional().allow(null, ''),
-}
-
-/**
- * Validation schema for creating a student profile
- */
-const createStudentSchema = Joi.object({
-  ...baseUserSchema,
-  role: Joi.string().valid('student').required(),
-  degreeTypeId: Joi.number().integer().required(),
-  address: Joi.string().max(255).required(),
-  gpa: Joi.number().min(0).max(4).precision(2).optional(),
-  expectedGraduationYear: Joi.number().integer().min(new Date().getFullYear()).max(new Date().getFullYear() + 20).optional()
-});
-
-/**
- * Validation schema for creating an employer profile
- */
-const createEmployerSchema = Joi.object({
-  ...baseUserSchema,
-  role: Joi.string().valid('hr').required(),
-  companyName: Joi.string().max(255).required(),
-  address: Joi.string().max(255).required(),
-  industry: Joi.string().valid(...industryValues).required(),
-  companySize: Joi.string().valid(...companySizeValues).required(),
-  website: Joi.string().uri().optional().allow(null, '')
-})
-
-/**
  * Validation schema for updating a user profile
  */
 const baseUpdateSchema = {
-  username: Joi.string().alphanum().min(3).max(30).optional(),
   name: Joi.string().max(100).optional(),
   surname: Joi.string().max(100).optional(),
   email: Joi.string().email().optional(),
@@ -89,7 +50,6 @@ const updateStudentSchema = Joi.object({
     .max(new Date().getFullYear() + 20)
     .optional()
 }).or(
-  'username',
   'name',
   'surname',
   'phoneNumber',
@@ -111,7 +71,6 @@ const updateEmployerSchema = Joi.object({
   companySize: Joi.string().valid(...companySizeValues).optional(),
   website: Joi.string().uri().optional().allow(null, '')
 }).or(
-  'username',
   'name',
   'surname',
   'phoneNumber',
@@ -121,35 +80,6 @@ const updateEmployerSchema = Joi.object({
   'companySize',
   'website'
 )
-
-/**
- * Combined validation for create profile endpoint
- */
-const createProfile = (req, res, next) => {
-  const { role } = req.body
-  
-  let schema
-  if (role === 'student') {
-    schema = createStudentSchema
-  } else if (role === 'hr') {
-    schema = createEmployerSchema
-  } else {
-    return res.status(400).json({
-      error: 'Invalid or missing role. Must be "student" or "hr"'
-    })
-  }
-  
-  const { error, value } = schema.validate(req.body)
-  
-  if (error) {
-    return res.status(400).json({
-      error: error.details[0].message
-    })
-  }
-  
-  req.body = value
-  next()
-}
 
 /**
  * Combined validation for update profile endpoint
@@ -220,8 +150,6 @@ const updateProfile = async (req, res, next) => {
 }
 
 module.exports = {
-  createStudentSchema,
-  createEmployerSchema,
   updateStudentSchema,
   updateEmployerSchema,
   createProfile,
