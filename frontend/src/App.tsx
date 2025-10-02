@@ -8,6 +8,7 @@ import StudentDashboardPage from "@/pages/student/DashboardPage";
 import EmployerDashboardPage from "@/pages/employer/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/DashboardPage";
+import EmployerProfilePage from "./pages/employer/ProfilePage";
 
 const App: React.FC = () => {
   return (
@@ -22,6 +23,8 @@ const App: React.FC = () => {
           <Route path="/admin" element={<Guard role="admin"><AdminDashboardPage /></Guard>} />
           <Route path="/professor" element={<Guard role="professor"><ProfessorDashboardPage /></Guard>} />
 
+          <Route path="/employer/profile" element={<EmployerProfilePage />} />
+          
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
