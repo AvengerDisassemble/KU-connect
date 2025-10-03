@@ -152,6 +152,5 @@ const updateProfile = async (req, res, next) => {
 module.exports = {
   updateStudentSchema,
   updateEmployerSchema,
-  createProfile,
   updateProfile
 }
