@@ -6,50 +6,6 @@
 const profileService = require('../services/profileService')
 
 /**
- * Creates a new profile (student or employer)
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
- */
-async function createProfile (req, res) {
-  try {
-    const { role, ...profileData } = req.body
-    
-    let result
-    if (role === 'student') {
-      result = await profileService.createStudentUser(profileData)
-    } else if (role === 'hr') {
-      result = await profileService.createEmployerUser(profileData)
-    } else {
-      return res.status(400).json({
-        error: 'Invalid role. Must be "student" or "hr"'
-      })
-    }
-    
-    res.status(201).json(result)
-  } catch (error) {
-    // Handle unique constraint violations
-    if (error.code === 'P2002') {
-      return res.status(409).json({
-        error: 'Username already exists'
-      })
-    }
-    
-    // Handle foreign key constraints
-    if (error.code === 'P2003') {
-      return res.status(400).json({
-        error: 'Invalid reference ID provided'
-      })
-    }
-    
-    console.error('Profile creation error:', error)
-    res.status(500).json({
-      error: 'Failed to create profile'
-    })
-  }
-}
-
-/**
  * Updates an existing profile
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -58,42 +14,31 @@ async function createProfile (req, res) {
 async function updateProfile (req, res) {
   try {
     const { role, userId, ...updateData } = req.body
-    
-    // Determine user ID - from body or could be from auth context
-    if (!userId) {
-      return res.status(400).json({
-        error: 'User ID is required'
-      })
+
+    let profile = await profileService.getProfileById(userId)
+    if (!profile) return res.status(404).json({ error: 'User not found' })
+
+    // Resolve role
+    let resolvedRole = role
+    if (!resolvedRole) {
+      if (profile.student && !profile.hr) resolvedRole = 'student'
+      else if (profile.hr && !profile.student) resolvedRole = 'hr'
+      else return res.status(400).json({ error: 'User role not determined' })
     }
-    
-    // First, check what role the user has
-    const existingProfile = await profileService.getProfileById(userId)
-    
-    if (!existingProfile) {
-      return res.status(404).json({
-        error: 'User not found'
-      })
-    }
-    
+
     let result
-    const userRole = role || (existingProfile.student ? 'student' : existingProfile.hr ? 'hr' : null)
-    
-    if (userRole === 'student' && existingProfile.student) {
+    if (resolvedRole === 'student' && profile.student) {
       result = await profileService.updateStudentProfile(userId, updateData)
-    } else if (userRole === 'hr' && existingProfile.hr) {
+    } else if (resolvedRole === 'hr' && profile.hr) {
       result = await profileService.updateEmployerProfile(userId, updateData)
     } else {
-      return res.status(400).json({
-        error: 'Unable to determine or update profile role'
-      })
+      return res.status(403).json({ error: 'Role mismatch – cannot update profile' })
     }
-    
+
     res.json(result)
   } catch (error) {
     console.error('Profile update error:', error)
-    res.status(500).json({
-      error: 'Failed to update profile'
-    })
+    res.status(500).json({ error: 'Failed to update profile' })
   }
 }
 
@@ -143,7 +88,6 @@ async function listProfiles (req, res) {
 }
 
 module.exports = {
-  createProfile,
   updateProfile,
   getProfile,
   listProfiles

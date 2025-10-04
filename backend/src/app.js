@@ -1,5 +1,6 @@
 /**
- * Example of how to integrate profile routes into app.js
+ * @module app
+ * Main application setup with middleware and route mounting.
  */
 
 // In your app.js file, add:
@@ -10,8 +11,7 @@ const cors = require('cors')
 require('dotenv').config()
 
 const app = express()
-const profileRoutes = require('../src/routes/profile.routes')
-const degreeTypeRoutes = require('../src/routes/degreeType.routes')  
+const routes = require('./routes')
 
 // Middleware
 app.use(express.json())
@@ -19,10 +19,8 @@ app.use(express.urlencoded({ extended: true }))
 app.use(morgan('dev'))
 app.use(cors())
 
-// Mount profile routes
-
-app.use('/api/', profileRoutes)
-app.use('/api/', degreeTypeRoutes)
+// Mount all routes under /api
+app.use('/api', routes)
 
 // Error handling middleware (should be last)
 app.use((err, req, res, next) => {

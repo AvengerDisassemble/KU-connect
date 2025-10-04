@@ -3,7 +3,21 @@
  * @description Service layer for profile management operations
  */
 
-const prisma = require('../models/prisma')
+const prisma = require('../models/prisma')  // Prisma client instance
+
+/**
+ * Extract user fields for update (avoids duplication)
+ * @param {Object} fields - Partial user fields
+ * @returns {Object} filtered fields for update
+ */
+function extractUserUpdateFields(fields) {
+  const updates = {}
+  if (fields.name !== undefined) updates.name = fields.name
+  if (fields.surname !== undefined) updates.surname = fields.surname
+  if (fields.email !== undefined) updates.email = fields.email
+  if (fields.phoneNumber !== undefined) updates.phoneNumber = fields.phoneNumber
+  return updates
+}
 
 /**
  * Creates a new student user with profile
@@ -134,11 +148,7 @@ async function updateStudentProfile(userId, data) {
   if (gpa !== undefined) studentUpdate.gpa = gpa
   if (expectedGraduationYear !== undefined) studentUpdate.expectedGraduationYear = expectedGraduationYear
 
-  const userUpdate = {}
-  if (userFields.name !== undefined) userUpdate.name = userFields.name
-  if (userFields.surname !== undefined) userUpdate.surname = userFields.surname
-  if (userFields.email !== undefined) userUpdate.email = userFields.email
-  if (userFields.phoneNumber !== undefined) userUpdate.phoneNumber = userFields.phoneNumber
+  const userUpdate = extractUserUpdateFields(userFields)
 
   return prisma.user.update({
     where: { id: userId },
@@ -173,11 +183,7 @@ async function updateEmployerProfile(userId, data) {
   if (companySize !== undefined) hrUpdate.companySize = companySize
   if (website !== undefined) hrUpdate.website = website
 
-  const userUpdate = {}
-  if (userFields.name !== undefined) userUpdate.name = userFields.name
-  if (userFields.surname !== undefined) userUpdate.surname = userFields.surname
-  if (userFields.email !== undefined) userUpdate.email = userFields.email
-  if (userFields.phoneNumber !== undefined) userUpdate.phoneNumber = userFields.phoneNumber
+  const userUpdate = extractUserUpdateFields(userFields)
 
   return prisma.user.update({
     where: { id: userId },
