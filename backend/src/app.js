@@ -1,5 +1,4 @@
 /**
- * App initialization and Express setup
  * @module app
  */
 const express = require('express')
@@ -18,6 +17,7 @@ app.use(cors({
 app.use(express.json())
 app.use(cookieParser())
 app.use(morgan('dev'))
+app.use(express.urlencoded({ extended: true }))
 
 // Mount API routes
 app.use('/api', routes)

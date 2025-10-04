@@ -27,6 +27,23 @@ enum Role {
   ADMIN
 }
 
+enum Industry {
+  IT_HARDWARE_AND_DEVICES
+  IT_SOFTWARE
+  IT_SERVICES
+  NETWORK_SERVICES
+  EMERGING_TECH
+  E_COMMERCE
+  OTHER
+}
+
+enum CompanySize {
+  ONE_TO_TEN
+  ELEVEN_TO_FIFTY
+  FIFTY_ONE_TO_TWO_HUNDRED
+  TWO_HUNDRED_PLUS
+}
+
 model User {
   id           String         @id @default(cuid())
   name         String
@@ -68,22 +85,32 @@ model Admin {
 }
 
 model Student {
-  id           Int                 @id @default(autoincrement())
-  userId       String              @unique
-  degreeType   DegreeType          @relation(fields: [degreeTypeId], references: [id])
-  degreeTypeId Int
-  address      String
-  user         User                @relation(fields: [userId], references: [id])
-  interests    StudentInterest[]
-  resumes      Resume[]
+  id                     Int               @id @default(autoincrement())
+  userId                 String            @unique
+  user                   User              @relation(fields: [userId], references: [id])
+  degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
+  degreeTypeId           Int
+  address                String
+  gpa                    Float?          
+  expectedGraduationYear Int?             
+  interests              StudentInterest[]
+  resumes                Resume[]
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 }
 
 model HR {
-  id          Int    @id @default(autoincrement())
-  userId      String @unique
+  id          Int         @id @default(autoincrement())
+  userId      String      @unique
   companyName String
   address     String
-  user        User   @relation(fields: [userId], references: [id])
+  industry    Industry    @default(OTHER)
+  companySize CompanySize @default(ONE_TO_TEN)
+  website     String?     
+  user        User        @relation(fields: [userId], references: [id])
+  jobs        Job[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model DegreeType {
@@ -94,6 +121,8 @@ model DegreeType {
 
 model Job {
   id                     Int      @id @default(autoincrement())
+  hrId                   Int
+  hr                     HR @relation(fields: [hrId], references: [id])
   title                  String
   description            String
   location               String
