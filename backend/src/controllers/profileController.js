@@ -14,6 +14,8 @@ const profileService = require('../services/profileService')
 async function updateProfile (req, res) {
   try {
     const { role, userId, ...updateData } = req.body
+
+    let profile = await profileService.getProfileById(userId)
     if (!profile) return res.status(404).json({ error: 'User not found' })
 
     // Resolve role
