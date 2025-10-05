@@ -56,7 +56,9 @@ async function registerUser (userData, roleSpecificData = {}) {
         data: {
           userId: newUser.id,
           degreeTypeId: roleSpecificData.degreeTypeId,
-          address: roleSpecificData.address
+          address: roleSpecificData.address,
+          gpa: roleSpecificData.gpa || null,
+          expectedGraduationYear: roleSpecificData.expectedGraduationYear || null
         }
       })
     } else if (userData.role === 'PROFESSOR' && roleSpecificData.department) {
@@ -71,7 +73,10 @@ async function registerUser (userData, roleSpecificData = {}) {
         data: {
           userId: newUser.id,
           companyName: roleSpecificData.companyName,
-          address: roleSpecificData.address
+          address: roleSpecificData.address,
+          industry: roleSpecificData.industry || 'OTHER',
+          companySize: roleSpecificData.companySize || 'ONE_TO_TEN',
+          website: roleSpecificData.website || null
         }
       })
     } else if (userData.role === 'ADMIN') {
