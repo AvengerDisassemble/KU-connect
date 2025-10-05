@@ -32,13 +32,7 @@ function FieldLabel({
   );
 }
 
-function Chip({
-  text,
-  onRemove,
-}: {
-  text: string;
-  onRemove?: () => void;
-}) {
+function Chip({ text, onRemove }: { text: string; onRemove?: () => void }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs">
       {text}
@@ -80,6 +74,8 @@ type JobFormState = {
 const REQUIRED_TOAST_ID = "job-form-required";
 
 const JobPostingForm = () => {
+  const [submitting, setSubmitting] = useState(false);
+
   const [formData, setFormData] = useState<JobFormState>({
     title: "",
     companyName: "",
@@ -132,7 +128,7 @@ const JobPostingForm = () => {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    // build required list
+    // Required checks
     const missing: string[] = [];
     if (!formData.title) missing.push("Title");
     if (!formData.companyName) missing.push("Company");
@@ -141,9 +137,12 @@ const JobPostingForm = () => {
     if (!formData.jobType) missing.push("Job Type");
     if (!formData.workArrangement) missing.push("Work Arrangement");
     if (!formData.phone_number) missing.push("Phone");
+    if (!formData.minSalary) missing.push("Min Salary");
+    if (!formData.maxSalary) missing.push("Max Salary");
+    if (!formData.duration) missing.push("Duration");
+    if (!formData.application_deadline) missing.push("Application Deadline");
 
     if (missing.length > 0) {
-      // focus the first missing field
       const idMap: Record<string, string> = {
         Title: "title",
         Company: "companyName",
@@ -152,11 +151,14 @@ const JobPostingForm = () => {
         "Job Type": "jobType",
         "Work Arrangement": "workArrangement",
         Phone: "phone_number",
+        "Min Salary": "minSalary",
+        "Max Salary": "maxSalary",
+        Duration: "duration",
+        "Application Deadline": "application_deadline",
       };
       const firstId = idMap[missing[0]];
       if (firstId) document.getElementById(firstId)?.focus();
 
-      // single toast only (use fixed id)
       toast.error("Please fill all required (*) fields", {
         id: REQUIRED_TOAST_ID,
         description: `Missing: ${missing.join(", ")}`,
@@ -165,6 +167,29 @@ const JobPostingForm = () => {
       return;
     }
 
+    // Numeric checks
+    const min = Number(formData.minSalary);
+    const max = Number(formData.maxSalary);
+    if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0) {
+      document.getElementById(!Number.isFinite(min) ? "minSalary" : "maxSalary")?.focus();
+      toast.error("Salary must be positive numbers", { id: REQUIRED_TOAST_ID });
+      return;
+    }
+    if (min > max) {
+      document.getElementById("minSalary")?.focus();
+      toast.error("Min Salary must be less than or equal to Max Salary", { id: REQUIRED_TOAST_ID });
+      return;
+    }
+
+    // Date check
+    const deadline = new Date(formData.application_deadline);
+    if (isNaN(deadline.getTime())) {
+      document.getElementById("application_deadline")?.focus();
+      toast.error("Invalid Application Deadline", { id: REQUIRED_TOAST_ID });
+      return;
+    }
+
+    // Build payload
     const payload = {
       title: formData.title,
       companyName: formData.companyName,
@@ -172,13 +197,11 @@ const JobPostingForm = () => {
       location: formData.location,
       jobType: formData.jobType,
       workArrangement: formData.workArrangement,
-      duration: formData.duration || null,
+      duration: formData.duration,
       tags: formData.tags,
-      minSalary: formData.minSalary ? Number(formData.minSalary) : null,
-      maxSalary: formData.maxSalary ? Number(formData.maxSalary) : null,
-      application_deadline: formData.application_deadline
-        ? new Date(formData.application_deadline).toISOString()
-        : null,
+      minSalary: min,
+      maxSalary: max,
+      application_deadline: deadline.toISOString(), // ISO string
       email: formData.email || null,
       phone_number: formData.phone_number,
       other_contact_information: formData.other_contact_information || null,
@@ -188,29 +211,29 @@ const JobPostingForm = () => {
       benefits: formData.benefits,
     };
 
-    console.log("Submitting payload:", payload);
+    try {
+      setSubmitting(true);
 
-    // try {
-    //   const res = await fetch("/api/jobs", {
-    //     method: "POST",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify(payload),
-    //   });
-    //   if (!res.ok) {
-    //     const data = await res.json().catch(() => ({}));
-    //     toast.error("Post failed", {
-    //       description: data?.message || "Please try again.",
-    //     });
-    //     return;
-    //   }
-    //   toast.success("Job posted successfully");
-    // } catch (err: any) {
-    //   toast.error("Network error", { description: String(err?.message || err) });
-    //   return;
-    // }
+      // const res = await fetch("/api/jobs", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify(payload),
+      // });
+      // if (!res.ok) {
+      //   const data = await res.json().catch(() => ({}));
+      //   toast.error("Post failed", {
+      //     description: data?.message || "Please try again.",
+      //   });
+      //   return;
+      // }
 
-    // For now (no API call), show success toast and stay on the same page
-    toast.success("Job posted successfully");
+      console.log("Submitting payload:", payload);
+      toast.success("Job posted successfully");
+    } catch (err: any) {
+      toast.error("Network error", { description: String(err?.message || err) });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -220,7 +243,7 @@ const JobPostingForm = () => {
         <Card className="border-0 shadow-none bg-transparent">
           <CardHeader>
             <CardTitle className="text-xl font-semibold">Job Details</CardTitle>
-            <p className="text-muted-foreground text-sm">Tell others about role</p>
+            <p className="text-muted-foreground text-sm">Tell others about this role</p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -295,7 +318,7 @@ const JobPostingForm = () => {
             </div>
 
             <div>
-              <FieldLabel htmlFor="duration">Duration</FieldLabel>
+              <FieldLabel htmlFor="duration" required>Duration</FieldLabel>
               <Input
                 id="duration"
                 placeholder="e.g., 6-month, 1-year"
@@ -326,9 +349,10 @@ const JobPostingForm = () => {
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <FieldLabel>Salary Range</FieldLabel>
+              <FieldLabel required>Salary Range</FieldLabel>
               <div className="flex items-center gap-4 mt-2">
                 <Input
+                  id="minSalary"
                   inputMode="numeric"
                   placeholder="15000"
                   value={formData.minSalary}
@@ -337,6 +361,7 @@ const JobPostingForm = () => {
                 />
                 <span className="text-muted-foreground">to</span>
                 <Input
+                  id="maxSalary"
                   inputMode="numeric"
                   placeholder="25000"
                   value={formData.maxSalary}
@@ -410,7 +435,8 @@ const JobPostingForm = () => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addToList(qualInput, "qualifications", () => setQualInput(""));}
+                    addToList(qualInput, "qualifications", () => setQualInput(""));
+                  }
                 }}
                 className="mt-2"
               />
@@ -475,7 +501,7 @@ const JobPostingForm = () => {
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <FieldLabel htmlFor="application_deadline">Application Deadline</FieldLabel>
+                <FieldLabel htmlFor="application_deadline" required>Application Deadline</FieldLabel>
                 <Input
                   id="application_deadline"
                   type="date"
@@ -570,12 +596,17 @@ const JobPostingForm = () => {
             type="button"
             className="px-8 border-brand-teal text-brand-teal hover:bg-brand-teal hover:text-white"
             onClick={() => console.log("Save draft clicked", formData)}
+            disabled={submitting}
           >
             Save Draft
           </Button>
 
-          <Button type="submit" className="px-8 bg-brand-teal hover:bg-brand-teal-dark">
-            Post Job
+          <Button
+            type="submit"
+            className="px-8 bg-brand-teal hover:bg-brand-teal-dark"
+            disabled={submitting}
+          >
+            {submitting ? "Posting..." : "Post Job"}
           </Button>
         </div>
       </form>
