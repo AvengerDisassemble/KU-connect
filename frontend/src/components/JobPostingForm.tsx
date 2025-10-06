@@ -213,20 +213,6 @@ const JobPostingForm = () => {
 
     try {
       setSubmitting(true);
-
-      // const res = await fetch("/api/jobs", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(payload),
-      // });
-      // if (!res.ok) {
-      //   const data = await res.json().catch(() => ({}));
-      //   toast.error("Post failed", {
-      //     description: data?.message || "Please try again.",
-      //   });
-      //   return;
-      // }
-
       console.log("Submitting payload:", payload);
       toast.success("Job posted successfully");
     } catch (err: any) {
@@ -396,7 +382,7 @@ const JobPostingForm = () => {
           </CardContent>
         </Card>
 
-        {/* Requirements / Qualifications / Responsibilities / Benefits */}
+        {/* Role Details */}
         <Card className="border-0 shadow-none bg-transparent">
           <CardHeader>
             <CardTitle className="text-xl font-semibold">Role Details</CardTitle>
@@ -479,8 +465,7 @@ const JobPostingForm = () => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addToList(benefitInput, "benefits", () => setBenefitInput(""));
-                  }
+                    addToList(benefitInput, "benefits", () => setBenefitInput(""));}
                 }}
                 className="mt-2"
               />
@@ -589,18 +574,8 @@ const JobPostingForm = () => {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="flex w-full items-center justify-between">
-          <Button
-            variant="outline"
-            type="button"
-            className="px-8 border-brand-teal text-brand-teal hover:bg-brand-teal hover:text-white"
-            onClick={() => console.log("Save draft clicked", formData)}
-            disabled={submitting}
-          >
-            Save Draft
-          </Button>
-
+        {/* Actions */}
+        <div className="flex w-full items-center justify-end">
           <Button
             type="submit"
             className="px-8 bg-brand-teal hover:bg-brand-teal-dark"
