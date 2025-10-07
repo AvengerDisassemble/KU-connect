@@ -122,6 +122,63 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
 })
 
 /**
+ * Register university staff controller
+ * POST /register/staff
+ */
+const registerStaff = asyncErrorHandler(async (req, res) => {
+  const { name, surname, email, password, department } = req.body
+
+  // Register staff as PROFESSOR
+  const user = await registerUser(
+    {
+      name,
+      surname,
+      email,
+      password,
+      role: 'PROFESSOR'
+    },
+    {
+      department
+    }
+  )
+
+  res.status(201).json({
+    success: true,
+    message: 'University staff registration successful',
+    data: {
+      user
+    }
+  })
+})
+
+/**
+ * Register admin controller
+ * POST /register/admin
+ */
+const registerAdmin = asyncErrorHandler(async (req, res) => {
+  const { name, surname, email, password } = req.body
+
+  // Register admin as ADMIN
+  const user = await registerUser(
+    {
+      name,
+      surname,
+      email,
+      password,
+      role: 'ADMIN'
+    }
+  )
+
+  res.status(201).json({
+    success: true,
+    message: 'Admin registration successful',
+    data: {
+      user
+    }
+  })
+})
+
+/**
  * Refresh token controller
  * POST /auth/refresh
  */
@@ -192,6 +249,8 @@ module.exports = {
   login,
   registerAlumni,
   registerEnterprise,
+  registerStaff,
+  registerAdmin,
   refreshToken,
   logout,
   getProfile

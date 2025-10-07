@@ -189,10 +189,112 @@ function validateEnterpriseRegistration (req, res, next) {
   next()
 }
 
+/**
+ * Validate university staff registration request body
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+function validateStaffRegistration (req, res, next) {
+  const { name, surname, email, password, department } = req.body
+  const errors = []
+
+  // Check for missing required fields first
+  if (!name || !surname || !email || !password || !department) {
+    errors.push('All fields are required: name, surname, email, password, department')
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    })
+  }
+
+  if (name.trim().length < 2) {
+    errors.push('Name must be at least 2 characters long')
+  }
+
+  if (surname.trim().length < 2) {
+    errors.push('Surname must be at least 2 characters long')
+  }
+
+  if (!isValidEmail(email)) {
+    errors.push('Invalid email format')
+  }
+
+  const passwordValidation = validatePassword(password)
+  if (!passwordValidation.isValid) {
+    errors.push(passwordValidation.message)
+  }
+
+  if (department.trim().length < 2) {
+    errors.push('Department must be at least 2 characters long')
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    })
+  }
+
+  next()
+}
+
+/**
+ * Validate admin registration request body
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+function validateAdminRegistration (req, res, next) {
+  const { name, surname, email, password } = req.body
+  const errors = []
+
+  // Check for missing required fields first
+  if (!name || !surname || !email || !password) {
+    errors.push('All fields are required: name, surname, email, password')
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    })
+  }
+
+  if (name.trim().length < 2) {
+    errors.push('Name must be at least 2 characters long')
+  }
+
+  if (surname.trim().length < 2) {
+    errors.push('Surname must be at least 2 characters long')
+  }
+
+  if (!isValidEmail(email)) {
+    errors.push('Invalid email format')
+  }
+
+  const passwordValidation = validatePassword(password)
+  if (!passwordValidation.isValid) {
+    errors.push(passwordValidation.message)
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    })
+  }
+
+  next()
+}
+
 module.exports = {
   validateLogin,
   validateAlumniRegistration,
   validateEnterpriseRegistration,
+  validateStaffRegistration,
+  validateAdminRegistration,
   isValidEmail,
   validatePassword
 }
