@@ -5,15 +5,16 @@ import { Guard } from "@/components/Guard";
 import LandingPage from "@/pages/public/LandingPage";
 import LoginPage from "@/pages/public/LoginPage";
 import NotFoundPage from "@/pages/public/NotFoundPage";
-import StudentDashboardPage from "@/pages/student/DashboardPage";
-import StudentProfilePage from "@/pages/student/ProfilePage";
-import EmployerDashboardPage from "@/pages/employer/DashboardPage";
-import AdminDashboardPage from "@/pages/admin/DashboardPage";
-import ProfessorDashboardPage from "@/pages/professor/DashboardPage";
+import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
+import StudentProfilePage from "@/pages/student/profile/ProfilePage";
+import BrowserJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
+import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
+import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
+import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-dvh">
+    <div className="min-h-dvh ">
       <Header />
       <main className="container mx-auto max-w-screen-xl px-4 py-6">
         <Routes>
@@ -33,6 +34,14 @@ const App: React.FC = () => {
             element={
               <Guard role="student">
                 <StudentProfilePage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/student/browsejobs"
+            element={
+              <Guard role="student">
+                <BrowserJobsPage />
               </Guard>
             }
           />

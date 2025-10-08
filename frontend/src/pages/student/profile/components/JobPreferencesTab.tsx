@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Pencil, Download, MoreHorizontal, Check, X } from "lucide-react";
+import { Edit, Download, MoreHorizontal, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -46,11 +45,8 @@ const JobPreferencesTab = () => {
     <div className="max-w-4xl">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-accent">Job preferences</h1>
+        <h1 className="text-2xl font-bold text-foreground">Job preferences</h1>
       </div>
-      <p className="font-sans">This is Inter</p>
-<p className="font-poppins">This is Poppins</p>
-<p className="font-volkhov">This is Volkhov</p>
 
       {/* Job Goals Section */}
       <Card className="mb-8">
@@ -65,7 +61,7 @@ const JobPreferencesTab = () => {
                   onClick={() => setIsEditing(true)}
                   className="h-6 w-6"
                 >
-                  <Pencil className="w-4 h-4 text-muted-foreground" />
+                  <Edit className="w-4 h-4 text-muted-foreground" />
                 </Button>
               )}
             </div>

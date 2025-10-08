@@ -1,6 +1,8 @@
 import { Edit, HelpCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { getProfile } from "@/services/profileApi";
 
 interface ProfileSidebarProps {
   activeTab: "profile" | "job-preferences";
@@ -8,8 +10,16 @@ interface ProfileSidebarProps {
 }
 
 const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
+  const userId = 1; // TODO: Replace with actual user ID from auth
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfile(userId),
+  });
+
+  const fullName = profile ? `${profile.name} ${profile.surname}` : "";
+  const degreeAbbrev = profile?.student?.degreeType?.name ?? "";
   return (
-    <aside className="w-72 bg-card border-r border-border min-h-screen rounded-2xl p-6">
+    <aside className="w-72 bg-card border-r border-border p-6">
       {/* Profile Avatar and Info */}
       <div className="text-center mb-8">
         <div className="relative inline-block mb-4">
@@ -21,9 +31,11 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
             <Edit className="w-3 h-3 text-primary-foreground" />
           </div>
         </div>
-        
-        <div className="text-xs text-muted-foreground font-medium mb-1">SKE</div>
-        <div className="font-semibold text-foreground">Phantawat Organ</div>
+
+        <div className="text-xs text-muted-foreground font-medium mb-1">
+          {degreeAbbrev}
+        </div>
+        <div className="font-semibold text-foreground">{fullName || " "}</div>
       </div>
 
       {/* Navigation Menu */}
@@ -32,8 +44,8 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
           onClick={() => onTabChange("profile")}
           className={cn(
             "w-full text-left px-4 py-3 rounded-md font-medium transition-colors",
-            activeTab === "profile" 
-              ? "bg-primary/10 text-primary border-r-2 border-primary" 
+            activeTab === "profile"
+              ? "bg-primary/10 text-primary border-r-2 border-primary"
               : "text-foreground hover:bg-muted"
           )}
         >
@@ -43,8 +55,8 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
           onClick={() => onTabChange("job-preferences")}
           className={cn(
             "w-full text-left px-4 py-3 rounded-md font-medium transition-colors",
-            activeTab === "job-preferences" 
-              ? "bg-primary/10 text-primary border-r-2 border-primary" 
+            activeTab === "job-preferences"
+              ? "bg-primary/10 text-primary border-r-2 border-primary"
               : "text-foreground hover:bg-muted"
           )}
         >
@@ -58,7 +70,7 @@ const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
           <HelpCircle className="w-4 h-4 mr-2" />
           Help Center
         </Button>
-        
+
         <Button variant="outline" className="w-full">
           <LogOut className="w-4 h-4 mr-2" />
           Sign out
