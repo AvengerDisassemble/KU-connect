@@ -6,9 +6,11 @@ const prisma = new PrismaClient()
 
 describe('Authentication Endpoints', () => {
   beforeAll(async () => {
-    // Clean up any existing test data
+    // Clean up any existing test data - delete in correct order to avoid foreign key constraints
     await prisma.refreshToken.deleteMany()
     await prisma.student.deleteMany()
+    await prisma.professor.deleteMany()
+    await prisma.admin.deleteMany()
     await prisma.hR.deleteMany()
     await prisma.user.deleteMany({
       where: {
@@ -30,9 +32,11 @@ describe('Authentication Endpoints', () => {
   })
 
   afterAll(async () => {
-    // Clean up test data
+    // Clean up test data - delete in correct order to avoid foreign key constraints
     await prisma.refreshToken.deleteMany()
     await prisma.student.deleteMany()
+    await prisma.professor.deleteMany()
+    await prisma.admin.deleteMany()
     await prisma.hR.deleteMany()
     await prisma.user.deleteMany({
       where: {
