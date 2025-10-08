@@ -1,31 +1,28 @@
 /**
  * @module app
- * Main application setup with middleware and route mounting.
  */
-
-// In your app.js file, add:
-
 const express = require('express')
-const morgan = require('morgan')
 const cors = require('cors')
-require('dotenv').config()
+const morgan = require('morgan')
+const cookieParser = require('cookie-parser')
+const routes = require('./routes')
+const { errorHandler } = require('./middlewares/errorHandler')
 
 const app = express()
-const routes = require('./routes')
 
-// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}))
 app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+app.use(cookieParser())
 app.use(morgan('dev'))
-app.use(cors())
+app.use(express.urlencoded({ extended: true }))
 
-// Mount all routes under /api
+// Mount API routes
 app.use('/api', routes)
 
-// Error handling middleware (should be last)
-app.use((err, req, res, next) => {
-  console.error(err.stack)
-  res.status(500).json({ error: 'Something went wrong!' })
-})
+// Global error handler (must be last)
+app.use(errorHandler)
 
 module.exports = app
