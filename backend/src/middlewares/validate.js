@@ -1,32 +1,36 @@
 /**
- * @module middlewares/validate
- * @description Generic validation middleware
+ * Middleware wrapper for validation
+ * Supports Joi schemas or custom validator functions
  */
+module.exports = (schema) => (req, res, next) => {
+  try {
+    let value, error
 
-/**
- * Wraps validation function for use as middleware
- * @param {Function} validationFn - Validation function
- * @returns {Function} Express middleware function
- */
-function validate (validationFn) {
-  return (req, res, next) => {
-    // If the validation function is already a middleware, use it directly
-    if (validationFn.length === 3) {
-      return validationFn(req, res, next)
+    if (typeof schema === 'function' && schema.validate) {
+      // Joi schema instance
+      const result = schema.validate(req.body)
+      value = result.value
+      error = result.error
+    } else if (schema && typeof schema.validate === 'function') {
+      // If schema is a Joi object
+      const result = schema.validate(req.body)
+      value = result.value
+      error = result.error
+    } else if (typeof schema === 'function') {
+      // Custom validator function
+      return schema(req, res, next)
+    } else {
+      throw new Error('Invalid schema passed to validate()')
     }
-    
-    // Otherwise, wrap it
-    const result = validationFn(req.body)
-    
-    if (result.error) {
-      return res.status(400).json({
-        error: result.error.details[0].message
-      })
+
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message })
     }
-    
-    req.body = result.value
+
+    req.body = value
     next()
+  } catch (err) {
+    console.error('Validation middleware error:', err)
+    res.status(500).json({ error: 'Validation error' })
   }
 }
-
-module.exports = validate
