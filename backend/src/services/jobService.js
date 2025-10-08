@@ -79,6 +79,7 @@ async function getJobById (jobId) {
     include: {
       hr: true,
       tags: true,
+      requirements: true,
       qualifications: true,
       responsibilities: true,
       benefits: true
@@ -151,7 +152,8 @@ async function createJob (hrId, data) {
       application_deadline: new Date(application_deadline),
       email: email || null,
       phone_number,
-      requirements,
+      other_contact_information: null,
+      requirements: { create: requirements.map(text => ({ text })) },
       tags: {
         connectOrCreate: tags.map(name => ({
           where: { name },
@@ -164,6 +166,7 @@ async function createJob (hrId, data) {
     },
     include: {
       tags: true,
+      requirements: true,
       qualifications: true,
       responsibilities: true,
       benefits: true
@@ -188,7 +191,7 @@ async function updateJob (jobId, hrId, data) {
   }
 
   const {
-    tags, qualifications, responsibilities, benefits,
+    tags, requirements, qualifications, responsibilities, benefits,
     application_deadline, ...scalars
   } = data
 
@@ -211,6 +214,13 @@ async function updateJob (jobId, hrId, data) {
           }
         }
       })
+    )
+  }
+
+  if (Array.isArray(requirements)) {
+    tx.push(
+      prisma.requirement.deleteMany({ where: { jobId: existing.id } }),
+      prisma.requirement.createMany({ data: requirements.map(text => ({ jobId: existing.id, text })) })
     )
   }
 
