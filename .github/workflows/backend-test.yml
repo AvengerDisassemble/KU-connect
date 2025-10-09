@@ -17,6 +17,9 @@ jobs:
     - name: Install Dependencies
       run: cd backend; npm install
 
+    - name: Copy env files
+      run: cd backend; cp .env.example .env
+
     - name: Run Prisma Migrate
       run: cd backend; npx prisma migrate deploy
 
