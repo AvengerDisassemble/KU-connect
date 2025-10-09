@@ -58,6 +58,14 @@ router.post(
   jobController.manageApplication
 )
 
+// DELETE /api/job/:id → Delete a job (Admin or HR owner)
+router.delete(
+  '/:id', 
+  roleMiddleware(['ADMIN', 'EMPLOYER']), 
+  jobController.deleteJob
+)
+
+
 // ===================== STUDENT ACCESS =====================
 
 // POST /api/job/:id → Student applies for a job
