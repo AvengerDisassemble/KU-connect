@@ -59,22 +59,22 @@ enum ApplicationStatus {
 // ------------------------------
 
 model User {
-  id           String         @id @default(cuid())
-  name         String
-  surname      String
-  password     String
-  email        String         @unique
-  username     String?        @unique
-  role         Role
-  verified     Boolean        @default(false)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  professor    Professor?
-  admin        Admin?
-  student      Student?
-  hr           HR?
+  id            String         @id @default(cuid())
+  name          String
+  surname       String
+  password      String
+  email         String         @unique
+  username      String?        @unique
+  role          Role
+  verified      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  professor     Professor?
+  admin         Admin?
+  student       Student?
+  hr            HR?
   refreshTokens RefreshToken[]
-  reports      JobReport[]
+  reports       JobReport[]
 }
 
 model RefreshToken {
@@ -108,7 +108,6 @@ model Student {
   address                String
   gpa                    Float?
   expectedGraduationYear Int?
-  user                   User              @relation(fields: [userId], references: [id])
   interests              StudentInterest[]
   resumes                Resume[]
   applications           Application[]
@@ -120,7 +119,7 @@ model HR {
   id          Int         @id @default(autoincrement())
   userId      String      @unique
   companyName String
-  description String
+  description String?
   address     String
   industry    Industry    @default(OTHER)
   companySize CompanySize @default(ONE_TO_TEN)
@@ -227,7 +226,7 @@ model Application {
 model JobReport {
   id        Int      @id @default(autoincrement())
   jobId     Int
-  userId    Int
+  userId    String
   reason    String
   createdAt DateTime @default(now())
 
