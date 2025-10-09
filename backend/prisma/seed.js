@@ -1,54 +1,67 @@
 /**
  * @file prisma/seed.js
- * @description Seeds default admin, HR, student, and degree types
+ * @description Seeds default admin, HR, student, and degree types for KU Connect
  */
 
-const prisma = require("../src/models/prisma")
+const bcrypt = require('bcrypt')
+const prisma = require('../src/models/prisma')
 
-async function main () {
+async function main() {
   console.log('🌱 Seeding base data...')
 
-  // Degree Types
-  const degreeTypes = ['Bachelor', 'Master', 'Doctor']
-  for (const name of degreeTypes) {
+  // ----------------------------------------------------------
+  // 1️⃣ Seed Degree Types
+  // ----------------------------------------------------------
+  const degreeNames = ['Bachelor', 'Master', 'Doctor']
+  for (const name of degreeNames) {
     await prisma.degreeType.upsert({
       where: { name },
       update: {},
       create: { name }
     })
   }
+  console.log('🎓 Degree types seeded')
 
-  // Admin
+  // ----------------------------------------------------------
+  // 2️⃣ Seed Admin User
+  // ----------------------------------------------------------
+  const adminPassword = await bcrypt.hash('admin123', 10)
   const adminUser = await prisma.user.upsert({
-    where: { username: 'admin' },
+    where: { email: 'admin@kuconnect.local' },
     update: {},
     create: {
-      username: 'admin',
-      password: 'admin123', // 🔒 replace with bcrypt if you have password hashing
       name: 'System',
       surname: 'Administrator',
+      username: 'admin',
+      password: adminPassword,
       email: 'admin@kuconnect.local',
+      role: 'ADMIN',
       verified: true,
       admin: { create: {} }
     }
   })
+  console.log(`👑 Admin created: ${adminUser.email}`)
 
-  // HR
+  // ----------------------------------------------------------
+  // 3️⃣ Seed HR User (Employer)
+  // ----------------------------------------------------------
+  const hrPassword = await bcrypt.hash('hr123', 10)
   const hrUser = await prisma.user.upsert({
-    where: { username: 'hr1' },
+    where: { email: 'hr1@company.com' },
     update: {},
     create: {
-      username: 'hr1',
-      password: 'hr123',
       name: 'Harry',
       surname: 'Recruiter',
+      username: 'hr1',
+      password: hrPassword,
       email: 'hr1@company.com',
+      role: 'EMPLOYER',
       verified: true,
       hr: {
         create: {
           companyName: 'Acme Corporation',
           description: 'Tech company hiring interns',
-          address: 'Bangkok',
+          address: 'Bangkok, Thailand',
           industry: 'IT_SOFTWARE',
           companySize: 'ELEVEN_TO_FIFTY',
           website: 'https://acme.co'
@@ -56,35 +69,42 @@ async function main () {
       }
     }
   })
+  console.log(`🏢 HR created: ${hrUser.email}`)
 
-  // Student
-  const degree = await prisma.degreeType.findFirst({ where: { name: 'Bachelor' } })
-  await prisma.user.upsert({
-    where: { username: 'student1' },
+  // ----------------------------------------------------------
+  // 4️⃣ Seed Student User
+  // ----------------------------------------------------------
+  const studentPassword = await bcrypt.hash('student123', 10)
+  const bachelor = await prisma.degreeType.findUnique({ where: { name: 'Bachelor' } })
+
+  const studentUser = await prisma.user.upsert({
+    where: { email: 'student1@ku.ac.th' },
     update: {},
     create: {
-      username: 'student1',
-      password: 'student123',
       name: 'Student',
       surname: 'Example',
+      username: 'student1',
+      password: studentPassword,
       email: 'student1@ku.ac.th',
+      role: 'STUDENT',
       verified: true,
       student: {
         create: {
-          degreeTypeId: degree.id,
-          address: 'Kasetsart University',
+          degreeTypeId: bachelor.id,
+          address: 'Kasetsart University, Bangkok',
           gpa: 3.25,
           expectedGraduationYear: 2026
         }
       }
     }
   })
+  console.log(`🎓 Student created: ${studentUser.email}`)
 
-  console.log('✅ Seeding completed successfully.')
+  console.log('\n✅ All seed data created successfully.')
 }
 
 main()
-  .catch(err => {
+  .catch((err) => {
     console.error('❌ Seeding failed:', err)
     process.exit(1)
   })
