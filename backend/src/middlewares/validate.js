@@ -1,36 +1,43 @@
 /**
- * Middleware wrapper for validation
- * Supports Joi schemas or custom validator functions
+ * @module middlewares/validate
+ * @description Universal Joi validation middleware
  */
-module.exports = (schema) => (req, res, next) => {
-  try {
-    let value, error
 
-    if (typeof schema === 'function' && schema.validate) {
-      // Joi schema instance
-      const result = schema.validate(req.body)
-      value = result.value
-      error = result.error
-    } else if (schema && typeof schema.validate === 'function') {
-      // If schema is a Joi object
-      const result = schema.validate(req.body)
-      value = result.value
-      error = result.error
-    } else if (typeof schema === 'function') {
-      // Custom validator function
-      return schema(req, res, next)
-    } else {
-      throw new Error('Invalid schema passed to validate()')
-    }
+const Joi = require('joi')
+
+/**
+ * Validation middleware factory
+ * @param {Joi.Schema} schema - Joi schema object
+ * @param {'body'|'query'|'params'} [property='body'] - Where to validate data from
+ * @returns {Function} Express middleware
+ */
+
+function validate (schema, property = 'body') {
+  // Defensive check
+  if (!schema || typeof schema.validate !== 'function') {
+    console.error('❌ Invalid Joi schema passed to validate():', schema)
+    throw new TypeError('Validation schema must be a Joi schema object')
+  }
+
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req[property], {
+      abortEarly: false,
+      allowUnknown: false,
+      stripUnknown: true
+    })
 
     if (error) {
-      return res.status(400).json({ error: error.details[0].message })
+      const messages = error.details.map(d => d.message)
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        errors: messages
+      })
     }
 
-    req.body = value
+    req[property] = value
     next()
-  } catch (err) {
-    console.error('Validation middleware error:', err)
-    res.status(500).json({ error: 'Validation error' })
   }
 }
+
+module.exports = validate
