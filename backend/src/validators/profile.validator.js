@@ -16,7 +16,9 @@ const updateProfileSchema = Joi.object({
   // Common fields for all users
   name: Joi.string().max(100).optional(),
   surname: Joi.string().max(100).optional(),
-  email: Joi.string().email().optional(),
+  email: Joi.any().forbidden().messages({
+  'any.unknown': 'Email cannot be changed. Please contact support.'
+  }),
   phoneNumber: Joi.string()
     .pattern(/^[0-9+\-()\s]+$/)
     .optional()
