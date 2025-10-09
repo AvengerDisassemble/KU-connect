@@ -48,6 +48,13 @@ async function updateProfile (req, res) {
         message: 'Role mismatch – cannot update profile'
       })
     }
+    // Prevent email change at controller level as well
+    if (updateData.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email cannot be changed. Please contact support.'
+      })
+    }
 
     res.status(200).json({
       success: true,
