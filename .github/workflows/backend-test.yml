@@ -1,4 +1,4 @@
-name: Run Jest Tests
+name: Run Jest Tests with Prisma Migration
 
 on: [push]
 
@@ -8,12 +8,20 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '18'  # specify your node version
+
     - name: Install Dependencies
       run: cd backend; npm install
+
+    - name: Run Prisma Migrate
+      run: cd backend; npx prisma migrate deploy
+
+    - name: Generate Prisma Client
+      run: cd backend; npx prisma generate
+
     - name: Run Jest Tests
       run: cd backend; npm test
-
