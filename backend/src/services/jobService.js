@@ -336,6 +336,40 @@ async function getApplicants (jobId, hrId) {
   })
 }
 
+/**
+ * Deletes a job (by Admin or HR owner)
+ * @param {number} jobId - Job ID to delete
+ * @param {object} requester - User object (from req.user)
+ * @returns {Promise<object|null>} Deleted job record
+ */
+async function deleteJob (jobId, requester) {
+  const job = await prisma.job.findUnique({ where: { id: Number(jobId) } })
+
+  if (!job) {
+    const err = new Error('Job not found')
+    err.status = 404
+    throw err
+  }
+
+  // Only allow Admins or the HR who owns the job
+  const isAdmin = requester.role === 'ADMIN'
+  const isOwner = requester.hr && job.hrId === requester.hr.id
+
+  if (!isAdmin && !isOwner) {
+    const err = new Error('You are not authorized to delete this job')
+    err.status = 403
+    throw err
+  }
+
+  // Delete job (cascades will handle child entities)
+  const deletedJob = await prisma.job.delete({
+    where: { id: Number(jobId) },
+    include: { hr: true, tags: true }
+  })
+
+  return deletedJob
+}
+
 module.exports = {
   listJobs,
   getJobById,
@@ -344,5 +378,6 @@ module.exports = {
   updateJob,
   applyToJob,
   manageApplication,
-  getApplicants
+  getApplicants,
+  deleteJob
 }
