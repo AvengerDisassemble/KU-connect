@@ -8,6 +8,7 @@ const jobService = require('../services/jobService')
 
 /**
  * List jobs with pagination (public)
+ * @route GET /api/job
  */
 async function listJobs(req, res) {
   try {
@@ -29,6 +30,7 @@ async function listJobs(req, res) {
 
 /**
  * Search jobs by keyword (public)
+ * @route GET /api/job/search/:query
  */
 async function searchJobs(req, res) {
   try {
@@ -50,6 +52,7 @@ async function searchJobs(req, res) {
 
 /**
  * Get job by ID (public)
+ * @route GET /api/job/:id
  */
 async function getJobById(req, res) {
   try {
@@ -78,6 +81,7 @@ async function getJobById(req, res) {
 
 /**
  * Create job posting (HR only)
+ * @route POST /api/job
  */
 async function createJob(req, res) {
   try {
@@ -114,6 +118,7 @@ async function createJob(req, res) {
 
 /**
  * Update job posting (HR only, must own job)
+ * @route PATCH /api/job/:id
  */
 async function updateJob(req, res) {
   try {
@@ -156,6 +161,7 @@ async function updateJob(req, res) {
 
 /**
  * Student applies to a job
+ * @route POST /api/job/:id
  */
 async function applyToJob(req, res) {
   try {
@@ -195,6 +201,7 @@ async function applyToJob(req, res) {
 
 /**
  * HR gets applicants for their job
+ * @route GET /api/job/:id/applyer
  */
 async function getApplicants(req, res) {
   try {
@@ -236,6 +243,7 @@ async function getApplicants(req, res) {
 
 /**
  * HR manages application status (QUALIFIED / REJECTED)
+ * @route PATCH /api/job/:id/applyer
  */
 async function manageApplication(req, res) {
   try {
@@ -283,6 +291,32 @@ async function manageApplication(req, res) {
   }
 }
 
+/**
+ * Deletes a job posting (Admin or HR owner)
+ * @route DELETE /api/job/:id
+ */
+async function deleteJob (req, res) {
+  try {
+    const jobId = req.params.id
+    const requester = req.user
+
+    const deleted = await jobService.deleteJob(jobId, requester)
+
+    res.status(200).json({
+      success: true,
+      message: 'Job deleted successfully',
+      data: deleted
+    })
+  } catch (error) {
+    console.error('Delete job error:', error)
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Failed to delete job'
+    })
+  }
+}
+
+
 module.exports = {
   listJobs,
   searchJobs,
@@ -291,5 +325,6 @@ module.exports = {
   updateJob,
   applyToJob,
   getApplicants,
-  manageApplication
+  manageApplication,
+  deleteJob
 }
