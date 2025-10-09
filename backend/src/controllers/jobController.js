@@ -1,148 +1,295 @@
 /**
  * @module controllers/jobController
- * @description Express handlers for Job Posting feature
+ * @description Controller for Job Posting feature (with authentication + role-based access)
  */
 
-const {
-  listJobs,
-  getJobById,
-  searchJobs,
-  createJob,
-  updateJob,
-  applyToJob,
-  manageApplication,
-  getApplicants
-} = require('../services/jobService')
+const prisma = require('../models/prisma')
+const jobService = require('../services/jobService')
 
 /**
- * Lists jobs with pagination
+ * List jobs with pagination (public)
  */
-async function listJobsController (req, res, next) {
+async function listJobs(req, res) {
   try {
-    const data = await listJobs(req.query)
-    return res.status(200).json({ data })
-  } catch (err) {
-    next(err)
+    const filters = req.query
+    const result = await jobService.listJobs(filters)
+    res.status(200).json({
+      success: true,
+      message: 'Jobs retrieved successfully',
+      data: result
+    })
+  } catch (error) {
+    console.error('List jobs error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to list jobs'
+    })
   }
 }
 
 /**
- * Searches jobs by keyword query param
+ * Search jobs by keyword (public)
  */
-async function searchJobsController (req, res, next) {
+async function searchJobs(req, res) {
   try {
-    const data = await searchJobs(req.params.query)
-    return res.status(200).json({ data })
-  } catch (err) {
-    next(err)
+    const query = req.params.query
+    const result = await jobService.searchJobs(query)
+    res.status(200).json({
+      success: true,
+      message: 'Search completed successfully',
+      data: result
+    })
+  } catch (error) {
+    console.error('Search jobs error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to search jobs'
+    })
   }
 }
 
 /**
- * Gets job detail by id
+ * Get job by ID (public)
  */
-async function getJobByIdController (req, res, next) {
+async function getJobById(req, res) {
   try {
-    const data = await getJobById(req.params.id)
-    if (!data) return res.status(404).json({ error: 'Job not found' })
-    return res.status(200).json({ data })
-  } catch (err) {
-    next(err)
-  }
-}
-
-/**
- * Creates a new job (HR only)
- */
-async function createJobController (req, res, next) {
-  try {
-    const hrId = req.user.hrId || req.user.id
-    const data = await createJob(hrId, req.body)
-    return res.status(201).json({ data })
-  } catch (err) {
-    if (err.code === 'P2002') {
-      const fields = err.meta && err.meta.target ? err.meta.target : []
-      const fieldList = fields.length > 0 ? fields.join(', ') : 'A unique field'
-      return res.status(409).json({ error: `${fieldList} already exists` })
+    const jobId = req.params.id
+    const job = await jobService.getJobById(jobId)
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found'
+      })
     }
-    next(err)
+
+    res.status(200).json({
+      success: true,
+      message: 'Job retrieved successfully',
+      data: job
+    })
+  } catch (error) {
+    console.error('Get job by ID error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get job'
+    })
   }
 }
 
 /**
- * Updates a job (HR owner only)
+ * Create job posting (HR only)
  */
-async function updateJobController (req, res, next) {
+async function createJob(req, res) {
   try {
-    const hrId = req.user.hrId || req.user.id
-    const data = await updateJob(req.params.id, hrId, req.body)
-    if (!data) return res.status(404).json({ error: 'Job not found' })
-    return res.status(200).json({ data })
-  } catch (err) {
-    if (err.status === 403) return res.status(403).json({ error: err.message })
-    if (err.code === 'P2002') {
-      const fields = err.meta && err.meta.target ? err.meta.target : []
-      const fieldList = fields.length > 0 ? fields.join(', ') : 'A unique field'
-      return res.status(409).json({ error: `${fieldList} already exists` })
+    const userId = req.user.id
+
+    // Find the HR profile linked to this user
+    const hr = await prisma.hR.findUnique({
+      where: { userId },
+      select: { id: true, companyName: true }
+    })
+
+    if (!hr) {
+      return res.status(403).json({
+        success: false,
+        message: 'You must have an HR profile to post a job'
+      })
     }
-    next(err)
+
+    const job = await jobService.createJob(hr.id, req.body)
+
+    res.status(201).json({
+      success: true,
+      message: 'Job created successfully',
+      data: job
+    })
+  } catch (error) {
+    console.error('Create job error:', error)
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Failed to create job'
+    })
+  }
+}
+
+/**
+ * Update job posting (HR only, must own job)
+ */
+async function updateJob(req, res) {
+  try {
+    const userId = req.user.id
+    const jobId = req.params.id
+
+    // Resolve HR ID from userId
+    const hr = await prisma.hR.findUnique({
+      where: { userId },
+      select: { id: true }
+    })
+    if (!hr) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only HR users can update jobs'
+      })
+    }
+
+    const updated = await jobService.updateJob(jobId, hr.id, req.body)
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found or unauthorized'
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Job updated successfully',
+      data: updated
+    })
+  } catch (error) {
+    console.error('Update job error:', error)
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Failed to update job'
+    })
   }
 }
 
 /**
  * Student applies to a job
  */
-async function applyToJobController (req, res, next) {
+async function applyToJob(req, res) {
   try {
-    const studentId = req.user.studentId || req.user.id
-    const data = await applyToJob(req.params.id, studentId, req.body.resumeLink)
-    return res.status(201).json({ data })
-  } catch (err) {
-    const status = err.status || 500
-    const error = err.message || 'Internal Server Error'
-    return res.status(status).json({ error })
+    const userId = req.user.id
+
+    // Find student profile linked to this user
+    const student = await prisma.student.findUnique({
+      where: { userId },
+      select: { id: true }
+    })
+
+    if (!student) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only students can apply to jobs'
+      })
+    }
+
+    const jobId = req.params.id
+    const { resumeLink } = req.body
+
+    const application = await jobService.applyToJob(jobId, student.id, resumeLink)
+
+    res.status(201).json({
+      success: true,
+      message: 'Job application submitted successfully',
+      data: application
+    })
+  } catch (error) {
+    console.error('Apply to job error:', error)
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Failed to apply for job'
+    })
   }
 }
 
 /**
- * HR fetches applicants for a job they own
+ * HR gets applicants for their job
  */
-async function getApplicantsController (req, res, next) {
+async function getApplicants(req, res) {
   try {
-    const hrId = req.user.hrId || req.user.id
-    const data = await getApplicants(req.params.id, hrId)
-    if (data === null) return res.status(404).json({ error: 'Job not found' })
-    return res.status(200).json({ data })
-  } catch (err) {
-    const status = err.status || 500
-    return res.status(status).json({ error: err.message || 'Internal Server Error' })
+    const userId = req.user.id
+    const jobId = req.params.id
+
+    const hr = await prisma.hR.findUnique({
+      where: { userId },
+      select: { id: true }
+    })
+    if (!hr) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only HR users can view applicants'
+      })
+    }
+
+    const applicants = await jobService.getApplicants(jobId, hr.id)
+    if (!applicants) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found or unauthorized'
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Applicants retrieved successfully',
+      data: applicants
+    })
+  } catch (error) {
+    console.error('Get applicants error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve applicants'
+    })
   }
 }
 
 /**
- * HR manages a specific application (QUALIFIED/REJECTED)
+ * HR manages application status (QUALIFIED / REJECTED)
  */
-async function manageApplicationController (req, res, next) {
+async function manageApplication(req, res) {
   try {
-    const hrId = req.user.hrId || req.user.id
-    const { applicationId } = req.body
-    if (!applicationId) return res.status(400).json({ error: 'applicationId is required' })
-    const data = await manageApplication(req.params.id, hrId, applicationId, req.body.status)
-    if (!data) return res.status(404).json({ error: 'Job or application not found' })
-    return res.status(200).json({ data })
-  } catch (err) {
-    const status = err.status || 500
-    return res.status(status).json({ error: err.message || 'Internal Server Error' })
+    const userId = req.user.id
+    const jobId = req.params.id
+    const { applicationId, status } = req.body
+
+    if (!applicationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Application ID is required'
+      })
+    }
+
+    const hr = await prisma.hR.findUnique({
+      where: { userId },
+      select: { id: true }
+    })
+    if (!hr) {
+      return res.status(403).json({
+        success: false,
+        message: 'Only HR users can manage applications'
+      })
+    }
+
+    const result = await jobService.manageApplication(jobId, hr.id, applicationId, status)
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: 'Application not found or unauthorized'
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Application ${status.toLowerCase()} successfully`,
+      data: result
+    })
+  } catch (error) {
+    console.error('Manage application error:', error)
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Failed to update application status'
+    })
   }
 }
 
 module.exports = {
-  listJobs: listJobsController,
-  searchJobs: searchJobsController,
-  getJobById: getJobByIdController,
-  createJob: createJobController,
-  updateJob: updateJobController,
-  applyToJob: applyToJobController,
-  getApplicants: getApplicantsController,
-  manageApplication: manageApplicationController
+  listJobs,
+  searchJobs,
+  getJobById,
+  createJob,
+  updateJob,
+  applyToJob,
+  getApplicants,
+  manageApplication
 }
