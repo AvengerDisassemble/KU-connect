@@ -64,12 +64,6 @@ let studentToken
 let seeded
 
 beforeAll(async () => {
-  process.env.TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || 'file:./test.db'
-  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL
-  process.env.JWT_SECRET = process.env.JWT_SECRET || 'testsecret'
-
-  execSync('npx prisma migrate deploy', { stdio: 'inherit' })
-
   app = express()
   app.use(express.json())
   // mount your job + job report routes root (assuming report lives under /api/job as specified)
