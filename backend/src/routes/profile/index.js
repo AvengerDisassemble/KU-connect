@@ -1,25 +1,25 @@
 /**
- * @module routes/profile
- * @description Profile management routes
+ * Profile routes
+ * @module routes/profile/index
  */
 
 const express = require('express')
 const router = express.Router()
 const profileController = require('../../controllers/profileController')
-const validate = require('../../middlewares/validate')
-const profileValidators = require('../../validators/profile.validator')
+const profileValidator = require('../../validators/profile.validator')
+const auth = require('../../middlewares/authMiddleware')
+const role = require('../../middlewares/roleMiddleware')
 
-// Get all profiles
-router.get('/', profileController.listProfiles)
+// Require login for all profile endpoints
+router.use(auth.authMiddleware)
 
-// Get profile by ID
+// Admins can view all profiles
+router.get('/', role.roleMiddleware(['ADMIN']), profileController.listProfiles)
+
+// Admins or the profile owner can view a single profile
 router.get('/:userId', profileController.getProfile)
 
-// Update profile
-router.patch(
-  '/',
-  validate(profileValidators.updateProfile),
-  profileController.updateProfile
-)
+// Authenticated users can update only their own profile
+router.patch('/', profileValidator.validateUpdateProfile,profileController.updateProfile)
 
 module.exports = router
