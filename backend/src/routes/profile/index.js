@@ -8,8 +8,7 @@ const router = express.Router()
 const profileController = require('../../controllers/profileController')
 const { authMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
-const validate = require('../../middlewares/validate')
-const { updateProfile } = require('../../validators/profile.validator')
+const { validateUpdateProfile } = require('../../validators/profileValidator')
 
 // Require authentication for all profile endpoints
 router.use(authMiddleware)
@@ -25,7 +24,7 @@ router.get('/', roleMiddleware(['ADMIN']), profileController.listProfiles)
 router.get('/:userId', profileController.getProfile)
 
 // Authenticated users can update their own profile
-router.patch('/', updateProfile, profileController.updateProfile)
+router.patch('/', validateUpdateProfile, profileController.updateProfile)
 
 module.exports = router
 
