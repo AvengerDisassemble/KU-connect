@@ -28,3 +28,4 @@ router.get('/:userId', profileController.getProfile)
 router.patch('/', updateProfile, profileController.updateProfile)
 
 module.exports = router
+
