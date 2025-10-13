@@ -1,5 +1,5 @@
 /**
- * @module validators/job.validator
+ * @module validators/jobValidator
  * @description Joi schemas for Job Posting feature
  */
 
@@ -8,7 +8,7 @@ const Joi = require('joi')
 /**
  * Common reusable patterns
  */
-const stringArray = Joi.array().items(Joi.string().trim().min(1).max(300)).default([])
+const stringArray = Joi.array().items(Joi.string().trim().min(1).max(300))
 
 /**
  * Phone regex pattern allows digits, spaces, dashes, parentheses, and plus sign.
@@ -48,10 +48,10 @@ const createJobSchema = Joi.object({
     .required(),
   other_contact_information: Joi.string().trim().max(300).allow(null, '').optional(),
 
-  requirements: stringArray,
-  qualifications: stringArray,
-  responsibilities: stringArray,
-  benefits: stringArray,
+  requirements: stringArray.default([]),
+  qualifications: stringArray.default([]),
+  responsibilities: stringArray.default([]),
+  benefits: stringArray.default([]),
   tags: Joi.array().items(Joi.string().trim().min(1).max(50)).unique().default([])
 })
 
