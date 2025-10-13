@@ -1,5 +1,5 @@
 /**
- * @module validators/profile.validator
+ * @module validators/profileValidator
  * @description Joi validation schemas for profile operations
  */
 
