@@ -6,10 +6,10 @@
 const express = require('express')
 const router = express.Router()
 const jobReportController = require('../../controllers/jobReportController')
-const validate = require('../../middlewares/validate')
+const { validate } = require('../../middlewares/validate')
 const auth = require('../../middlewares/authMiddleware')
 const role = require('../../middlewares/roleMiddleware')
-const { createReportSchema } = require('../../validators/report.validator')
+const { createReportSchema } = require('../../validators/reportValidator')
 
 // POST /api/job/report/:id/report - Authenticated, non-owner
 router.post('/:id/report', auth.authMiddleware, validate(createReportSchema), jobReportController.createReport)
