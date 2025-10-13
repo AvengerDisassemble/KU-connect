@@ -175,38 +175,65 @@ async function createJob (hrId, data) {
 }
 
 /**
- * Updates a job if owned by HR
+ * Updates a job if owned by HR (PATCH semantics)
+ * - Replaces nested arrays ONLY when provided in req body
+ * - Leaves omitted fields unchanged
+ * - Runs all operations in a single transaction for consistency
+ *
  * @param {number} jobId
  * @param {number} hrId
  * @param {object} data
  * @returns {Promise<object|null>}
  */
 async function updateJob (jobId, hrId, data) {
-  const existing = await prisma.job.findUnique({ where: { id: Number(jobId) } })
+  const jobIdNum = Number(jobId)
+  const hrIdNum = Number(hrId)
+
+  const existing = await prisma.job.findUnique({ where: { id: jobIdNum } })
   if (!existing) return null
-  if (existing.hrId !== Number(hrId)) {
+  if (existing.hrId !== hrIdNum) {
     const err = new Error('Forbidden: not job owner')
     err.status = 403
     throw err
   }
 
+  // Destructure known nested-list fields; everything else is scalar on Job
   const {
-    tags, requirements, qualifications, responsibilities, benefits,
-    application_deadline, ...scalars
+    tags,
+    requirements,
+    qualifications,
+    responsibilities,
+    benefits,
+    application_deadline,
+    ...scalarUpdates
   } = data
 
-  const updateData = { ...scalars }
-  if (application_deadline) updateData.application_deadline = new Date(application_deadline)
+  // Normalize scalar updates
+  const scalarData = { ...scalarUpdates }
+  if (application_deadline) scalarData.application_deadline = new Date(application_deadline)
 
-  const tx = []
+  // Build transactional steps (one transaction)
+  const steps = []
 
-  if (Array.isArray(tags)) {
-    tx.push(
+  // 1) Scalar job fields (if any present)
+  if (Object.keys(scalarData).length > 0) {
+    steps.push(
       prisma.job.update({
-        where: { id: existing.id },
+        where: { id: jobIdNum },
+        data: scalarData
+      })
+    )
+  }
+
+  // 2) Tags (replace only if provided AND is array)
+  if (Array.isArray(tags)) {
+    // Replace tags set completely
+    steps.push(
+      prisma.job.update({
+        where: { id: jobIdNum },
         data: {
           tags: {
-            set: [],
+            set: [], // clear all
             connectOrCreate: tags.map(name => ({
               where: { name },
               create: { name }
@@ -217,43 +244,45 @@ async function updateJob (jobId, hrId, data) {
     )
   }
 
-  if (Array.isArray(requirements)) {
-    tx.push(
-      prisma.requirement.deleteMany({ where: { jobId: existing.id } }),
-      prisma.requirement.createMany({ data: requirements.map(text => ({ jobId: existing.id, text })) })
-    )
-  }
-
-  if (Array.isArray(qualifications)) {
-    tx.push(
-      prisma.qualification.deleteMany({ where: { jobId: existing.id } }),
-      prisma.qualification.createMany({ data: qualifications.map(text => ({ jobId: existing.id, text })) })
-    )
-  }
-
-  if (Array.isArray(responsibilities)) {
-    tx.push(
-      prisma.responsibility.deleteMany({ where: { jobId: existing.id } }),
-      prisma.responsibility.createMany({ data: responsibilities.map(text => ({ jobId: existing.id, text })) })
-    )
-  }
-
-  if (Array.isArray(benefits)) {
-    tx.push(
-      prisma.benefit.deleteMany({ where: { jobId: existing.id } }),
-      prisma.benefit.createMany({ data: benefits.map(text => ({ jobId: existing.id, text })) })
-    )
-  }
-
-  const updated = await prisma.job.update({
-    where: { id: existing.id },
-    data: updateData
-  })
-
-  if (tx.length) await prisma.$transaction(tx)
-
-  return getJobById(updated.id)
+  // Helper to replace a simple child table (Requirement / Qualification / Responsibility / Benefit)
+  const replaceSimpleChildren = (model, fieldNameArray) => {
+  const arr = fieldNameArray // array of strings (texts)
+  if (!Array.isArray(arr)) return
+  steps.push(
+    prisma[model].deleteMany({ where: { jobId: jobIdNum } }),
+    prisma[model].createMany({
+      data: arr.map(text => ({ jobId: jobIdNum, text }))
+    })
+  )
 }
+
+
+  replaceSimpleChildren('requirement', requirements)
+  replaceSimpleChildren('qualification', qualifications)
+  replaceSimpleChildren('responsibility', responsibilities)
+  replaceSimpleChildren('benefit', benefits)
+
+  // 3) After all writes, read back the canonical job with all relations
+  steps.push(
+    prisma.job.findUnique({
+      where: { id: jobIdNum },
+      include: {
+        hr: true,
+        tags: true,
+        requirements: true,
+        qualifications: true,
+        responsibilities: true,
+        benefits: true
+      }
+    })
+  )
+
+  // Run in a single transaction; the last step returns the job
+  const results = await prisma.$transaction(steps)
+  const updatedJob = results[results.length - 1]
+  return updatedJob
+}
+
 
 /**
  * Student applies to a job with a resume link
