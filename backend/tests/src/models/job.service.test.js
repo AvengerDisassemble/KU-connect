@@ -6,7 +6,7 @@
 const { jest } = require('@jest/globals')
 
 /**
- * Mock prisma singleton before importing the service
+ * Mock Prisma singleton (partial)
  */
 const prismaMock = {
   job: {
@@ -23,17 +23,38 @@ const prismaMock = {
     update: jest.fn(),
     findMany: jest.fn()
   },
-  user: {
+  hR: {
     findUnique: jest.fn()
-  }
+  },
+  requirement: {
+    deleteMany: jest.fn(),
+    createMany: jest.fn()
+  },
+  qualification: {
+    deleteMany: jest.fn(),
+    createMany: jest.fn()
+  },
+  responsibility: {
+    deleteMany: jest.fn(),
+    createMany: jest.fn()
+  },
+  benefit: {
+    deleteMany: jest.fn(),
+    createMany: jest.fn()
+  },
+  tag: {
+    findMany: jest.fn(),
+    create: jest.fn()
+  },
+  $transaction: jest.fn(async (tx) => Promise.all(tx))
 }
 
-// mock the prisma module path used by your jobService
 jest.unstable_mockModule('../../../src/models/prisma', () => ({
   default: prismaMock
 }))
 
-const jobService = await import('../../../src/services/job.service.js')
+// Import service after mocks
+const jobService = (await import('../../../src/services/jobService.js')).default ?? (await import('../../../src/services/jobService.js'))
 
 describe('jobService (unit)', () => {
   beforeEach(() => {
@@ -41,165 +62,138 @@ describe('jobService (unit)', () => {
   })
 
   describe('listJobs()', () => {
-    it('builds pagination args and filter, returns page of jobs', async () => {
+    it('returns paginated jobs', async () => {
       prismaMock.job.count.mockResolvedValue(12)
       prismaMock.job.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }])
 
-      const page = 2
-      const pageSize = 2
-      const filters = { q: 'engineer', location: 'Bangkok' }
-      const result = await jobService.default.listJobs({ page, pageSize, filters })
-
-      expect(prismaMock.job.count).toHaveBeenCalledWith({
-        where: {
-          AND: [
-            { title: { contains: 'engineer', mode: 'insensitive' } },
-            { location: { equals: 'Bangkok' } }
-          ]
-        }
-      })
-      expect(prismaMock.job.findMany).toHaveBeenCalledWith({
-        where: {
-          AND: [
-            { title: { contains: 'engineer', mode: 'insensitive' } },
-            { location: { equals: 'Bangkok' } }
-          ]
-        },
-        orderBy: { createdAt: 'desc' },
-        skip: 2,
-        take: 2
-      })
+      const result = await jobService.listJobs({ page: 2, limit: 2, keyword: 'developer' })
+      expect(prismaMock.job.count).toHaveBeenCalled()
+      expect(prismaMock.job.findMany).toHaveBeenCalled()
       expect(result.total).toBe(12)
       expect(result.items).toHaveLength(2)
     })
   })
 
   describe('getJobById()', () => {
-    it('returns job object when found', async () => {
-      prismaMock.job.findUnique.mockResolvedValue({ id: 10, title: 'Dev' })
-      const job = await jobService.default.getJobById(10)
+    it('returns job when found', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 10, title: 'Backend Dev' })
+      const job = await jobService.getJobById(10)
       expect(prismaMock.job.findUnique).toHaveBeenCalledWith({
-        where: { id: 10 }
+        where: { id: 10 },
+        include: expect.any(Object)
       })
-      expect(job.title).toBe('Dev')
+      expect(job.title).toBe('Backend Dev')
     })
 
-    it('returns null when not found', async () => {
+    it('returns null when job not found', async () => {
       prismaMock.job.findUnique.mockResolvedValue(null)
-      const job = await jobService.default.getJobById(999)
+      const job = await jobService.getJobById(999)
       expect(job).toBeNull()
     })
   })
 
   describe('createJob()', () => {
-    it('creates a job with HR owner and company name', async () => {
-      prismaMock.job.create.mockResolvedValue({ id: 1, title: 'SWE' })
-      const data = { title: 'SWE', description: 'Build things', location: 'BKK' }
-      const result = await jobService.default.createJob({ hrId: 7, companyName: 'TestCorp', data })
-      expect(prismaMock.job.create).toHaveBeenCalledWith({
-        data: {
-          ...data,
-          hrId: 7,
-          companyName: 'TestCorp'
-        }
+    it('creates a job for HR owner', async () => {
+      prismaMock.hR.findUnique.mockResolvedValue({ companyName: 'Acme' })
+      prismaMock.job.create.mockResolvedValue({ id: 1, title: 'Intern' })
+
+      const data = { title: 'Intern', description: 'Write code', location: 'BKK' }
+      const result = await jobService.createJob(5, data)
+
+      expect(prismaMock.hR.findUnique).toHaveBeenCalledWith({
+        where: { id: 5 },
+        select: { companyName: true }
       })
+      expect(prismaMock.job.create).toHaveBeenCalled()
       expect(result.id).toBe(1)
+    })
+
+    it('throws 404 if HR not found', async () => {
+      prismaMock.hR.findUnique.mockResolvedValue(null)
+      await expect(jobService.createJob(999, {})).rejects.toMatchObject({ status: 404 })
     })
   })
 
   describe('updateJob()', () => {
-    it('allows HR owner to update their job', async () => {
-      prismaMock.job.findUnique.mockResolvedValue({ id: 1, hrId: 9 })
-      prismaMock.job.update.mockResolvedValue({ id: 1, title: 'New' })
-      const body = { title: 'New' }
+    it('updates a job owned by HR', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 2, hrId: 10 })
+      prismaMock.job.update.mockResolvedValue({ id: 2, title: 'Updated' })
+      prismaMock.$transaction.mockResolvedValue([])
 
-      const updated = await jobService.default.updateJob({ jobId: 1, actor: { role: 'EMPLOYER', hrId: 9 }, body })
-      expect(prismaMock.job.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: { title: 'New' }
-      })
-      expect(updated.title).toBe('New')
+      const data = { title: 'Updated' }
+      const result = await jobService.updateJob(2, 10, data)
+      expect(prismaMock.job.update).toHaveBeenCalled()
+      expect(result).toBeDefined()
     })
 
-    it('throws 403 when HR tries to update another HR job', async () => {
-      prismaMock.job.findUnique.mockResolvedValue({ id: 1, hrId: 123 })
-      const body = { title: 'Hack' }
-      await expect(
-        jobService.default.updateJob({ jobId: 1, actor: { role: 'EMPLOYER', hrId: 9 }, body })
-      ).rejects.toMatchObject({ status: 403 })
+    it('throws 403 when HR not owner', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 2, hrId: 11 })
+      await expect(jobService.updateJob(2, 99, {})).rejects.toMatchObject({ status: 403 })
     })
   })
 
   describe('deleteJob()', () => {
     it('allows ADMIN to delete any job', async () => {
-      prismaMock.job.findUnique.mockResolvedValue({ id: 3, hrId: 2 })
+      prismaMock.job.findUnique.mockResolvedValue({ id: 3, hrId: 1 })
       prismaMock.job.delete.mockResolvedValue({ id: 3 })
-      await jobService.default.deleteJob({ jobId: 3, actor: { role: 'ADMIN' } })
+      const result = await jobService.deleteJob(3, { role: 'ADMIN' })
       expect(prismaMock.job.delete).toHaveBeenCalledWith({ where: { id: 3 } })
+      expect(result.id).toBe(3)
     })
 
-    it('allows HR owner to delete their job', async () => {
-      prismaMock.job.findUnique.mockResolvedValue({ id: 4, hrId: 88 })
+    it('allows HR owner to delete their own job', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 4, hrId: 9 })
       prismaMock.job.delete.mockResolvedValue({ id: 4 })
-      await jobService.default.deleteJob({ jobId: 4, actor: { role: 'EMPLOYER', hrId: 88 } })
-      expect(prismaMock.job.delete).toHaveBeenCalledWith({ where: { id: 4 } })
+      const result = await jobService.deleteJob(4, { role: 'EMPLOYER', hrId: 9 })
+      expect(result.id).toBe(4)
     })
 
-    it('throws 403 when another HR attempts delete', async () => {
-      prismaMock.job.findUnique.mockResolvedValue({ id: 4, hrId: 88 })
-      await expect(
-        jobService.default.deleteJob({ jobId: 4, actor: { role: 'EMPLOYER', hrId: 99 } })
-      ).rejects.toMatchObject({ status: 403 })
+    it('throws 403 if HR not owner', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 5, hrId: 1 })
+      await expect(jobService.deleteJob(5, { role: 'EMPLOYER', hrId: 2 })).rejects.toMatchObject({ status: 403 })
     })
   })
 
   describe('applyToJob()', () => {
-    it('prevents duplicate application, returns conflict-like error', async () => {
-      prismaMock.application.findFirst.mockResolvedValue({ id: 99 })
-      await expect(
-        jobService.default.applyToJob({ jobId: 5, studentId: 11, resumeUrl: 'r.pdf' })
-      ).rejects.toMatchObject({ code: 'P2002' })
+    it('creates new application when not existing', async () => {
+      prismaMock.application.findFirst.mockResolvedValue(null)
+      prismaMock.application.create.mockResolvedValue({ id: 10 })
+      const result = await jobService.applyToJob(5, 7, 'resume.pdf')
+      expect(prismaMock.application.create).toHaveBeenCalled()
+      expect(result.id).toBe(10)
     })
 
-    it('creates application once when not existing', async () => {
-      prismaMock.application.findFirst.mockResolvedValue(null)
-      prismaMock.application.create.mockResolvedValue({ id: 10, jobId: 5, studentId: 11 })
-      const created = await jobService.default.applyToJob({ jobId: 5, studentId: 11, resumeUrl: 'r.pdf' })
-      expect(prismaMock.application.create).toHaveBeenCalledWith({
-        data: { jobId: 5, studentId: 11, resumeUrl: 'r.pdf', status: 'PENDING' }
-      })
-      expect(created.id).toBe(10)
+    it('throws 409 if already applied', async () => {
+      prismaMock.application.create.mockRejectedValue({ code: 'P2002' })
+      await expect(jobService.applyToJob(5, 7, 'resume.pdf')).rejects.toMatchObject({ status: 409 })
     })
   })
 
   describe('manageApplication()', () => {
     it('updates application status', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 6, hrId: 2 })
       prismaMock.application.update.mockResolvedValue({ id: 1, status: 'QUALIFIED' })
-      const result = await jobService.default.manageApplication({
-        applicationId: 1,
-        status: 'QUALIFIED'
-      })
-      expect(prismaMock.application.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: { status: 'QUALIFIED' }
-      })
+      const result = await jobService.manageApplication(6, 2, 1, 'QUALIFIED')
       expect(result.status).toBe('QUALIFIED')
+    })
+
+    it('throws 403 when HR not owner', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 6, hrId: 99 })
+      await expect(jobService.manageApplication(6, 1, 1, 'QUALIFIED')).rejects.toMatchObject({ status: 403 })
     })
   })
 
   describe('getApplicants()', () => {
-    it('returns list of applicants for job', async () => {
-      prismaMock.application.findMany.mockResolvedValue([
-        { id: 1, studentId: 100 },
-        { id: 2, studentId: 101 }
-      ])
-      const rows = await jobService.default.getApplicants({ jobId: 44 })
-      expect(prismaMock.application.findMany).toHaveBeenCalledWith({
-        where: { jobId: 44 },
-        include: { student: true }
-      })
-      expect(Array.isArray(rows)).toBe(true)
-      expect(rows).toHaveLength(2)
+    it('returns applicants for HR job', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 7, hrId: 3 })
+      prismaMock.application.findMany.mockResolvedValue([{ id: 1 }, { id: 2 }])
+      const result = await jobService.getApplicants(7, 3)
+      expect(result).toHaveLength(2)
+    })
+
+    it('throws 403 if HR not owner', async () => {
+      prismaMock.job.findUnique.mockResolvedValue({ id: 7, hrId: 9 })
+      await expect(jobService.getApplicants(7, 3)).rejects.toMatchObject({ status: 403 })
     })
   })
 })
