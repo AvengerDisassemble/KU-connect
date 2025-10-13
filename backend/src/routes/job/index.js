@@ -6,10 +6,10 @@
 const express = require('express')
 const router = express.Router()
 const jobController = require('../../controllers/jobController')
-const { createJobSchema, updateJobSchema, applyJobSchema, manageApplicationSchema } = require('../../validators/job.validator')
+const { createJobSchema, updateJobSchema, applyJobSchema, manageApplicationSchema } = require('../../validators/jobValidator')
 const { authMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
-const validate = require('../../middlewares/validate')
+const { validate } = require('../../middlewares/validate')
 
 // ===================== AUTH REQUIRED FOR ALL JOB ROUTES =====================
 router.use(authMiddleware)
