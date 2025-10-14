@@ -2,18 +2,23 @@ import { Edit, HelpCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { getProfile } from "@/services/profileApi";
+import { getProfile } from "@/services/profile";
 
 interface ProfileSidebarProps {
   activeTab: "profile" | "job-preferences";
   onTabChange: (tab: "profile" | "job-preferences") => void;
+  userId?: string;
 }
 
-const ProfileSidebar = ({ activeTab, onTabChange }: ProfileSidebarProps) => {
-  const userId = 1; // TODO: Replace with actual user ID from auth
+const ProfileSidebar = ({
+  activeTab,
+  onTabChange,
+  userId,
+}: ProfileSidebarProps) => {
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],
-    queryFn: () => getProfile(userId),
+    queryFn: () => getProfile(userId!),
+    enabled: !!userId, // Only run query if userId is available
   });
 
   const fullName = profile ? `${profile.name} ${profile.surname}` : "";

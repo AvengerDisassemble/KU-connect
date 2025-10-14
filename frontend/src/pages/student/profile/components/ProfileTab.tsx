@@ -29,19 +29,21 @@ import { z } from "zod";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getProfile, updateProfile } from "@/services/profileApi";
+import { getProfile, updateProfile } from "@/services/profile";
+import { login } from "@/services/auth";
 
 const profileSchema = z.object({
-  fullName: z.string().min(1, "Full name is required").max(100),
-  phoneNumber: z.preprocess(
-    (v) => (v === "" ? undefined : v),
-    z
-      .string()
-      .regex(/^[0-9]+$/, "Phone number must contain only digits")
-      .min(9, "Phone number must be at least 9 digits")
-      .max(15, "Phone number must not exceed 15 digits")
-      .optional()
-  ),
+  name: z.string().min(1, "First name is required").max(50),
+  surname: z.string().min(1, "Last name is required").max(50),
+  // phoneNumber: z.preprocess(
+  //   (v) => (v === "" ? undefined : v),
+  //   z
+  //     .string()
+  //     .regex(/^[0-9]+$/, "Phone number must contain only digits")
+  //     .min(9, "Phone number must be at least 9 digits")
+  //     .max(15, "Phone number must not exceed 15 digits")
+  //     .optional()
+  // ),
   address: z.string().min(1),
   gpa: z.preprocess(
     (v) => (v === "" ? undefined : v),
@@ -63,9 +65,9 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 const DEGREE_OPTIONS = [
-  { id: 2, label: "Bachelor" },
-  { id: 3, label: "Master" },
-  { id: 4, label: "PhD" },
+  { id: 1, label: "Bachelor" },
+  { id: 2, label: "Master" },
+  { id: 3, label: "PhD" },
 ];
 
 function getDegreeLabel(id?: number) {
@@ -74,10 +76,24 @@ function getDegreeLabel(id?: number) {
   return found ? found.label : "";
 }
 
-const ProfileTab = () => {
+interface ProfileTabProps {
+  userId?: string;
+}
+
+const ProfileTab = ({ userId }: ProfileTabProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
-  const userId = 1; // TODO: Replace with actual user ID from auth
+
+  // Temporary login function for testing
+  const handleLogin = async () => {
+    try {
+      await login("sunthorn@test.com", "Password123");
+      window.location.reload(); // Refresh to update auth state
+    } catch (error) {
+      console.error("Login failed:", error);
+      toast.error("Login failed");
+    }
+  };
 
   const {
     data: profile,
@@ -85,7 +101,8 @@ const ProfileTab = () => {
     error,
   } = useQuery({
     queryKey: ["profile", userId],
-    queryFn: () => getProfile(userId),
+    queryFn: () => getProfile(userId!),
+    enabled: !!userId, // Only run query if userId is available
   });
 
   const mutation = useMutation({
@@ -109,8 +126,9 @@ const ProfileTab = () => {
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema) as Resolver<ProfileFormData>,
     defaultValues: {
-      fullName: "",
-      phoneNumber: undefined,
+      name: "",
+      surname: "",
+      // phoneNumber: undefined,
       address: "",
       gpa: undefined,
       expectedGraduationYear: undefined,
@@ -121,36 +139,32 @@ const ProfileTab = () => {
   useEffect(() => {
     if (profile) {
       form.reset({
-        fullName: `${profile.name} ${profile.surname}`,
-        phoneNumber: profile.phoneNumber,
-        address: profile.student.address,
-        gpa: profile.student.gpa,
-        expectedGraduationYear: profile.student.expectedGraduationYear,
-        degreeTypeId: profile.student.degreeTypeId,
+        name: profile.name || "",
+        surname: profile.surname || "",
+        // phoneNumber: profile.phoneNumber || "",
+        address: profile.student?.address || "",
+        gpa: profile.student?.gpa,
+        expectedGraduationYear: profile.student?.expectedGraduationYear,
+        degreeTypeId: profile.student?.degreeTypeId,
       });
     }
   }, [profile, form]);
 
   const onSubmit = (data: ProfileFormData) => {
     console.log("SUBMITTING FORM with data:", data);
-    const nameParts = data.fullName.trim().split(" ");
-
-    const name = nameParts[0];
-    const surname = nameParts.slice(1).join(" ") || "-";
-
     const payload: {
-      userId: number;
+      userId: string;
       name: string;
       surname: string;
       address: string;
       gpa?: number;
       degreeTypeId?: number;
       expectedGraduationYear?: number;
-      phoneNumber?: string;
+      // phoneNumber?: string;
     } = {
-      userId,
-      name,
-      surname,
+      userId: userId!,
+      name: data.name.trim(),
+      surname: data.surname.trim(),
       address: data.address,
     };
 
@@ -169,9 +183,9 @@ const ProfileTab = () => {
     ) {
       payload.expectedGraduationYear = data.expectedGraduationYear;
     }
-    if (data.phoneNumber && data.phoneNumber.trim().length > 0) {
-      payload.phoneNumber = data.phoneNumber.trim();
-    }
+    // if (data.phoneNumber && data.phoneNumber.trim().length > 0) {
+    //   payload.phoneNumber = data.phoneNumber.trim();
+    // }
 
     mutation.mutate(payload);
   };
@@ -194,6 +208,10 @@ const ProfileTab = () => {
       <div className="max-w-4xl">
         <div className="text-center py-8 text-destructive">
           Failed to load profile. Please try again.
+          <br />
+          <Button onClick={handleLogin} className="mt-4">
+            Login to Test
+          </Button>
         </div>
       </div>
     );
@@ -243,7 +261,10 @@ const ProfileTab = () => {
                     console.log("Save button clicked");
                     form.handleSubmit(
                       (data) => {
-                        console.log("Form is valid, calling onSubmit with data:", data);
+                        console.log(
+                          "Form is valid, calling onSubmit with data:",
+                          data
+                        );
                         onSubmit(data);
                       },
                       (errors) => {
@@ -272,15 +293,15 @@ const ProfileTab = () => {
               onSubmit={form.handleSubmit(onSubmit)}
               className="space-y-6"
             >
-              {/* Row 1:Full Name & Phone Number*/}
+              {/* Row 1: Name & Surname */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="fullName"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        Full name <span className="text-red-500">*</span>
+                        First Name <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -293,8 +314,26 @@ const ProfileTab = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
+                  control={form.control}
+                  name="surname"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">
+                        Last Name <span className="text-red-500">*</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="bg-background border-border"
+                          readOnly={!isEditing}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />    
+                {/* <FormField
                   control={form.control}
                   name="phoneNumber"
                   render={({ field }) => (
@@ -312,7 +351,7 @@ const ProfileTab = () => {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
               </div>
 
               {/* Row 2: Address & Degree Type */}
