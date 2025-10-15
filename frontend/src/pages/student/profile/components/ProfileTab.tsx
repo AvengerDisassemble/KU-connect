@@ -30,7 +30,6 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProfile, updateProfile } from "@/services/profile";
-import { login } from "@/services/auth";
 
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
@@ -83,17 +82,6 @@ interface ProfileTabProps {
 const ProfileTab = ({ userId }: ProfileTabProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const queryClient = useQueryClient();
-
-  // Temporary login function for testing
-  const handleLogin = async () => {
-    try {
-      await login("sunthorn@test.com", "Password123");
-      window.location.reload(); // Refresh to update auth state
-    } catch (error) {
-      console.error("Login failed:", error);
-      toast.error("Login failed");
-    }
-  };
 
   const {
     data: profile,
@@ -208,10 +196,6 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
       <div className="max-w-4xl">
         <div className="text-center py-8 text-destructive">
           Failed to load profile. Please try again.
-          <br />
-          <Button onClick={handleLogin} className="mt-4">
-            Login to Test
-          </Button>
         </div>
       </div>
     );
