@@ -1,0 +1,116 @@
+AI_CONTEXT_FRONTEND
+
+Background
+KU-Connect is a job board platform for Kasetsart University students and employers.
+- Users: Students, Employers, Professors, Admins
+- Features: Role-based dashboards, login with KU Gmail (OAuth), job posting, application, saved jobs, moderation.
+- Frontend Goal: Clean, responsive UI connected to backend APIs, with consistent structure and maintainable code.
+
+Tech Stack
+- Vite + React + TypeScript
+- Tailwind v4 + shadcn/ui
+- React Router
+- ESLint + Prettier
+- Alias: @ → src
+
+Folder Structure
+src/
+    ├─ assets/
+    ├─ components/
+    │   ├─ ui/         # shared UI (Header, Footer, Guard)
+    │   └─ hooks/      # custom hooks
+    ├─ lib/            # helpers
+    ├─ pages/          # grouped by role
+    │   ├─ admin/ employer/ professor/ student/ public/
+    ├─ services/       # api.ts
+    ├─ styles/         # global.css
+    ├─ utils/
+    ├─ App.tsx
+    └─ main.tsx
+
+Naming Conventions
+- Components: PascalCase .tsx
+- Files/helpers: camelCase
+- Types/interfaces: PascalCase
+- Constants: UPPER_CASE
+- Variables/functions: camelCase
+- Booleans: prefix is/has/can
+
+Component Rules
+- Functional components only
+- Order: imports → state/hooks → handlers → return
+- Props typed with TS interfaces
+- Optional props with ? and defaults
+
+Styling
+- MUST use Tailwind
+- Group class names logically
+- Conditional classes via template/clsx
+
+State & Hooks
+- React hooks only
+- Explicit types if not inferred
+- Extract reusable logic into hooks/
+
+Imports
+1. React
+2. External libs
+3. Local files (@/...)
+- MUST use absolute imports
+- No unused imports
+
+Event Handlers
+- Verb-prefixed names
+- Defined above return
+- MUST type events
+
+Routing & Guards
+- Routes in App.tsx
+- Private routes wrap with Guard + useAuth
+- Pages under src/pages/{role}/
+
+API Layer
+- All API calls via services/api.ts
+- Typed functions
+- DO NOT use fetch directly in components
+
+UI Components
+- Prefer shadcn/ui
+- Shared UI in components/ui/
+- Reuse before creating new
+
+Testing
+- Vitest + React Testing Library
+- Test props, handlers, rendering conditions
+
+PR Checklist
+- Naming/structure correct
+- Types explicit
+- Uses Tailwind + shadcn/ui
+- API calls via services/api.ts
+- Guarded routes where needed
+- ESLint + Prettier + type check pass
+- Minimal tests added
+- No unused imports/dead code
+
+Prompt Patterns
+
+New Page:
+Create src/pages/student/ProfilePage.tsx.
+- Wrap with Guard, use useAuth
+- Fetch from services/api.ts:getStudentProfile()
+- Show loading/error states
+- Use Tailwind + shadcn/ui Card
+- Types must be defined, no inline fetch
+
+New Component:
+Create src/components/ui/JobCard.tsx.
+Props: { title: string; company: string; salary?: string; onApply?: () => void }
+- Use shadcn/ui Card, Tailwind spacing
+- Render Apply button only if onApply exists
+
+New Hook:
+Create src/hooks/useJobs.ts.
+- Expose { jobs, isLoading, error, refresh }
+- Fetch via services/api.ts:getJobs()
+- Cache last result, refresh triggers refetch
