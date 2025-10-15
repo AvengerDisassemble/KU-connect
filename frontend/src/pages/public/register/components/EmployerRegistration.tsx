@@ -696,9 +696,8 @@ const EmployerRegistration = () => {
                 <label htmlFor="proof-upload" className="cursor-pointer flex flex-col items-center gap-2">
                   <Upload className="w-8 h-8 text-muted-foreground" aria-hidden="true" />
                     <span className="text-sm text-muted-foreground text-center">
-                      Upload company registration or business license
-                      <br />
-                      <span className="text-xs">(JPEG, PNG, PDF • Max 5MB)</span>
+                      <span className="block">Upload company registration or business license</span>
+                      <span className="block mt-1 text-xs">(JPEG, PNG, PDF • Max 5MB)</span>
                     </span>
                   <input
                     id="proof-upload"
