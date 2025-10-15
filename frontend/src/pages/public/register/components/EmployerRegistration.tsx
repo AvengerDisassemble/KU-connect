@@ -437,11 +437,17 @@ const EmployerRegistration = () => {
               aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined}
               required
             />
-            {errors.confirmPassword && (
-              <p id="confirm-password-error" className="text-sm text-destructive" role="alert">
-                {errors.confirmPassword}
-              </p>
-            )}
+            {formData.confirmPassword && formData.password === formData.confirmPassword && (
+            <p id="password-match" className="text-sm text-accent flex items-center gap-1">
+              <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+              Passwords match
+            </p>
+          )}
+          {errors.confirmPassword && (
+            <p id="confirm-password-error" className="text-sm text-destructive" role="alert">
+              {errors.confirmPassword}
+            </p>
+          )}
           </div>
 
           <Button 
