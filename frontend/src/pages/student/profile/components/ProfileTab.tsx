@@ -426,7 +426,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                        Graduation Date/ Expected Graduation Year{" "}
+                         Graduation Year (Actual or Expected){" "}
                         <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>

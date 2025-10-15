@@ -136,8 +136,10 @@ export async function refreshAccessToken(): Promise<LoginResponse> {
   });
 
   if (!response.ok) {
-    throw new Error("Token refresh failed");
-  }
+  const errorText = await response.text();
+  console.error("Token refresh failed:", errorText);
+  throw new Error(errorText || "Token refresh failed");
+}
 
   const data = await response.json();
 

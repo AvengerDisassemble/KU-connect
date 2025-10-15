@@ -74,10 +74,10 @@ const StudentRegistration = () => {
     } catch (err) {
     if (
         err instanceof z.ZodError &&
-        Array.isArray(err.errors) &&
-        err.errors.length > 0
+        Array.isArray(err.issues) &&
+        err.issues.length > 0
         ) {
-        setErrors(prev => ({ ...prev, [field]: err.errors[0].message }));
+        setErrors(prev => ({ ...prev, [field]: err.issues[0].message }));
       }
     }
   };
@@ -95,6 +95,7 @@ const StudentRegistration = () => {
 
       await toast.promise(
         (async () => {
+          console.log("Submitting alumni register:", validatedData);
           // Step 1: Register
           await registerAlumni({
             name: validatedData.name,
@@ -126,8 +127,8 @@ const StudentRegistration = () => {
     } catch (err) {
       if (err instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
-        if (Array.isArray(err.errors)) {
-          err.errors.forEach((error) => {
+        if (Array.isArray(err.issues)) {
+          err.issues.forEach((error) => {
             if (error.path && error.path.length > 0) {
               fieldErrors[error.path[0] as string] = error.message;
             }

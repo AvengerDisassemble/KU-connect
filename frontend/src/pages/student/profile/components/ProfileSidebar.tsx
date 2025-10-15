@@ -1,8 +1,11 @@
-import { Edit, HelpCircle, LogOut } from "lucide-react";
+import { Edit, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { getProfile } from "@/services/profile";
+import { useNavigate } from "react-router-dom";
+import { logout } from "@/services/auth";
+
 
 interface ProfileSidebarProps {
   activeTab: "profile" | "job-preferences";
@@ -23,8 +26,18 @@ const ProfileSidebar = ({
 
   const fullName = profile ? `${profile.name} ${profile.surname}` : "";
   const degreeAbbrev = profile?.student?.degreeType?.name ?? "";
+  const navigate = useNavigate();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
   return (
-    <aside className="w-72 bg-card border-r border-border p-6">
+    <aside className="w-72 bg-card rounded-2xl border-r border-border p-6">
       {/* Profile Avatar and Info */}
       <div className="text-center mb-8">
         <div className="relative inline-block mb-4">
@@ -71,13 +84,8 @@ const ProfileSidebar = ({
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-          <HelpCircle className="w-4 h-4 mr-2" />
-          Help Center
-        </Button>
-
-        <Button variant="outline" className="w-full">
-          <LogOut className="w-4 h-4 mr-2" />
+        <Button variant="outline" className="w-full" onClick={handleLogout} >
+          <LogOut className="w-4 h-4 mr-2"/>
           Sign out
         </Button>
       </div>
