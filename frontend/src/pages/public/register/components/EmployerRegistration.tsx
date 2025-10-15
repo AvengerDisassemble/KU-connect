@@ -76,6 +76,14 @@ interface FormData {
   proofFile: File | null;
 }
 
+const getPasswordStrength = (password: string) => {
+  if (password.length === 0) return { strength: 0, label: "" };
+  if (password.length < 8) return { strength: 25, label: "Weak" };
+  if (password.length < 12) return { strength: 50, label: "Fair" };
+  if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) return { strength: 50, label: "Fair" };
+  return { strength: 100, label: "Strong" };
+};
+
 const EmployerRegistration = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -100,6 +108,7 @@ const EmployerRegistration = () => {
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const stepContainerRef = useRef<HTMLDivElement>(null);
+  const passwordStrength = getPasswordStrength(formData.password);
 
   // Focus management when step changes
   useEffect(() => {
@@ -369,7 +378,9 @@ const EmployerRegistration = () => {
                 onChange={(e) => handleInputChange("password", e.target.value)}
                 className={`h-11 sm:h-12 ${errors.password ? "border-destructive pr-10" : "pr-10"}`}
                 aria-invalid={!!errors.password}
-                aria-describedby={errors.password ? "password-error" : undefined}
+                aria-describedby={
+                  errors.password ? "password-error" : formData.password ? "password-strength" : undefined
+                }
                 required
               />
               <button
@@ -381,6 +392,31 @@ const EmployerRegistration = () => {
                 {showPassword ? <EyeOff className="w-4 h-4" aria-hidden="true" /> : <Eye className="w-4 h-4" aria-hidden="true" />}
               </button>
             </div>
+            {formData.password && (
+              <div className="space-y-1" id="password-strength">
+                <div
+                  className="h-1.5 w-full bg-muted rounded-full overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={passwordStrength.strength}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      passwordStrength.strength === 100
+                        ? "bg-accent"
+                        : passwordStrength.strength >= 50
+                        ? "bg-secondary"
+                        : "bg-destructive"
+                    }`}
+                    style={{ width: `${passwordStrength.strength}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Password strength: <span className="font-medium">{passwordStrength.label}</span>
+                </p>
+              </div>
+            )}
             {errors.password && (
               <p id="password-error" className="text-sm text-destructive" role="alert">
                 {errors.password}

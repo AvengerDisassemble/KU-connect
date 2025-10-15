@@ -111,8 +111,8 @@ const StudentRegistration = () => {
           const { user, accessToken, refreshToken } = loginData.data;
 
           // Step 3: Store session
-          localStorage.setItem("accessToken", accessToken);
-          localStorage.setItem("refreshToken", refreshToken);
+          localStorage.setItem("accessToken", accessToken ?? "");
+          localStorage.setItem("refreshToken", refreshToken ?? "");
           localStorage.setItem("user", JSON.stringify(user));
 
           navigate("/student/browsejobs");
@@ -138,8 +138,17 @@ const StudentRegistration = () => {
         toast.error("Please fix the errors in the form");
     } else {
         console.error("Non-Zod error:", err);
-        const message = (err as any)?.message || "Unknown error";
-        const backendErrors = (err as any)?.errors;
+        let message = "Unknown error";
+        let backendErrors: string[] | undefined = undefined;
+
+        if (typeof err === "object" && err !== null) {
+          if ("message" in err && typeof (err as { message?: unknown }).message === "string") {
+            message = (err as { message: string }).message;
+          }
+          if ("errors" in err && Array.isArray((err as { errors?: unknown }).errors)) {
+            backendErrors = (err as { errors: string[] }).errors;
+          }
+        }
       
         if (Array.isArray(backendErrors)) {
           toast.error(`${message}: ${backendErrors.join(", ")}`);
@@ -358,7 +367,7 @@ const StudentRegistration = () => {
   <Label htmlFor="degreeTypeId" className="text-sm sm:text-base">Degree Type</Label>
     <Select
     value={formData.degreeTypeId?.toString() || ""}
-    onValueChange={(val) => handleInputChange("degreeTypeId", Number(val))}
+    onValueChange={(val) => handleInputChange("degreeTypeId", val)}
     >
     <SelectTrigger
         className={`h-11 sm:h-12 ${errors.degreeTypeId ? "border-destructive" : ""}`}

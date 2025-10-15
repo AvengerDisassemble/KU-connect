@@ -73,7 +73,7 @@ const authorizedFetch = async (
   if (response.status === 401) {
     try {
       await refreshAccessToken();
-    } catch (error) {
+    } catch {
       throw new Error("Session expired. Please log in again.");
     }
 
