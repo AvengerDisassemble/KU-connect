@@ -12,11 +12,11 @@ const jobReportService = require('../services/jobReportService')
 async function createReport(req, res) {
   try {
     const userId = req.user.id
-    const jobId = Number(req.params.id)
+    const jobId = req.params.id // Keep as string (cuid)
     const { reason } = req.body
 
     // Basic input validation
-    if (!jobId || isNaN(jobId)) {
+    if (!jobId || typeof jobId !== 'string') {
       return res.status(400).json({
         success: false,
         message: 'Invalid job ID'
@@ -30,13 +30,20 @@ async function createReport(req, res) {
       })
     }
 
-    // Prevent HR from reporting their own job
-    if (req.user.role === 'EMPLOYER' && req.user.hr && req.user.hr.id) {
+    // Prevent EMPLOYER from reporting their own job
+    if (req.user.role === 'EMPLOYER') {
+      if (!req.user.hr || !req.user.hr.id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Employer profile not found'
+        })
+      }
+
       const isOwner = await jobReportService.isJobOwnedByHr(jobId, req.user.hr.id)
       if (isOwner) {
         return res.status(403).json({
           success: false,
-          message: 'You cannot report your own job'
+          message: 'You cannot report your own job posting'
         })
       }
     }
@@ -63,6 +70,13 @@ async function createReport(req, res) {
       return res.status(404).json({
         success: false,
         message: 'Job not found'
+      })
+    }
+
+    if (err.code === 'OWNER_REPORT') {
+      return res.status(403).json({
+        success: false,
+        message: 'You cannot report your own job posting'
       })
     }
 
@@ -111,9 +125,9 @@ async function listReports(req, res) {
  */
 async function deleteReport(req, res) {
   try {
-    const reportId = Number(req.params.reportId)
+    const reportId = req.params.reportId // Keep as string (cuid)
 
-    if (!reportId || isNaN(reportId)) {
+    if (!reportId || typeof reportId !== 'string') {
       return res.status(400).json({
         success: false,
         message: 'Invalid report ID'
