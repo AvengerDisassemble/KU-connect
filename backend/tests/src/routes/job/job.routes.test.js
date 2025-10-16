@@ -4,11 +4,10 @@
  */
 
 const request = require('supertest')
-const { PrismaClient } = require('../../../../src/generated/prisma')
+const prisma = require('../../../src/models/prisma')
 const app = require('../../../../src/app')
 const jwt = require('jsonwebtoken')
 
-const prisma = new PrismaClient()
 jest.setTimeout(30000) // give DB setup more time
 
 describe('Job Routes (Integration)', () => {
@@ -34,13 +33,19 @@ describe('Job Routes (Integration)', () => {
     const degreeType = await prisma.degreeType.create({ data: { name: 'Bachelor' } })
 
     admin = await prisma.user.create({
-      data: { email: 'admin@test.com', password: 'pass', role: 'ADMIN' }
+      data: {
+        name: "Admin",        // ✅ Add this
+        surname: "User",      // ✅ Add this
+        email: "admin@test.com",
+        password: "Pass",
+        role: "ADMIN"
+      }
     })
 
     hr = await prisma.user.create({
       data: {
         email: 'hr@test.com',
-        password: 'pass',
+        password: 'Pass',
         role: 'EMPLOYER',
         hr: {
           create: {
@@ -57,7 +62,7 @@ describe('Job Routes (Integration)', () => {
     hr2 = await prisma.user.create({
       data: {
         email: 'hr2@test.com',
-        password: 'pass',
+        password: 'Pass',
         role: 'EMPLOYER',
         hr: {
           create: {
@@ -74,7 +79,7 @@ describe('Job Routes (Integration)', () => {
     student = await prisma.user.create({
       data: {
         email: 'student@test.com',
-        password: 'pass',
+        password: 'Pass',
         role: 'STUDENT',
         student: {
           create: {
