@@ -222,7 +222,11 @@ async function getUserById (userId) {
       role: true,
       verified: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      student: true, 
+      professor: true,
+      hr: true,
+      admin: true
     }
   })
 }
