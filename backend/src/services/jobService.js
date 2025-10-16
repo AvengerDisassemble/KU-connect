@@ -70,12 +70,12 @@ async function listJobs (filters = {}) {
 
 /**
  * Gets full job details by id
- * @param {number|string} jobId
+ * @param {string} jobId
  * @returns {Promise<object|null>}
  */
 async function getJobById (jobId) {
   return prisma.job.findUnique({
-    where: { id: Number(jobId) },
+    where: { id: jobId },
     include: {
       hr: true,
       tags: true,
@@ -111,14 +111,14 @@ async function searchJobs (query) {
 
 /**
  * Creates a job posting owned by HR
- * @param {number} hrId
+ * @param {string} hrId
  * @param {object} data
  * @returns {Promise<object>}
  */
 async function createJob (hrId, data) {
   // Fetch HR profile to get the companyName
   const hr = await prisma.hR.findUnique({
-    where: { id: Number(hrId) },
+    where: { id: hrId },
     select: { companyName: true }
   })
 
@@ -180,18 +180,15 @@ async function createJob (hrId, data) {
  * - Leaves omitted fields unchanged
  * - Runs all operations in a single transaction for consistency
  *
- * @param {number} jobId
- * @param {number} hrId
+ * @param {string} jobId
+ * @param {string} hrId
  * @param {object} data
  * @returns {Promise<object|null>}
  */
 async function updateJob (jobId, hrId, data) {
-  const jobIdNum = Number(jobId)
-  const hrIdNum = Number(hrId)
-
-  const existing = await prisma.job.findUnique({ where: { id: jobIdNum } })
+  const existing = await prisma.job.findUnique({ where: { id: jobId } })
   if (!existing) return null
-  if (existing.hrId !== hrIdNum) {
+  if (existing.hrId !== hrId) {
     const err = new Error('Forbidden: not job owner')
     err.status = 403
     throw err
@@ -219,7 +216,7 @@ async function updateJob (jobId, hrId, data) {
   if (Object.keys(scalarData).length > 0) {
     steps.push(
       prisma.job.update({
-        where: { id: jobIdNum },
+        where: { id: jobId },
         data: scalarData
       })
     )
@@ -230,7 +227,7 @@ async function updateJob (jobId, hrId, data) {
     // Replace tags set completely
     steps.push(
       prisma.job.update({
-        where: { id: jobIdNum },
+        where: { id: jobId },
         data: {
           tags: {
             set: [], // clear all
@@ -249,9 +246,9 @@ async function updateJob (jobId, hrId, data) {
   const arr = fieldNameArray // array of strings (texts)
   if (!Array.isArray(arr)) return
   steps.push(
-    prisma[model].deleteMany({ where: { jobId: jobIdNum } }),
+    prisma[model].deleteMany({ where: { jobId } }),
     prisma[model].createMany({
-      data: arr.map(text => ({ jobId: jobIdNum, text }))
+      data: arr.map(text => ({ jobId, text }))
     })
   )
 }
@@ -265,7 +262,7 @@ async function updateJob (jobId, hrId, data) {
   // 3) After all writes, read back the canonical job with all relations
   steps.push(
     prisma.job.findUnique({
-      where: { id: jobIdNum },
+      where: { id: jobId },
       include: {
         hr: true,
         tags: true,
@@ -287,8 +284,8 @@ async function updateJob (jobId, hrId, data) {
 /**
  * Student applies to a job with a resume link
  * Why: enforce one application per (job, student)
- * @param {number} jobId
- * @param {number} studentId
+ * @param {string} jobId
+ * @param {string} studentId
  * @param {string} resumeLink
  * @returns {Promise<object>}
  */
@@ -296,7 +293,7 @@ async function applyToJob (jobId, studentId, resumeLink) {
   // create a Resume record for traceability (optional in your schema)
   const resume = await prisma.resume.create({
     data: {
-      studentId: Number(studentId),
+      studentId,
       link: resumeLink
     }
   })
@@ -304,8 +301,8 @@ async function applyToJob (jobId, studentId, resumeLink) {
   try {
     return await prisma.application.create({
       data: {
-        jobId: Number(jobId),
-        studentId: Number(studentId),
+        jobId,
+        studentId,
         resumeId: resume.id
       }
     })
@@ -321,42 +318,42 @@ async function applyToJob (jobId, studentId, resumeLink) {
 
 /**
  * HR manages a single application (QUALIFIED/REJECTED)
- * @param {number} jobId
- * @param {number} hrId
- * @param {number} applicationId
+ * @param {string} jobId
+ * @param {string} hrId
+ * @param {string} applicationId
  * @param {'QUALIFIED'|'REJECTED'} status
  * @returns {Promise<object|null>}
  */
 async function manageApplication (jobId, hrId, applicationId, status) {
-  const job = await prisma.job.findUnique({ where: { id: Number(jobId) } })
+  const job = await prisma.job.findUnique({ where: { id: jobId } })
   if (!job) return null
-  if (job.hrId !== Number(hrId)) {
+  if (job.hrId !== hrId) {
     const err = new Error('Forbidden: not job owner')
     err.status = 403
     throw err
   }
   return prisma.application.update({
-    where: { id: Number(applicationId) },
+    where: { id: applicationId },
     data: { status }
   })
 }
 
 /**
  * HR lists applicants for a job they own
- * @param {number} jobId
- * @param {number} hrId
+ * @param {string} jobId
+ * @param {string} hrId
  * @returns {Promise<Array|null>}
  */
 async function getApplicants (jobId, hrId) {
-  const job = await prisma.job.findUnique({ where: { id: Number(jobId) } })
+  const job = await prisma.job.findUnique({ where: { id: jobId } })
   if (!job) return null
-  if (job.hrId !== Number(hrId)) {
+  if (job.hrId !== hrId) {
     const err = new Error('Forbidden: not job owner')
     err.status = 403
     throw err
   }
   return prisma.application.findMany({
-    where: { jobId: Number(jobId) },
+    where: { jobId },
     include: {
       student: { include: { degreeType: true, user: true } },
       resume: true
@@ -367,12 +364,12 @@ async function getApplicants (jobId, hrId) {
 
 /**
  * Deletes a job (by Admin or HR owner)
- * @param {number} jobId - Job ID to delete
+ * @param {string} jobId - Job ID to delete
  * @param {object} requester - User object (from req.user)
  * @returns {Promise<object|null>} Deleted job record
  */
 async function deleteJob (jobId, requester) {
-  const job = await prisma.job.findUnique({ where: { id: Number(jobId) } })
+  const job = await prisma.job.findUnique({ where: { id: jobId } })
 
   if (!job) {
     const err = new Error('Job not found')
@@ -381,10 +378,10 @@ async function deleteJob (jobId, requester) {
   }
 
   // Only allow Admins or the HR who owns the job
-  const isAdmin = requester.role === 'ADMIN'
+  const isAdminOrEmployer = requester.role === 'ADMIN' || requester.role === 'EMPLOYER'
   const isOwner = requester.hr && job.hrId === requester.hr.id
 
-  if (!isAdmin && !isOwner) {
+  if (!isAdminOrEmployer && !isOwner) {
     const err = new Error('You are not authorized to delete this job')
     err.status = 403
     throw err
@@ -392,7 +389,7 @@ async function deleteJob (jobId, requester) {
 
   // Delete job (cascades will handle child entities)
   const deletedJob = await prisma.job.delete({
-    where: { id: Number(jobId) },
+    where: { id: jobId },
     include: { hr: true, tags: true }
   })
 
