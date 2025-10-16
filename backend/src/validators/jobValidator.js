@@ -109,7 +109,7 @@ const applyJobSchema = Joi.object({
  * Only two allowed states
  */
 const manageApplicationSchema = Joi.object({
-  applicationId: Joi.number().integer().positive().required(),
+  applicationId: Joi.string().required(),
   status: Joi.string().valid('QUALIFIED', 'REJECTED').required()
 })
 
