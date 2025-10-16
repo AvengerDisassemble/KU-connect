@@ -25,7 +25,7 @@ async function main() {
   // ----------------------------------------------------------
   // 2️⃣ Seed Admin User
   // ----------------------------------------------------------
-  const adminPassword = await bcrypt.hash('admin123', 10)
+  const password = await bcrypt.hash('Password123', 10)
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@kuconnect.local' },
     update: {},
@@ -33,7 +33,7 @@ async function main() {
       name: 'System',
       surname: 'Administrator',
       username: 'admin',
-      password: adminPassword,
+      password: password,
       email: 'admin@kuconnect.local',
       role: 'ADMIN',
       verified: true,
@@ -45,7 +45,6 @@ async function main() {
   // ----------------------------------------------------------
   // 3️⃣ Seed HR User (Employer)
   // ----------------------------------------------------------
-  const hrPassword = await bcrypt.hash('hr123', 10)
   const hrUser = await prisma.user.upsert({
     where: { email: 'hr1@company.com' },
     update: {},
@@ -53,7 +52,7 @@ async function main() {
       name: 'Harry',
       surname: 'Recruiter',
       username: 'hr1',
-      password: hrPassword,
+      password: password,
       email: 'hr1@company.com',
       role: 'EMPLOYER',
       verified: true,
@@ -74,8 +73,11 @@ async function main() {
   // ----------------------------------------------------------
   // 4️⃣ Seed Student User
   // ----------------------------------------------------------
-  const studentPassword = await bcrypt.hash('student123', 10)
   const bachelor = await prisma.degreeType.findUnique({ where: { name: 'Bachelor' } })
+
+  if (!bachelor) {
+    throw new Error('Bachelor degree type not found. Ensure degree types are seeded first.')
+  }
 
   const studentUser = await prisma.user.upsert({
     where: { email: 'student1@ku.ac.th' },
@@ -84,7 +86,7 @@ async function main() {
       name: 'Student',
       surname: 'Example',
       username: 'student1',
-      password: studentPassword,
+      password: password,
       email: 'student1@ku.ac.th',
       role: 'STUDENT',
       verified: true,
