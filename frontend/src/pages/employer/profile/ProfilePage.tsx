@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import EmployerSidebar from "@/components/EmployerSideBar";
-import CompanyInfoForm, { type CompanyForm } from "@/components/CompanyInfoForm";
-import VerificationChecklist, { type VerificationItem } from "@/components/CompanyVerificationChecklist";
-import CompanyDocumentUpload from "@/components/CompanyDocumentUpload";
+import CompanyInfoForm, { type CompanyForm } from "@/pages/employer/profile/components/CompanyInfoForm";
+import VerificationChecklist, { type VerificationItem } from "@/pages/employer/profile/components/CompanyVerificationChecklist";
+import CompanyDocumentUpload from "@/pages/employer/profile/components/CompanyDocumentUpload";
 
 export default function EmployerProfilePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);

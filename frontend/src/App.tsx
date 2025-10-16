@@ -8,7 +8,8 @@ import StudentDashboardPage from "@/pages/student/DashboardPage";
 import EmployerDashboardPage from "@/pages/employer/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/DashboardPage";
-import EmployerProfilePage from "./pages/employer/ProfilePage";
+import EmployerProfilePage from "./pages/employer/profile/ProfilePage";
+
 
 const App: React.FC = () => {
   return (
@@ -17,14 +18,47 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/student"
+            element={
+              <Guard role="student">
+                <StudentDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer"
+            element={
+              <Guard role="employer">
+                <EmployerDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer/profile"
+            element={
+              <Guard role="employer">
+                <EmployerProfilePage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <Guard role="admin">
+                <AdminDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/professor"
+            element={
+              <Guard role="professor">
+                <ProfessorDashboardPage />
+              </Guard>
+            }
+          />
 
-          <Route path="/student" element={<Guard role="student"><StudentDashboardPage /></Guard>} />
-          <Route path="/employer" element={<Guard role="employer"><EmployerDashboardPage /></Guard>} />
-          <Route path="/admin" element={<Guard role="admin"><AdminDashboardPage /></Guard>} />
-          <Route path="/professor" element={<Guard role="professor"><ProfessorDashboardPage /></Guard>} />
-
-          <Route path="/employer/profile" element={<EmployerProfilePage />} />
-          
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
