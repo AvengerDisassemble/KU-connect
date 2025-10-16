@@ -11,13 +11,13 @@ const auth = require('../../middlewares/authMiddleware')
 const role = require('../../middlewares/roleMiddleware')
 const { createReportSchema } = require('../../validators/reportValidator')
 
-// POST /api/job/report/:id/report - Authenticated, non-owner
+// POST /api/job/:id/report - Authenticated, non-owner
 router.post('/:id/report', auth.authMiddleware, validate(createReportSchema), jobReportController.createReport)
 
-// GET /api/job/report/reports - Admin only
+// GET /api/job/reports - Admin only
 router.get('/reports', auth.authMiddleware, role.roleMiddleware(['ADMIN']), jobReportController.listReports)
 
-// DELETE /api/job/report/:reportId - Admin only
-router.delete('/:reportId', auth.authMiddleware, role.roleMiddleware(['ADMIN']), jobReportController.deleteReport)
+// DELETE /api/job/reports/:reportId - Admin only
+router.delete('/reports/:reportId', auth.authMiddleware, role.roleMiddleware(['ADMIN']), jobReportController.deleteReport)
 
 module.exports = router
