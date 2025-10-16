@@ -87,24 +87,24 @@ model RefreshToken {
 }
 
 model Professor {
-  id         Int    @id @default(autoincrement())
+  id         String @id @default(cuid())
   userId     String @unique
   department String
   user       User   @relation(fields: [userId], references: [id])
 }
 
 model Admin {
-  id     Int    @id @default(autoincrement())
+  id     String @id @default(cuid())
   userId String @unique
   user   User   @relation(fields: [userId], references: [id])
 }
 
 model Student {
-  id                     Int               @id @default(autoincrement())
+  id                     String            @id @default(cuid())
   userId                 String            @unique
   user                   User              @relation(fields: [userId], references: [id])
   degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
-  degreeTypeId           Int
+  degreeTypeId           String
   address                String
   gpa                    Float?
   expectedGraduationYear Int?
@@ -116,7 +116,7 @@ model Student {
 }
 
 model HR {
-  id          Int         @id @default(autoincrement())
+  id          String      @id @default(cuid())
   userId      String      @unique
   companyName String
   description String?
@@ -131,7 +131,7 @@ model HR {
 }
 
 model DegreeType {
-  id       Int       @id @default(autoincrement())
+  id       String    @id @default(cuid())
   name     String    @unique
   students Student[]
 }
@@ -141,8 +141,8 @@ model DegreeType {
 // ------------------------------
 
 model Job {
-  id                        Int               @id @default(autoincrement())
-  hrId                      Int
+  id                        String            @id @default(cuid())
+  hrId                      String
   hr                        HR                @relation(fields: [hrId], references: [id])
   title                     String
   companyName               String
@@ -170,35 +170,35 @@ model Job {
 }
 
 model Tag {
-  id   Int    @id @default(autoincrement())
+  id   String @id @default(cuid())
   name String @unique
   jobs Job[]  @relation("JobTags")
 }
 
 model Requirement {
-  id    Int    @id @default(autoincrement())
-  jobId Int
+  id    String @id @default(cuid())
+  jobId String
   text  String
   job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 model Qualification {
-  id    Int    @id @default(autoincrement())
-  jobId Int
+  id    String @id @default(cuid())
+  jobId String
   text  String
   job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 model Responsibility {
-  id    Int    @id @default(autoincrement())
-  jobId Int
+  id    String @id @default(cuid())
+  jobId String
   text  String
   job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 model Benefit {
-  id    Int    @id @default(autoincrement())
-  jobId Int
+  id    String @id @default(cuid())
+  jobId String
   text  String
   job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
@@ -208,10 +208,10 @@ model Benefit {
 // ------------------------------
 
 model Application {
-  id        Int               @id @default(autoincrement())
-  jobId     Int
-  studentId Int
-  resumeId  Int?
+  id        String            @id @default(cuid())
+  jobId     String
+  studentId String
+  resumeId  String?
   status    ApplicationStatus @default(PENDING)
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
@@ -224,8 +224,8 @@ model Application {
 }
 
 model JobReport {
-  id        Int      @id @default(autoincrement())
-  jobId     Int
+  id        String   @id @default(cuid())
+  jobId     String
   userId    String
   reason    String
   createdAt DateTime @default(now())
@@ -235,16 +235,16 @@ model JobReport {
 }
 
 model StudentInterest {
-  id        Int     @id @default(autoincrement())
-  studentId Int
-  jobId     Int
+  id        String  @id @default(cuid())
+  studentId String
+  jobId     String
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   job       Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 model Resume {
-  id           Int           @id @default(autoincrement())
-  studentId    Int
+  id           String        @id @default(cuid())
+  studentId    String
   link         String
   student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   applications Application[]
