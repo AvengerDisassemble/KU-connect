@@ -5,10 +5,10 @@
  */
 const express = require('express')
 const router = express.Router()
-const { authMiddleware } = require('../../middlewares/authMiddleware')
 const controller = require('../../controllers/degreeController')
 
-// GET /api/degree-types - All authenticated users can access
-router.get('/', authMiddleware, controller.getAllDegreeTypes)
+// GET /api/degree-types - Public endpoint (no authentication required)
+// Why: Needed for registration forms before user has an account
+router.get('/', controller.getAllDegreeTypes)
 
 module.exports = router
