@@ -42,6 +42,14 @@ router.post(
 // GET /api/job/filter - Filter jobs by tags, title, company
 router.get('/filter', jobController.filterJobs)
 
+// GET /api/job/my-applications → Student checks their application statuses
+// MUST COME BEFORE /search/:query and /:id routes
+router.get(
+  '/my-applications',
+  roleMiddleware(['STUDENT']),
+  jobController.getMyApplications
+)
+
 // GET /api/jobs?page=1&limit=5
 router.get('/', jobController.listJobs)
 
