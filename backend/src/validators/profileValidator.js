@@ -29,7 +29,7 @@ const updateProfileSchema = Joi.object({
 
   // Student-specific fields
   address: Joi.string().max(255).optional(),
-  degreeTypeId: Joi.number().integer().positive().optional(),
+  degreeTypeId: Joi.string().optional(), // Changed from number to string (cuid)
 
   gpa: Joi.number()
     .precision(2)
