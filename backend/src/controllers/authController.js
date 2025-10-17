@@ -68,7 +68,7 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
       role: 'STUDENT'
     },
     {
-      degreeTypeId: parseInt(degreeTypeId),
+      degreeTypeId, // Keep as string (cuid)
       address
     }
   )
