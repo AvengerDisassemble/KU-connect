@@ -316,6 +316,26 @@ async function deleteJob (req, res) {
   }
 }
 
+/**
+ * Filter jobs by tags, title, and company with pagination
+ * @route GET /api/job/filter
+ */
+async function filterJobs (req, res) {
+  try {
+    const data = await jobService.filterJobs(req.query)
+    res.json({ 
+      success: true, 
+      message: 'Jobs filtered successfully', 
+      data 
+    })
+  } catch (err) {
+    console.error('Filter jobs error:', err)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to filter jobs'
+    })
+  }
+}
 
 module.exports = {
   listJobs,
@@ -326,5 +346,6 @@ module.exports = {
   applyToJob,
   getApplicants,
   manageApplication,
-  deleteJob
+  deleteJob,
+  filterJobs
 }
