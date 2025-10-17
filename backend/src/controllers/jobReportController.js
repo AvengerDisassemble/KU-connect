@@ -31,15 +31,9 @@ async function createReport(req, res) {
     }
 
     // Prevent EMPLOYER from reporting their own job
+    // Why: fetch HR data directly without modifying authService
     if (req.user.role === 'EMPLOYER') {
-      if (!req.user.hr || !req.user.hr.id) {
-        return res.status(400).json({
-          success: false,
-          message: 'Employer profile not found'
-        })
-      }
-
-      const isOwner = await jobReportService.isJobOwnedByHr(jobId, req.user.hr.id)
+      const isOwner = await jobReportService.isJobOwnedByUser(jobId, userId)
       if (isOwner) {
         return res.status(403).json({
           success: false,
