@@ -337,6 +337,39 @@ async function filterJobs (req, res) {
   }
 }
 
+/**
+ * Get all applications for the authenticated student
+ * UC-S09: Check Application Status
+ * @route GET /api/job/my-applications
+ */
+async function getMyApplications (req, res) {
+  try {
+    const userId = req.user.id
+    const applications = await jobService.getMyApplications(userId)
+
+    // Handle empty state
+    if (applications.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No applications submitted yet',
+        data: []
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Applications retrieved successfully',
+      data: applications
+    })
+  } catch (error) {
+    console.error('Get my applications error:', error)
+    res.status(error.status || 500).json({
+      success: false,
+      message: error.message || 'Failed to retrieve applications'
+    })
+  }
+}
+
 module.exports = {
   listJobs,
   searchJobs,
@@ -347,5 +380,6 @@ module.exports = {
   getApplicants,
   manageApplication,
   deleteJob,
-  filterJobs
+  filterJobs,
+  getMyApplications
 }
