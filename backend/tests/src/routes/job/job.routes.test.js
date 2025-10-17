@@ -3,8 +3,19 @@
  * @module tests/routes/job/job.routes.test
  */
 
+// IMPORTANT: Set environment variable BEFORE requiring any modules
+process.env.ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'testsecret'
+
 const request = require('supertest')
-const prisma = require('../../../src/models/prisma')
+const prisma = require('../../../../src/models/prisma')
+
+// Clear the require cache for auth-related modules to ensure they pick up the env var
+Object.keys(require.cache).forEach(key => {
+  if (key.includes('tokenUtils') || key.includes('authMiddleware') || key.includes('authService')) {
+    delete require.cache[key]
+  }
+})
+
 const app = require('../../../../src/app')
 const jwt = require('jsonwebtoken')
 
@@ -14,36 +25,44 @@ describe('Job Routes (Integration)', () => {
   let admin, hr, hr2, student
   let job1, job2
   let adminToken, hrToken, hr2Token, studentToken
+  let degreeType // Store degreeType at module level to ensure accessibility
 
   /**
    * Clean and seed database
    */
   beforeAll(async () => {
-    process.env.JWT_SECRET = process.env.JWT_SECRET || 'testsecret'
+    // --- DO NOT clean all data - tests share database state ---
+    // --- Only seed data if it doesn't exist ---
+    
+    // Use upsert for degreeType to handle race conditions
+    degreeType = await prisma.degreeType.upsert({
+      where: { name: 'Bachelor' },
+      update: {},
+      create: { name: 'Bachelor' }
+    })
 
-    // --- Clean all ---
-    await prisma.application.deleteMany()
-    await prisma.job.deleteMany()
-    await prisma.student.deleteMany()
-    await prisma.hR.deleteMany()
-    await prisma.user.deleteMany()
-    await prisma.degreeType.deleteMany()
-
-    // --- Seed minimal data ---
-    const degreeType = await prisma.degreeType.create({ data: { name: 'Bachelor' } })
-
-    admin = await prisma.user.create({
-      data: {
-        name: "Admin",        // ✅ Add this
-        surname: "User",      // ✅ Add this
+    // Use upsert for atomic user creation to avoid race conditions
+    admin = await prisma.user.upsert({
+      where: { email: 'admin@test.com' },
+      update: {},
+      create: {
+        name: "Admin",
+        surname: "User",
         email: "admin@test.com",
         password: "Pass",
-        role: "ADMIN"
+        role: "ADMIN",
+        admin: {
+          create: {}
+        }
       }
     })
 
-    hr = await prisma.user.create({
-      data: {
+    hr = await prisma.user.upsert({
+      where: { email: 'hr@test.com' },
+      update: {},
+      create: {
+        name: 'HR',
+        surname: 'User',
         email: 'hr@test.com',
         password: 'Pass',
         role: 'EMPLOYER',
@@ -59,8 +78,12 @@ describe('Job Routes (Integration)', () => {
       include: { hr: true }
     })
 
-    hr2 = await prisma.user.create({
-      data: {
+    hr2 = await prisma.user.upsert({
+      where: { email: 'hr2@test.com' },
+      update: {},
+      create: {
+        name: 'HR2',
+        surname: 'User',
         email: 'hr2@test.com',
         password: 'Pass',
         role: 'EMPLOYER',
@@ -76,8 +99,12 @@ describe('Job Routes (Integration)', () => {
       include: { hr: true }
     })
 
-    student = await prisma.user.create({
-      data: {
+    student = await prisma.user.upsert({
+      where: { email: 'student@test.com' },
+      update: {},
+      create: {
+        name: 'Student',
+        surname: 'User',
         email: 'student@test.com',
         password: 'Pass',
         role: 'STUDENT',
@@ -89,46 +116,77 @@ describe('Job Routes (Integration)', () => {
             expectedGraduationYear: 2026
           }
         }
-      }
+      },
+      include: { student: true }
     })
 
-    job1 = await prisma.job.create({
-      data: {
+    // Find or create job1
+    job1 = await prisma.job.findFirst({
+      where: { 
         title: 'Backend Engineer',
-        description: 'Node.js',
-        location: 'Bangkok',
-        workType: 'ONSITE',
-        hrId: hr.hr.id,
-        companyName: 'TestCorp'
+        hrId: hr.hr.id
       }
     })
+    if (!job1) {
+      job1 = await prisma.job.create({
+        data: {
+          title: 'Backend Engineer',
+          description: 'Node.js',
+          location: 'Bangkok',
+          jobType: 'full-time',
+          workArrangement: 'on-site',
+          duration: '6-month',
+          minSalary: 40000,
+          maxSalary: 60000,
+          application_deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          phone_number: '+66812345678',
+          hrId: hr.hr.id,
+          companyName: 'TestCorp'
+        }
+      })
+    }
 
-    job2 = await prisma.job.create({
-      data: {
+    // Find or create job2
+    job2 = await prisma.job.findFirst({
+      where: { 
         title: 'Frontend Engineer',
-        description: 'React',
-        location: 'Bangkok',
-        workType: 'HYBRID',
-        hrId: hr.hr.id,
-        companyName: 'TestCorp'
+        hrId: hr.hr.id
       }
     })
+    if (!job2) {
+      job2 = await prisma.job.create({
+        data: {
+          title: 'Frontend Engineer',
+          description: 'React',
+          location: 'Bangkok',
+          jobType: 'full-time',
+          workArrangement: 'hybrid',
+          duration: '1-year',
+          minSalary: 35000,
+          maxSalary: 55000,
+          application_deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          phone_number: '+66812345679',
+          hrId: hr.hr.id,
+          companyName: 'TestCorp'
+        }
+      })
+    }
 
     // --- Create tokens ---
-    const secret = process.env.JWT_SECRET
+    const secret = process.env.ACCESS_TOKEN_SECRET
     adminToken = `Bearer ${jwt.sign({ id: admin.id, role: 'ADMIN' }, secret)}`
     hrToken = `Bearer ${jwt.sign({ id: hr.id, role: 'EMPLOYER', hr: { id: hr.hr.id } }, secret)}`
     hr2Token = `Bearer ${jwt.sign({ id: hr2.id, role: 'EMPLOYER', hr: { id: hr2.hr.id } }, secret)}`
     studentToken = `Bearer ${jwt.sign({ id: student.id, role: 'STUDENT' }, secret)}`
   })
 
-  afterAll(async () => {
+  // Clean up applications between tests to avoid duplicates
+  beforeEach(async () => {
     await prisma.application.deleteMany()
-    await prisma.job.deleteMany()
-    await prisma.student.deleteMany()
-    await prisma.hR.deleteMany()
-    await prisma.user.deleteMany()
-    await prisma.degreeType.deleteMany()
+  })
+
+  afterAll(async () => {
+    // Disconnect from database (cleanup removed to avoid conflicts with other test files)
     await prisma.$disconnect()
   })
 
@@ -137,7 +195,9 @@ describe('Job Routes (Integration)', () => {
   // ───────────────────────────────
   describe('GET /api/job', () => {
     it('should return paginated jobs list', async () => {
-      const res = await request(app).get('/api/job?page=1&pageSize=1')
+      const res = await request(app)
+        .get('/api/job?page=1&pageSize=1')
+        .set('Authorization', studentToken) // All job routes require auth
       expect(res.status).toBe(200)
       expect(res.body.success).toBe(true)
       expect(Array.isArray(res.body.data.items)).toBe(true)
@@ -150,7 +210,9 @@ describe('Job Routes (Integration)', () => {
   // ───────────────────────────────
   describe('GET /api/job/:id', () => {
     it('should return job details', async () => {
-      const res = await request(app).get(`/api/job/${job1.id}`)
+      const res = await request(app)
+        .get(`/api/job/${job1.id}`)
+        .set('Authorization', studentToken) // All job routes require auth
       expect(res.status).toBe(200)
       expect(res.body.success).toBe(true)
       expect(res.body.data.id).toBe(job1.id)
@@ -164,9 +226,15 @@ describe('Job Routes (Integration)', () => {
     it('should allow HR to create a job', async () => {
       const newJob = {
         title: 'Data Engineer',
-        description: 'ETL pipeline',
+        description: 'ETL pipeline development',
         location: 'Bangkok',
-        workType: 'REMOTE'
+        jobType: 'full-time',
+        workArrangement: 'remote', // Correct field name (not workType)
+        duration: '1-year',
+        minSalary: 50000,
+        maxSalary: 80000,
+        application_deadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days from now
+        phone_number: '+66812345678'
       }
 
       const res = await request(app)
@@ -219,8 +287,26 @@ describe('Job Routes (Integration)', () => {
   // ───────────────────────────────
   describe('DELETE /api/job/:id', () => {
     it('should allow Admin to delete any job', async () => {
+      // Create a temporary job for this test
+      const tempJob = await prisma.job.create({
+        data: {
+          title: 'Admin Delete Test',
+          description: 'Will be deleted by admin',
+          location: 'Bangkok',
+          jobType: 'contract',
+          workArrangement: 'on-site',
+          duration: '3-month',
+          minSalary: 30000,
+          maxSalary: 45000,
+          application_deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+          phone_number: '+66812345681',
+          hrId: hr.hr.id,
+          companyName: 'TestCorp'
+        }
+      })
+
       const res = await request(app)
-        .delete(`/api/job/${job1.id}`)
+        .delete(`/api/job/${tempJob.id}`)
         .set('Authorization', adminToken)
 
       expect(res.status).toBe(200)
@@ -233,7 +319,13 @@ describe('Job Routes (Integration)', () => {
           title: 'Temporary',
           description: 'Remove soon',
           location: 'Bangkok',
-          workType: 'ONSITE',
+          jobType: 'contract',
+          workArrangement: 'on-site',
+          duration: '3-month',
+          minSalary: 30000,
+          maxSalary: 45000,
+          application_deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+          phone_number: '+66812345680',
           hrId: hr2.hr.id,
           companyName: 'OtherCorp'
         }
@@ -247,8 +339,26 @@ describe('Job Routes (Integration)', () => {
     })
 
     it('should not allow another HR to delete', async () => {
+      // Create a temporary job owned by hr (not hr2)
+      const jobOwnedByHr = await prisma.job.create({
+        data: {
+          title: 'HR1 Job',
+          description: 'Owned by hr1, hr2 should not be able to delete',
+          location: 'Bangkok',
+          jobType: 'contract',
+          workArrangement: 'on-site',
+          duration: '3-month',
+          minSalary: 30000,
+          maxSalary: 45000,
+          application_deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
+          phone_number: '+66812345682',
+          hrId: hr.hr.id,
+          companyName: 'TestCorp'
+        }
+      })
+
       const res = await request(app)
-        .delete(`/api/job/${job2.id}`)
+        .delete(`/api/job/${jobOwnedByHr.id}`)
         .set('Authorization', hr2Token)
 
       expect(res.status).toBe(403)
@@ -263,7 +373,7 @@ describe('Job Routes (Integration)', () => {
       const res = await request(app)
         .post(`/api/job/${job2.id}`)
         .set('Authorization', studentToken)
-        .send({ resumeUrl: 'resume.pdf' })
+        .send({ resumeLink: 'https://example.com/resume.pdf' }) // Correct field name and valid URL
 
       expect(res.status).toBe(201)
       expect(res.body.success).toBe(true)
@@ -271,10 +381,16 @@ describe('Job Routes (Integration)', () => {
     })
 
     it('should reject duplicate application', async () => {
+      // Create application directly (the test above already created one via API)
+      // But we need to ensure we have the student ID
+      const studentRecord = await prisma.student.findFirst({
+        where: { userId: student.id }
+      })
+
       await prisma.application.create({
         data: {
           jobId: job2.id,
-          studentId: student.id,
+          studentId: studentRecord.id,
           status: 'PENDING'
         }
       })
@@ -282,7 +398,7 @@ describe('Job Routes (Integration)', () => {
       const res = await request(app)
         .post(`/api/job/${job2.id}`)
         .set('Authorization', studentToken)
-        .send({ resumeUrl: 'resume.pdf' })
+        .send({ resumeLink: 'https://example.com/resume.pdf' }) // Correct field name and valid URL
 
       expect(res.status).toBe(409)
     })
@@ -293,10 +409,15 @@ describe('Job Routes (Integration)', () => {
   // ───────────────────────────────
   describe('GET /api/job/:id/applyer', () => {
     it('should allow HR to view applicants', async () => {
+      // Get student record ID
+      const studentRecord = await prisma.student.findFirst({
+        where: { userId: student.id }
+      })
+
       await prisma.application.create({
         data: {
           jobId: job2.id,
-          studentId: student.id,
+          studentId: studentRecord.id,
           status: 'PENDING'
         }
       })
@@ -316,10 +437,15 @@ describe('Job Routes (Integration)', () => {
   // ───────────────────────────────
   describe('POST /api/job/:id/applyer', () => {
     it('should allow HR to update applicant status', async () => {
+      // Get student record ID
+      const studentRecord = await prisma.student.findFirst({
+        where: { userId: student.id }
+      })
+
       const application = await prisma.application.create({
         data: {
           jobId: job2.id,
-          studentId: student.id,
+          studentId: studentRecord.id,
           status: 'PENDING'
         }
       })
