@@ -6,6 +6,7 @@
 const express = require('express')
 const router = express.Router()
 const jobController = require('../../controllers/jobController')
+const jobReportController = require('../../controllers/jobReportController')
 const { createJobSchema, updateJobSchema, applyJobSchema, manageApplicationSchema } = require('../../validators/jobValidator')
 const { authMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
@@ -14,7 +15,32 @@ const { validate } = require('../../middlewares/validate')
 // ===================== AUTH REQUIRED FOR ALL JOB ROUTES =====================
 router.use(authMiddleware)
 
+// ===================== JOB REPORT ROUTES (MUST COME BEFORE GENERIC :id ROUTES) =====================
+
+// GET /api/job/reports → List all reports (Admin only)
+router.get(
+  '/reports',
+  roleMiddleware(['ADMIN']),
+  jobReportController.listReports
+)
+
+// DELETE /api/job/reports/:reportId → Delete a report (Admin only)
+router.delete(
+  '/reports/:reportId',
+  roleMiddleware(['ADMIN']),
+  jobReportController.deleteReport
+)
+
+// POST /api/job/:id/report → Create a report for a job (any authenticated user)
+router.post(
+  '/:id/report',
+  jobReportController.createReport
+)
+
 // ===================== PUBLIC ACCESS (ALL ROLES) =====================
+
+// GET /api/job/filter - Filter jobs by tags, title, company
+router.get('/filter', jobController.filterJobs)
 
 // GET /api/jobs?page=1&limit=5
 router.get('/', jobController.listJobs)
