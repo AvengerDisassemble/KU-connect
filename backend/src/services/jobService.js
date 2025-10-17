@@ -137,6 +137,9 @@ async function createJob (hrId, data) {
     tags = []
   } = data
 
+  // Normalize tags to lowercase for case-insensitive filtering
+  const normalizedTags = tags.map(t => t.toString().trim().toLowerCase()).filter(Boolean)
+
   return prisma.job.create({
     data: {
       hrId,
@@ -155,7 +158,7 @@ async function createJob (hrId, data) {
       other_contact_information: null,
       requirements: { create: requirements.map(text => ({ text })) },
       tags: {
-        connectOrCreate: tags.map(name => ({
+        connectOrCreate: normalizedTags.map(name => ({
           where: { name },
           create: { name }
         }))
@@ -224,6 +227,8 @@ async function updateJob (jobId, hrId, data) {
 
   // 2) Tags (replace only if provided AND is array)
   if (Array.isArray(tags)) {
+    // Normalize tags to lowercase for case-insensitive filtering
+    const normalizedTags = tags.map(t => t.toString().trim().toLowerCase()).filter(Boolean)
     // Replace tags set completely
     steps.push(
       prisma.job.update({
@@ -231,7 +236,7 @@ async function updateJob (jobId, hrId, data) {
         data: {
           tags: {
             set: [], // clear all
-            connectOrCreate: tags.map(name => ({
+            connectOrCreate: normalizedTags.map(name => ({
               where: { name },
               create: { name }
             }))
@@ -378,10 +383,10 @@ async function deleteJob (jobId, requester) {
   }
 
   // Only allow Admins or the HR who owns the job
-  const isAdminOrEmployer = requester.role === 'ADMIN' || requester.role === 'EMPLOYER'
-  const isOwner = requester.hr && job.hrId === requester.hr.id
+  const isAdmin = requester.role === 'ADMIN'
+  const isOwner = requester.role === 'EMPLOYER' && requester.hr && job.hrId === requester.hr.id
 
-  if (!isAdminOrEmployer && !isOwner) {
+  if (!isAdmin && !isOwner) {
     const err = new Error('You are not authorized to delete this job')
     err.status = 403
     throw err
@@ -396,6 +401,61 @@ async function deleteJob (jobId, requester) {
   return deletedJob
 }
 
+/**
+ * Filters jobs by tags with pagination
+ * Why: allow users to find jobs by specific tags
+ * Note: Tags must be stored in lowercase for exact matching
+ * @param {object} q - { tags, page, limit }
+ * @returns {Promise<{items: Array, total: number, page: number, limit: number}>}
+ */
+async function filterJobs (q) {
+  // Parse and normalize tags (lowercase, dedupe)
+  // Why: Prisma doesn't support mode:'insensitive' on relation fields, so we normalize to lowercase
+  let tags = []
+  if (q.tags) {
+    const rawTags = typeof q.tags === 'string' ? q.tags.split(',') : q.tags
+    tags = [...new Set(
+      rawTags
+        .map(t => t.toString().trim().toLowerCase())
+        .filter(Boolean)
+    )]
+  }
+
+  // If no tags provided, return empty
+  if (!tags.length) {
+    return { items: [], total: 0, page: 1, limit: 5 }
+  }
+
+  // Pagination with clamping
+  const limit = Math.min(Math.max(Number(q.limit) || 5, 1), 50)
+  const page = Math.max(Number(q.page) || 1, 1)
+  const skip = (page - 1) * limit
+
+  // Build where clause - only filter by tags
+  // Why: OR allows matching any tag provided
+  const where = {
+    OR: tags.map(t => ({
+      tags: { some: { name: t } }
+    }))
+  }
+
+  const [items, total] = await Promise.all([
+    prisma.job.findMany({
+      where,
+      take: limit,
+      skip,
+      include: {
+        tags: true,
+        hr: true
+      },
+      orderBy: { createdAt: 'desc' }
+    }),
+    prisma.job.count({ where })
+  ])
+
+  return { items, total, page, limit }
+}
+
 module.exports = {
   listJobs,
   getJobById,
@@ -405,5 +465,6 @@ module.exports = {
   applyToJob,
   manageApplication,
   getApplicants,
-  deleteJob
+  deleteJob,
+  filterJobs
 }
