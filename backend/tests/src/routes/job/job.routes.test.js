@@ -181,8 +181,13 @@ describe('Job Routes (Integration)', () => {
   })
 
   // Clean up applications between tests to avoid duplicates
+  // Only delete applications for THIS test file's student to avoid interfering with other test files
   beforeEach(async () => {
-    await prisma.application.deleteMany()
+    if (student?.student?.id) {
+      await prisma.application.deleteMany({
+        where: { studentId: student.student.id }
+      })
+    }
   })
 
   afterAll(async () => {
