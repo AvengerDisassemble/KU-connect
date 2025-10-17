@@ -14,7 +14,7 @@ let studentUser, hrUser, adminUser
 let studentToken, hrToken, adminToken
 
 beforeAll(async () => {
-  process.env.JWT_SECRET = process.env.JWT_SECRET || 'testsecret'
+  process.env.ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'your-access-token-secret'
 
   // Cleanup in proper order - order matters for foreign keys
   await prisma.jobReport.deleteMany()
@@ -25,6 +25,7 @@ beforeAll(async () => {
   await prisma.responsibility.deleteMany()
   await prisma.benefit.deleteMany()
   await prisma.job.deleteMany()
+  await prisma.resume.deleteMany()
   await prisma.student.deleteMany()
   await prisma.hR.deleteMany()
   await prisma.admin.deleteMany()
@@ -42,7 +43,7 @@ beforeAll(async () => {
   })
 
   // Create test users with auth tokens
-  const secret = process.env.JWT_SECRET
+  const secret = process.env.ACCESS_TOKEN_SECRET
 
   adminUser = await prisma.user.create({
     data: {
@@ -93,7 +94,7 @@ beforeAll(async () => {
     },
     include: { hr: true }
   })
-  hrToken = `Bearer ${jwt.sign({ id: hrUser.id, role: 'EMPLOYER', hr: { id: hrUser.hr.id } }, secret)}`
+  hrToken = `Bearer ${jwt.sign({ id: hrUser.id, role: 'EMPLOYER' }, secret)}`
 })
 
 afterAll(async () => {
@@ -106,6 +107,7 @@ afterAll(async () => {
   await prisma.responsibility.deleteMany()
   await prisma.benefit.deleteMany()
   await prisma.job.deleteMany()
+  await prisma.resume.deleteMany()
   await prisma.student.deleteMany()
   await prisma.hR.deleteMany()
   await prisma.admin.deleteMany()
@@ -128,23 +130,31 @@ describe('Profile routes (integration)', () => {
       expect(res.body.data).toEqual(expect.objectContaining({ id: studentUser.id }))
     })
 
-    it('should return 404 if not found', async () => {
+    it('should return 403 for non-privileged user accessing other profile', async () => {
       const res = await request(app)
-        .get('/api/profile/99999')
+        .get(`/api/profile/${hrUser.id}`)
         .set('Authorization', studentToken)
-        .expect(404)
-      expect(res.body.data.message).toMatch(/not found/i)
+        .expect(403)
+      expect(res.body.message).toMatch(/access denied|not authorized/i)
     })
   })
 
   describe('GET /api/profile', () => {
-    it('should return 200 with list of profiles', async () => {
+    it('should return 200 with list of profiles for admin', async () => {
       const res = await request(app)
         .get('/api/profile')
-        .set('Authorization', studentToken)
+        .set('Authorization', adminToken)
         .expect(200)
       expect(Array.isArray(res.body.data)).toBe(true)
       expect(res.body.data.length).toBeGreaterThanOrEqual(2) // Should have student + hr
+    })
+
+    it('should return 403 for non-admin user', async () => {
+      const res = await request(app)
+        .get('/api/profile')
+        .set('Authorization', studentToken)
+        .expect(403)
+      expect(res.body.message).toMatch(/forbidden|not authorized|access denied|required role/i)
     })
   })
 
@@ -153,7 +163,7 @@ describe('Profile routes (integration)', () => {
       const res = await request(app)
         .patch('/api/profile')
         .set('Authorization', studentToken)
-        .send({ userId: studentUser.id, role: 'STUDENT', updates: { gpa: 3.8 } })
+        .send({ role: 'student', gpa: 3.8 })
         .expect(200)
 
       expect(res.body.data.student.gpa).toBe(3.8)
@@ -163,7 +173,7 @@ describe('Profile routes (integration)', () => {
       const res = await request(app)
         .patch('/api/profile')
         .set('Authorization', hrToken)
-        .send({ userId: hrUser.id, role: 'EMPLOYER', updates: { companyName: 'TestCorp Updated' } })
+        .send({ role: 'hr', companyName: 'TestCorp Updated' })
         .expect(200)
 
       expect(res.body.data.hr.companyName).toBe('TestCorp Updated')
@@ -175,16 +185,16 @@ describe('Profile routes (integration)', () => {
         .set('Authorization', studentToken)
         .send({})
         .expect(400)
-      expect(res.body.data.message).toMatch(/invalid|required/i)
+      expect(res.body.message).toMatch(/at least one field|required/i)
     })
 
-    it('should return 404 when profile not found', async () => {
+    it('should return 400 when trying to update email', async () => {
       const res = await request(app)
         .patch('/api/profile')
         .set('Authorization', studentToken)
-        .send({ userId: 99999, role: 'STUDENT', updates: { gpa: 4.0 } })
-        .expect(404)
-      expect(res.body.data.message).toMatch(/not found/i)
+        .send({ email: 'newemail@test.com', gpa: 3.9 })
+        .expect(400)
+      expect(res.body.message).toMatch(/email cannot be changed/i)
     })
   })
 })
