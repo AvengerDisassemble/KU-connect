@@ -456,6 +456,73 @@ async function filterJobs (q) {
   return { items, total, page, limit }
 }
 
+/**
+ * Gets all applications for a student with their statuses
+ * Why: UC-S09 - Students need to check their application statuses
+ * @param {string} userId - The user ID (must be a STUDENT)
+ * @returns {Promise<Array>} List of applications with job details and status
+ */
+async function getMyApplications (userId) {
+  // Verify user is a student
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { student: true }
+  })
+
+  if (!user || user.role !== 'STUDENT' || !user.student) {
+    const error = new Error('Only students can view their applications')
+    error.status = 403
+    throw error
+  }
+
+  // Get all applications for this student
+  const applications = await prisma.application.findMany({
+    where: {
+      studentId: user.student.id
+    },
+    include: {
+      job: {
+        include: {
+          hr: {
+            include: {
+              user: {
+                select: {
+                  name: true,
+                  surname: true
+                }
+              }
+            }
+          },
+          tags: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  })
+
+  // Format response to match frontend needs
+  return applications.map(app => ({
+    id: app.id,
+    status: app.status,
+    appliedAt: app.createdAt,
+    updatedAt: app.updatedAt,
+    job: {
+      id: app.job.id,
+      title: app.job.title,
+      companyName: app.job.companyName,
+      location: app.job.location,
+      jobType: app.job.jobType,
+      workArrangement: app.job.workArrangement,
+      minSalary: app.job.minSalary,
+      maxSalary: app.job.maxSalary,
+      tags: app.job.tags.map(t => t.name),
+      hrName: `${app.job.hr.user.name} ${app.job.hr.user.surname}`
+    }
+  }))
+}
+
 module.exports = {
   listJobs,
   getJobById,
@@ -466,5 +533,6 @@ module.exports = {
   manageApplication,
   getApplicants,
   deleteJob,
-  filterJobs
+  filterJobs,
+  getMyApplications
 }
