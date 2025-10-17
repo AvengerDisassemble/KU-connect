@@ -162,14 +162,15 @@ describe('jobService (unit)', () => {
       expect(result.id).toBe('job4')
     })
 
-    it('allows any HR to delete any job (current service logic)', async () => {
-      // Note: Current service logic allows any EMPLOYER to delete any job
-      // The check is: if (!isAdminOrEmployer && !isOwner) throw 403
-      // Since isAdminOrEmployer is true for EMPLOYER, it passes regardless of ownership
+    it('throws 403 when HR tries to delete another HR\'s job', async () => {
+      // HR2 trying to delete HR1's job should fail
       prisma.job.findUnique.mockResolvedValue({ id: 'job5', hrId: 'hr1' })
-      prisma.job.delete.mockResolvedValue({ id: 'job5' })
-      const result = await jobService.deleteJob('job5', { role: 'EMPLOYER', hr: { id: 'hr2' } })
-      expect(result.id).toBe('job5')
+      await expect(
+        jobService.deleteJob('job5', { role: 'EMPLOYER', hr: { id: 'hr2' } })
+      ).rejects.toMatchObject({ 
+        status: 403,
+        message: 'You are not authorized to delete this job'
+      })
     })
 
     it('throws 403 for non-admin non-employer roles', async () => {
