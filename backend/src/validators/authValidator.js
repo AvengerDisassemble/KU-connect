@@ -116,10 +116,8 @@ function validateAlumniRegistration (req, res, next) {
     }
   }
 
-  if (!degreeTypeId) {
-    errors.push('Degree type is required')
-  } else if (isNaN(parseInt(degreeTypeId))) {
-    errors.push('Degree type must be a valid number')
+  if (!degreeTypeId || typeof degreeTypeId !== 'string' || degreeTypeId.trim().length === 0) {
+    errors.push('Degree type is required and must be a valid ID')
   }
 
   if (!address || address.trim().length < 5) {
