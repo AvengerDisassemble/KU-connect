@@ -20,6 +20,25 @@ async function isJobOwnedByHr(jobId, hrId) {
 }
 
 /**
+ * Checks if a job belongs to the given user (via HR relation)
+ * Why: Allows ownership check without modifying authService
+ * @param {string} jobId - Job ID
+ * @param {string} userId - User ID
+ * @returns {Promise<boolean>} True if user owns this job, else false
+ */
+async function isJobOwnedByUser(jobId, userId) {
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: {
+      hr: {
+        select: { userId: true }
+      }
+    }
+  })
+  return job && job.hr && job.hr.userId === userId
+}
+
+/**
  * Creates a job report if not already reported by user
  * @param {string} userId - Reporter user ID
  * @param {string} jobId - Job ID
@@ -100,6 +119,7 @@ async function deleteReport(reportId) {
 
 module.exports = {
   isJobOwnedByHr,
+  isJobOwnedByUser,
   createReport,
   listReports,
   deleteReport
