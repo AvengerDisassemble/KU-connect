@@ -7,7 +7,8 @@ const degreeService = require('../services/degreeService')
 
 /**
  * Get all degree types
- * @route GET /api/degree-types
+ * @route GET /api/degree
+ * @access Public - No authentication required (needed for registration forms)
  */
 async function getAllDegreeTypes (req, res, next) {
   try {
