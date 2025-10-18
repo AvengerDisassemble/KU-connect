@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,25 +9,48 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { z, ZodError } from "zod";
 
-// Options for dropdowns
+
+import {
+  getEmployerProfile,
+  updateEmployerProfile,
+  type EmployerProfileResponse,
+  type UpdateEmployerProfileRequest,
+} from "@/services/employerProfile";
+import { Edit } from "lucide-react";
+
+// Options + mapping (MATCH backend enum)
 type Option = { value: string; label: string };
 
+// UI values → label
 const INDUSTRY_OPTIONS_BASE: Option[] = [
-  { value: "software", label: "Software Development" },
-  { value: "it-services", label: "IT Services" },
-  { value: "finance", label: "Finance / Fintech" },
-  { value: "healthcare", label: "Healthcare" },
-  { value: "education", label: "Education" },
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "retail", label: "Retail / E-commerce" },
+  { value: "it-hardware-and-devices", label: "IT Hardware & Devices" },
+  { value: "it-software",             label: "IT Software" },
+  { value: "it-services",             label: "IT Services" },
+  { value: "network-services",        label: "Network Services" },
+  { value: "emerging-tech",           label: "Emerging Tech" },
+  { value: "e-commerce",              label: "E-commerce" },
+  { value: "other",                   label: "Other" },
 ];
+
+// UI → API enum
+const INDUSTRY_UI_TO_API: Record<string, string> = {
+  "it-hardware-and-devices": "IT_HARDWARE_AND_DEVICES",
+  "it-software":             "IT_SOFTWARE",
+  "it-services":             "IT_SERVICES",
+  "network-services":        "NETWORK_SERVICES",
+  "emerging-tech":           "EMERGING_TECH",
+  "e-commerce":              "E_COMMERCE",
+  "other":                   "OTHER",
+};
+
+// API enum → UI (prefill)
+const API_TO_INDUSTRY_UI: Record<string, string> = Object.fromEntries(
+  Object.entries(INDUSTRY_UI_TO_API).map(([ui, api]) => [api, ui])
+);
 
 const COMPANY_SIZE_OPTIONS_BASE: Option[] = [
   { value: "1-10", label: "1-10" },
@@ -36,22 +60,23 @@ const COMPANY_SIZE_OPTIONS_BASE: Option[] = [
   { value: "500+", label: "500+" },
 ];
 
-// Helpers: check membership & normalize initial values
+const COMPANY_SIZE_UI_TO_API: Record<string, string> = {
+  "1-10":    "ONE_TO_TEN",
+  "11-50":   "ELEVEN_TO_FIFTY",
+  "51-200":  "FIFTY_ONE_TO_TWO_HUNDRED",
+  "201-500": "TWO_HUNDRED_ONE_TO_FIVE_HUNDRED",
+  "500+":    "FIVE_HUNDRED_PLUS",
+};
+const API_TO_COMPANY_SIZE_UI: Record<string, string> = Object.fromEntries(
+  Object.entries(COMPANY_SIZE_UI_TO_API).map(([ui, api]) => [api, ui])
+);
+
 const valuesOf = (ops: Option[]) => ops.map((o) => o.value);
-const isIn = (ops: Option[], v?: string) =>
-  !!v && valuesOf(ops).includes(v);
+const isIn = (ops: Option[], v?: string) => !!v && valuesOf(ops).includes(v);
 
 function FieldLabel({
-  htmlFor,
-  required,
-  children,
-  className = "text-sm font-medium",
-}: {
-  htmlFor?: string;
-  required?: boolean;
-  children: ReactNode;
-  className?: string;
-}) {
+  htmlFor, required, children, className = "text-sm font-medium",
+}: { htmlFor?: string; required?: boolean; children: ReactNode; className?: string }) {
   return (
     <Label htmlFor={htmlFor} className={className} aria-required={required}>
       {children}
@@ -60,6 +85,7 @@ function FieldLabel({
   );
 }
 
+// Form types
 export interface CompanyForm {
   companyName: string;
   industry: string;
@@ -71,142 +97,230 @@ export interface CompanyForm {
   address?: string;
 }
 
-export default function CompanyInfoForm({
-  initial,
-  onSave,
-}: {
-  initial: CompanyForm;
-  onSave: (data: CompanyForm) => void;
-}) {
-  const [formData, setFormData] = useState<CompanyForm>(initial);
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
+// Zod schema
+const formSchema = z.object({
+  companyName: z.string().min(1, "Company name is required"),
+  industry: z
+    .string()
+    .refine((v) => isIn(INDUSTRY_OPTIONS_BASE, v), "Industry must be selected from the list"),
+  companySize: z
+    .string()
+    .refine((v) => isIn(COMPANY_SIZE_OPTIONS_BASE, v), "Company Size must be selected from the list"),
+  address: z.string().min(1, "Address is required"),
+  contactEmail: z.string().email("Please enter a valid email address"),
+  website: z.string().url("Invalid URL").optional().or(z.literal("")),
+  description: z.string().optional(),
+  phoneNumber: z.string().optional(),
+});
 
-  // Normalize initial values to allowed options only
+// inline email validator (realtime)
+const validateEmailInline = (
+  value: string,
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>
+) => {
+  const s = value.trim();
+  if (s.length === 0) {
+    setErrors(prev => ({ ...prev, contactEmail: "" }));
+    return;
+  }
+  const ok = z.string().email().safeParse(s).success;
+  setErrors(prev => ({
+    ...prev,
+    contactEmail: ok ? "" : "Please enter a valid email address",
+  }));
+};
+
+export default function CompanyInfoForm({ userId }: { userId?: string }) {
+  const qc = useQueryClient();
+
+  const [formData, setFormData] = useState<CompanyForm>({
+    companyName: "",
+    industry: "",
+    companySize: "",
+    website: "",
+    description: "",
+    contactEmail: "",
+    phoneNumber: "",
+    address: "",
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // GET profile
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["employerProfile", userId],
+    queryFn: () => getEmployerProfile(userId!),
+    enabled: !!userId,
+  });
+
   useEffect(() => {
-    setFormData({
-      companyName: initial.companyName ?? "",
-      industry: isIn(INDUSTRY_OPTIONS_BASE, initial.industry) ? initial.industry : "",
-      companySize: isIn(COMPANY_SIZE_OPTIONS_BASE, initial.companySize) ? initial.companySize : "",
-      website: initial.website ?? "",
-      description: initial.description ?? "",
-      contactEmail: initial.contactEmail ?? "",
-      phoneNumber: initial.phoneNumber ?? "",
-      address: initial.address ?? "",
-    });
-  }, [initial]);
+    if (!profile) return;
+    const p = profile as EmployerProfileResponse as any;
+    const hr = p.hr ?? {};
 
-  // Update field helper
+    setFormData({
+      companyName: hr.companyName ?? "",
+      industry: API_TO_INDUSTRY_UI[hr.industry ?? ""] ?? "",
+      companySize: API_TO_COMPANY_SIZE_UI[hr.companySize ?? ""] ?? "",
+      website: hr.website ?? "",
+      address: hr.address ?? "",
+      // UI-only
+      description: "",
+      contactEmail: p.email ?? "",
+      phoneNumber: "",
+    });
+  }, [profile]);
+
+  // PATCH profile
+  const mutation = useMutation({
+    mutationFn: (payload: UpdateEmployerProfileRequest) => updateEmployerProfile(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["employerProfile", userId] });
+      toast.success("Profile Updated", {
+        description: "Company profile has been saved.",
+        duration: 3000,
+      });
+    },
+    onError: () => {
+      toast.error("Failed to update profile", {
+        description: "Please try again.",
+        duration: 4000,
+      });
+    },
+  });
+
   const set = (k: keyof CompanyForm, v: string) =>
     setFormData((p) => ({ ...p, [k]: v }));
 
-  // Validation: required + must be in option lists
   const validate = () => {
-    const required: (keyof CompanyForm)[] = [
-      "companyName",
-      "industry",
-      "companySize",
-      "description",
-      "contactEmail",
-    ];
-    const e: Record<string, boolean> = {};
-
-    required.forEach((k) => {
-      const val = (formData[k] ?? "").toString().trim();
-      if (!val) e[k as string] = true;
-    });
-
-    // strict membership checks
-    if (!isIn(INDUSTRY_OPTIONS_BASE, formData.industry)) e.industry = true;
-    if (!isIn(COMPANY_SIZE_OPTIONS_BASE, formData.companySize)) e.companySize = true;
-
-    setErrors(e);
-
-    if (Object.keys(e).length > 0) {
-      const msgs = [];
-      if (e.industry) msgs.push("Industry must be selected from the list");
-      if (e.companySize) msgs.push("Company Size must be selected from the list");
-      toast.error(
-        msgs.length ? msgs.join(" • ") : "Please fill in all required fields (*)"
-      );
+    try {
+      formSchema.parse({
+        companyName: (formData.companyName ?? "").trim(),
+        industry: formData.industry ?? "",
+        companySize: formData.companySize ?? "",
+        address: (formData.address ?? "").trim(),
+        contactEmail: (formData.contactEmail ?? "").trim(),
+        website: (formData.website ?? "").trim(),
+        description: formData.description ?? "",
+        phoneNumber: formData.phoneNumber ?? "",
+      });
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const eMap: Record<string, string> = {};
+        for (const issue of error.issues) {
+          const field = String(issue.path?.[0] ?? "");
+          if (field) eMap[field] = issue.message;
+        }
+        setErrors(eMap);
+      } else {
+        setErrors({ form: "Validation failed" });
+      }
       return false;
     }
-    return true;
+
   };
 
-  // Submit handler
   const submit = () => {
-    if (validate()) onSave(formData);
+    if (!validate()) return;
+    if (!userId) {
+      toast.error("Missing userId in URL.");
+      return;
+    }
+    // map UI → API
+    const payload: UpdateEmployerProfileRequest = {
+      userId,
+      companyName: formData.companyName.trim(),
+      address: (formData.address ?? "").trim(),
+      website: (formData.website ?? "").trim() || undefined,
+      industry: INDUSTRY_UI_TO_API[formData.industry],
+      companySize: COMPANY_SIZE_UI_TO_API[formData.companySize],
+    };
+    mutation.mutate(payload);
   };
 
   // UI
+  if (isLoading) {
+    return (
+      <Card className="border-none">
+        <CardHeader><CardTitle>Company Information</CardTitle></CardHeader>
+        <CardContent>Loading profile...</CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-none">
       <CardHeader>
         <CardTitle>Company Information</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div>
+          {/* Profile Avatar */}
+          <div className="text-center mb-8">
+          <div className="relative inline-block mb-4">
+              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-muted-foreground/30 rounded-full"></div>
+              </div>
+              {/* Verification badge */}
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+              <Edit className="w-3 h-3 text-primary-foreground" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+
         {/* Company Name */}
         <div>
-          <FieldLabel htmlFor="companyName" required>
-            Company Name
-          </FieldLabel>
+          <FieldLabel htmlFor="companyName" required>Company Name</FieldLabel>
           <Input
             id="companyName"
             value={formData.companyName ?? ""}
             onChange={(e) => set("companyName", e.target.value)}
-            className={`mt-2 ${errors.companyName ? "border-red-500" : ""}`}
+            className={`mt-2 ${!!errors.companyName ? "border-red-500" : ""}`}
             placeholder="e.g. Tech Solutions Co., Ltd."
           />
+          {!!errors.companyName && (
+            <p className="text-xs text-destructive mt-1">{errors.companyName}</p>
+          )}
         </div>
 
-        {/* Industry Dropdown (strict) */}
+        {/* Industry */}
         <div>
-          <FieldLabel htmlFor="industry" required>
-            Industry
-          </FieldLabel>
-          <Select
-            value={formData.industry || undefined}
-            onValueChange={(val) => set("industry", val)}
-          >
-            <SelectTrigger
-              id="industry"
-              className={`mt-2 ${errors.industry ? "border-red-500" : ""}`}
-            >
+          <FieldLabel htmlFor="industry" required>Industry</FieldLabel>
+          <Select value={formData.industry || undefined} onValueChange={(val) => set("industry", val)}>
+            <SelectTrigger id="industry" className={`mt-2 ${!!errors.industry ? "border-red-500" : ""}`}>
               <SelectValue placeholder="Select industry" />
             </SelectTrigger>
             <SelectContent>
               {INDUSTRY_OPTIONS_BASE.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {!!errors.industry && (
+            <p className="text-xs text-destructive mt-1">{errors.industry}</p>
+          )}
         </div>
 
-        {/* Company Size Dropdown (strict) */}
+        {/* Company Size */}
         <div>
-          <FieldLabel htmlFor="companySize" required>
-            Company Size
-          </FieldLabel>
-          <Select
-            value={formData.companySize || undefined}
-            onValueChange={(val) => set("companySize", val)}
-          >
-            <SelectTrigger
-              id="companySize"
-              className={`mt-2 ${errors.companySize ? "border-red-500" : ""}`}
-            >
+          <FieldLabel htmlFor="companySize" required>Company Size</FieldLabel>
+          <Select value={formData.companySize || undefined} onValueChange={(val) => set("companySize", val)}>
+            <SelectTrigger id="companySize" className={`mt-2 ${!!errors.companySize ? "border-red-500" : ""}`}>
               <SelectValue placeholder="Select company size" />
             </SelectTrigger>
             <SelectContent>
               {COMPANY_SIZE_OPTIONS_BASE.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
+          {!!errors.companySize && (
+            <p className="text-xs text-destructive mt-1">{errors.companySize}</p>
+          )}
         </div>
 
         {/* Website */}
@@ -216,43 +330,56 @@ export default function CompanyInfoForm({
             id="website"
             value={formData.website ?? ""}
             onChange={(e) => set("website", e.target.value)}
-            className="mt-2"
+            className={`mt-2 ${!!errors.website ? "border-red-500" : ""}`}
             placeholder="https://example.com"
+            inputMode="url"
+            autoComplete="url"
           />
+          {!!errors.website && (
+            <p className="text-xs text-destructive mt-1">{errors.website}</p>
+          )}
         </div>
 
         {/* Description */}
         <div>
-          <FieldLabel htmlFor="description" required>
-            Company Description
-          </FieldLabel>
+          <FieldLabel htmlFor="description">Company Description</FieldLabel>
           <Textarea
             id="description"
             value={formData.description ?? ""}
             onChange={(e) => set("description", e.target.value)}
-            className={`mt-2 min-h-[100px] ${
-              errors.description ? "border-red-500" : ""
-            }`}
+            className="mt-2 min-h-[100px]"
             placeholder="Brief intro about your company..."
           />
         </div>
 
         {/* Contact Email */}
         <div>
-          <FieldLabel htmlFor="contactEmail" required>
-            Contact Email
-          </FieldLabel>
+          <FieldLabel htmlFor="contactEmail" required>Contact Email</FieldLabel>
           <Input
             id="contactEmail"
             type="email"
             value={formData.contactEmail ?? ""}
-            onChange={(e) => set("contactEmail", e.target.value)}
-            className={`mt-2 ${errors.contactEmail ? "border-red-500" : ""}`}
+            onChange={(e) => {
+              const v = e.target.value;
+              set("contactEmail", v);
+              validateEmailInline(v, setErrors); // realtime
+            }}
+            onBlur={(e) => validateEmailInline(e.target.value, setErrors)}
+            className={`mt-2 ${!!errors.contactEmail ? "border-red-500" : ""}`}
             placeholder="hr@company.com"
+            autoComplete="email"
+            inputMode="email"
+            aria-invalid={!!errors.contactEmail}
+            aria-describedby={!!errors.contactEmail ? "contact-email-error" : undefined}
           />
+          {!!errors.contactEmail && (
+            <p id="contact-email-error" className="text-xs text-destructive mt-1">
+              {errors.contactEmail}
+            </p>
+          )}
         </div>
 
-        {/* Phone Number */}
+        {/* Phone */}
         <div>
           <FieldLabel htmlFor="phoneNumber">Phone Number</FieldLabel>
           <Input
@@ -260,27 +387,34 @@ export default function CompanyInfoForm({
             value={formData.phoneNumber ?? ""}
             onChange={(e) => set("phoneNumber", e.target.value)}
             className="mt-2"
+            inputMode="tel"
+            autoComplete="tel"
+            placeholder="e.g. 081-234-5678"
           />
         </div>
 
         {/* Address */}
         <div>
-          <FieldLabel htmlFor="address">Address</FieldLabel>
+          <FieldLabel htmlFor="address" required>Address</FieldLabel>
           <Input
             id="address"
             value={formData.address ?? ""}
             onChange={(e) => set("address", e.target.value)}
-            className="mt-2"
+            className={`mt-2 ${!!errors.address ? "border-red-500" : ""}`}
+            placeholder="Registered business address"
           />
+          {!!errors.address && (
+            <p className="text-xs text-destructive mt-1">{errors.address}</p>
+          )}
         </div>
 
-        {/* Submit button */}
         <Button
           type="button"
           onClick={submit}
-          className="px-8 bg-brand-teal hover:bg-brand-teal-dark"
+          disabled={mutation.isPending}
+          className="px-8 bg-brand-teal hover:bg-brand-teal/90"
         >
-          Save Changes
+          {mutation.isPending ? "Saving..." : "Save Changes"}
         </Button>
       </CardContent>
     </Card>
