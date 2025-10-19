@@ -1,19 +1,28 @@
 /**
- * App initialization and Express setup
  * @module app
  */
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-const routes = require('./routes');
+const express = require('express')
+const cors = require('cors')
+const morgan = require('morgan')
+const cookieParser = require('cookie-parser')
+const routes = require('./routes')
+const { errorHandler } = require('./middlewares/errorHandler')
 
-const app = express();
+const app = express()
 
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}))
+app.use(express.json())
+app.use(cookieParser())
+app.use(morgan('dev'))
+app.use(express.urlencoded({ extended: true }))
 
 // Mount API routes
-app.use('/api', routes);
+app.use('/api', routes)
 
-module.exports = app;
+// Global error handler (must be last)
+app.use(errorHandler)
+
+module.exports = app

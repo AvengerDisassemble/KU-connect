@@ -30,6 +30,19 @@ You must follow this coding style strictly
 2. The docstring standard will follow the JSDoc Standard (https://jsdoc.app/).
 3. Other than in docstring, don't comment what something does, comment why.
 
+Test Structure
+Mirror the /src folder structure inside /tests
+- Create subfolders inside /tests matching /src (e.g., /tests/controllers, /tests/models).
+- Place unit test files alongside the relevant modules logically, e.g., userController.test.js in /tests/controllers.
+- This approach keeps tests well-organized, clearly grouped by feature.
+- Look at the tests folder, the structure is already partially implemeted.
+
+Middleware structure for the autentication and authorization
+- authMiddleware.js – verify JWT and attach `req.user`
+- roleMiddleware.js – check if user has required role
+- validateMiddleware.js – validate request body with schemas
+- errorHandler.js – central error formatting
+
 Also Provided
 The domain digram and database diagram is in the context folder.
 

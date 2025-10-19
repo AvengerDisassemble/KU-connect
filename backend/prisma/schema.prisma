@@ -20,49 +20,97 @@ datasource test_db {
 //   url      = env("DATABASE_URL")
 // }
 
+enum Role {
+  STUDENT
+  PROFESSOR
+  EMPLOYER
+  ADMIN
+}
+
+enum Industry {
+  IT_HARDWARE_AND_DEVICES
+  IT_SOFTWARE
+  IT_SERVICES
+  NETWORK_SERVICES
+  EMERGING_TECH
+  E_COMMERCE
+  OTHER
+}
+
+enum CompanySize {
+  ONE_TO_TEN
+  ELEVEN_TO_FIFTY
+  FIFTY_ONE_TO_TWO_HUNDRED
+  TWO_HUNDRED_PLUS
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  surname   String
-  password  String
-  username  String   @unique
-  verified  Boolean
-  professor Professor?
-  admin     Admin?
-  student   Student?
-  hr        HR?
+  id           String         @id @default(cuid())
+  name         String
+  surname      String
+  password     String
+  email        String         @unique
+  username     String?        @unique
+  role         Role
+  verified     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  professor    Professor?
+  admin        Admin?
+  student      Student?
+  hr           HR?
+  refreshTokens RefreshToken[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Professor {
   id         Int    @id @default(autoincrement())
-  userId     Int    @unique
+  userId     String @unique
   department String
   user       User   @relation(fields: [userId], references: [id])
 }
 
 model Admin {
-  id     Int  @id @default(autoincrement())
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
+  id     Int    @id @default(autoincrement())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model Student {
-  id         Int        @id @default(autoincrement())
-  userId     Int        @unique
-  degreeType DegreeType @relation(fields: [degreeTypeId], references: [id])
-  degreeTypeId Int
-  address    String
-  user       User       @relation(fields: [userId], references: [id])
-  interests  StudentInterest[]
-  resumes    Resume[]
+  id                     Int               @id @default(autoincrement())
+  userId                 String            @unique
+  user                   User              @relation(fields: [userId], references: [id])
+  degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
+  degreeTypeId           Int
+  address                String
+  gpa                    Float?          
+  expectedGraduationYear Int?             
+  interests              StudentInterest[]
+  resumes                Resume[]
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 }
 
 model HR {
-  id          Int    @id @default(autoincrement())
-  userId      Int    @unique
+  id          Int         @id @default(autoincrement())
+  userId      String      @unique
   companyName String
   address     String
-  user        User   @relation(fields: [userId], references: [id])
+  industry    Industry    @default(OTHER)
+  companySize CompanySize @default(ONE_TO_TEN)
+  website     String?     
+  user        User        @relation(fields: [userId], references: [id])
+  jobs        Job[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model DegreeType {
@@ -73,6 +121,8 @@ model DegreeType {
 
 model Job {
   id                     Int      @id @default(autoincrement())
+  hrId                   Int
+  hr                     HR @relation(fields: [hrId], references: [id])
   title                  String
   description            String
   location               String
