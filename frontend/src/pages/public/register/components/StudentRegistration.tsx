@@ -14,7 +14,7 @@ import { Mail, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useNavigate, useLocation } from "react-router-dom";
-import { registerAlumni, login } from "@/services/auth";
+import { registerAlumni, login, setAuthSession } from "@/services/auth";
 import { API_BASE } from "@/services/api";
 
 type OAuthMessagePayload = {
@@ -102,9 +102,11 @@ const StudentRegistration = () => {
       const { accessToken, refreshToken, user } = payload;
       if (!accessToken || !refreshToken || !user) return;
 
-      window.localStorage.setItem("accessToken", accessToken ?? "");
-      window.localStorage.setItem("refreshToken", refreshToken ?? "");
-      window.localStorage.setItem("user", JSON.stringify(user));
+      setAuthSession({
+        accessToken,
+        refreshToken,
+        user,
+      });
 
       setOauthError(null);
       setIsOAuthInProgress(false);
@@ -125,8 +127,14 @@ const StudentRegistration = () => {
     const left = window.screenX + (window.outerWidth - width) / 2;
     const top = window.screenY + (window.outerHeight - height) / 2;
 
+    const authUrl = new URL(googleAuthUrl);
+    authUrl.searchParams.set("origin", window.location.origin);
+    if (location.pathname) {
+      authUrl.searchParams.set("redirect", location.pathname);
+    }
+
     const popup = window.open(
-      googleAuthUrl,
+      authUrl.toString(),
       "ku-connect-google-oauth",
       `width=${width},height=${height},left=${left},top=${top},menubar=no,toolbar=no,location=no,status=no`
     );
@@ -142,7 +150,7 @@ const StudentRegistration = () => {
     toast.info(
       "Continue in the Google window to verify your KU Gmail account."
     );
-  }, [googleAuthUrl]);
+  }, [googleAuthUrl, location.pathname]);
 
   const validateField = (field: keyof typeof formData, value: string) => {
     try {
@@ -197,12 +205,7 @@ const StudentRegistration = () => {
             validatedData.email,
             validatedData.password
           );
-          const { user, accessToken, refreshToken } = loginData.data;
-
-          // Step 3: Store session
-          localStorage.setItem("accessToken", accessToken ?? "");
-          localStorage.setItem("refreshToken", refreshToken ?? "");
-          localStorage.setItem("user", JSON.stringify(user));
+          const { user } = loginData.data;
 
           navigate("/student/browsejobs");
           return user.name;
@@ -610,9 +613,10 @@ const StudentRegistration = () => {
 export default StudentRegistration;
 
 function getRoleDestination(role?: string) {
-  switch (role) {
+  const normalized = typeof role === "string" ? role.toUpperCase() : undefined;
+  switch (normalized) {
     case "STUDENT":
-      return "/student";
+      return "/student/dashboard";
     case "EMPLOYER":
       return "/employer";
     case "ADMIN":
