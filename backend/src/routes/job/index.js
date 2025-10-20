@@ -11,6 +11,7 @@ const { createJobSchema, updateJobSchema, applyJobSchema, manageApplicationSchem
 const { authMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
 const { validate } = require('../../middlewares/validate')
+const { strictLimiter, writeLimiter, searchLimiter } = require('../../middlewares/rateLimitMiddleware')
 
 // ===================== AUTH REQUIRED FOR ALL JOB ROUTES =====================
 router.use(authMiddleware)
@@ -40,12 +41,15 @@ router.post(
 // ===================== PUBLIC ACCESS (ALL ROLES) =====================
 
 // GET /api/job/filter - Filter jobs by tags, title, company
-router.get('/filter', jobController.filterJobs)
+// Rate limited: Filter operations can be expensive with multiple tags
+router.get('/filter', searchLimiter, jobController.filterJobs)
 
 // GET /api/job/my-applications → Student checks their application statuses
 // MUST COME BEFORE /search/:query and /:id routes
+// Rate limited: Expensive query with multiple joins
 router.get(
   '/my-applications',
+  strictLimiter,
   roleMiddleware(['STUDENT']),
   jobController.getMyApplications
 )
@@ -54,7 +58,8 @@ router.get(
 router.get('/', jobController.listJobs)
 
 // GET /api/job/search/:query
-router.get('/search/:query', jobController.searchJobs)
+// Rate limited: Search operations can be expensive
+router.get('/search/:query', searchLimiter, jobController.searchJobs)
 
 // GET /api/job/:id
 router.get('/:id', jobController.getJobById)
@@ -62,39 +67,49 @@ router.get('/:id', jobController.getJobById)
 // ===================== HR ACCESS =====================
 
 // POST /api/job → HR creates job
+// Rate limited: Write operation
 router.post(
   '/',
+  writeLimiter,
   roleMiddleware(['EMPLOYER']),
   validate(createJobSchema),
   jobController.createJob
 )
 
 // PATCH /api/job/:id → HR updates their own job
+// Rate limited: Write operation with complex transaction
 router.patch(
   '/:id',
+  writeLimiter,
   roleMiddleware(['EMPLOYER']),
   validate(updateJobSchema),
   jobController.updateJob
 )
 
 // GET /api/job/:id/applyer → HR views applicants
+// Rate limited: Expensive query with multiple joins
 router.get(
   '/:id/applyer',
+  strictLimiter,
   roleMiddleware(['EMPLOYER']),
   jobController.getApplicants
 )
 
 // POST /api/job/:id/applyer → HR accepts/rejects an applicant
+// Rate limited: Write operation
 router.post(
   '/:id/applyer',
+  writeLimiter,
   roleMiddleware(['EMPLOYER']),
   validate(manageApplicationSchema),
   jobController.manageApplication
 )
 
 // DELETE /api/job/:id → Delete a job (Admin or HR owner)
+// Rate limited: Write operation with cascading deletes
 router.delete(
-  '/:id', 
+  '/:id',
+  writeLimiter,
   roleMiddleware(['ADMIN', 'EMPLOYER']), 
   jobController.deleteJob
 )
@@ -103,8 +118,10 @@ router.delete(
 // ===================== STUDENT ACCESS =====================
 
 // POST /api/job/:id → Student applies for a job
+// Rate limited: Write operation with resume creation
 router.post(
   '/:id',
+  writeLimiter,
   roleMiddleware(['STUDENT']),
   validate(applyJobSchema),
   jobController.applyToJob

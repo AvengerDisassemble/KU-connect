@@ -6,6 +6,7 @@ const express = require('express')
 const { authMiddleware } = require('../middlewares/authMiddleware')
 const { roleMiddleware } = require('../middlewares/roleMiddleware')
 const { asyncErrorHandler } = require('../middlewares/errorHandler')
+const { strictLimiter } = require('../middlewares/rateLimitMiddleware')
 const { PrismaClient } = require('../generated/prisma')
 
 const router = express.Router()
@@ -469,10 +470,10 @@ function getUserPermissions(role) {
   return permissions[role] || []
 }
 
-// Route definitions
-router.get('/me', authMiddleware, getUserProfile)
-router.get('/dashboard', authMiddleware, getDashboardData)
-router.get('/admin-only', authMiddleware, roleMiddleware(['ADMIN']), adminOnlyEndpoint)
-router.get('/employer-only', authMiddleware, roleMiddleware(['EMPLOYER']), employerOnlyEndpoint)
+// Route definitions - Rate limited to prevent DoS attacks
+router.get('/me', strictLimiter, authMiddleware, getUserProfile)
+router.get('/dashboard', strictLimiter, authMiddleware, getDashboardData)
+router.get('/admin-only', strictLimiter, authMiddleware, roleMiddleware(['ADMIN']), adminOnlyEndpoint)
+router.get('/employer-only', strictLimiter, authMiddleware, roleMiddleware(['EMPLOYER']), employerOnlyEndpoint)
 
 module.exports = router

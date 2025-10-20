@@ -9,6 +9,7 @@ const profileController = require('../../controllers/profileController')
 const { authMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
 const { validateUpdateProfile } = require('../../validators/profileValidator')
+const { strictLimiter, writeLimiter } = require('../../middlewares/rateLimitMiddleware')
 
 // Require authentication for all profile endpoints
 router.use(authMiddleware)
@@ -16,15 +17,18 @@ router.use(authMiddleware)
 // ===================== ADMIN ACCESS =====================
 
 // Admins can view all profiles
-router.get('/', roleMiddleware(['ADMIN']), profileController.listProfiles)
+// Rate limited: Expensive query returning many profiles
+router.get('/', strictLimiter, roleMiddleware(['ADMIN']), profileController.listProfiles)
 
 // ===================== INDIVIDUAL PROFILE ACCESS =====================
 
 // Admins or the profile owner can view a single profile
-router.get('/:userId', profileController.getProfile)
+// Rate limited: Multiple database joins for role-specific data
+router.get('/:userId', strictLimiter, profileController.getProfile)
 
 // Authenticated users can update their own profile
-router.patch('/', validateUpdateProfile, profileController.updateProfile)
+// Rate limited: Write operation
+router.patch('/', writeLimiter, validateUpdateProfile, profileController.updateProfile)
 
 module.exports = router
 
