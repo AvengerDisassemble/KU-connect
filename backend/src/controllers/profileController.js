@@ -16,6 +16,14 @@ async function updateProfile (req, res) {
     const { role, ...updateData } = req.body
     const userId = req.user.id
 
+    // Prevent email change at controller level - fail fast before database operations
+    if (updateData.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email cannot be changed. Please contact support.'
+      })
+    }
+
     const profile = await profileService.getProfileById(userId)
     if (!profile) {
       return res.status(404).json({
@@ -46,13 +54,6 @@ async function updateProfile (req, res) {
       return res.status(403).json({
         success: false,
         message: 'Role mismatch – cannot update profile'
-      })
-    }
-    // Prevent email change at controller level as well
-    if (updateData.email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email cannot be changed. Please contact support.'
       })
     }
 

@@ -50,7 +50,7 @@ async function createReport(req, res) {
       data: report
     })
   } catch (err) {
-    console.error('❌ Create report error:', err)
+    console.error('❌ Create report error:', err.message)
 
     // Handle known custom errors from service
     if (err.code === 'DUPLICATE_REPORT') {
@@ -104,7 +104,7 @@ async function listReports(req, res) {
       data: reports
     })
   } catch (err) {
-    console.error('❌ List reports error:', err)
+    console.error('❌ List reports error:', err.message)
     res.status(500).json({
       success: false,
       message: 'Failed to fetch job reports',
@@ -142,7 +142,7 @@ async function deleteReport(req, res) {
       data: deleted
     })
   } catch (err) {
-    console.error('❌ Delete report error:', err)
+    console.error('❌ Delete report error:', err.message)
     res.status(500).json({
       success: false,
       message: 'Failed to delete job report',
