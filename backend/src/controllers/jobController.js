@@ -20,7 +20,7 @@ async function listJobs(req, res) {
       data: result
     })
   } catch (error) {
-    console.error('List jobs error:', error)
+    console.error('List jobs error:', error.message)
     res.status(500).json({
       success: false,
       message: 'Failed to list jobs'
@@ -42,7 +42,7 @@ async function searchJobs(req, res) {
       data: result
     })
   } catch (error) {
-    console.error('Search jobs error:', error)
+    console.error('Search jobs error:', error.message)
     res.status(500).json({
       success: false,
       message: 'Failed to search jobs'
@@ -71,7 +71,7 @@ async function getJobById(req, res) {
       data: job
     })
   } catch (error) {
-    console.error('Get job by ID error:', error)
+    console.error('Get job by ID error:', error.message)
     res.status(500).json({
       success: false,
       message: 'Failed to get job'
@@ -108,7 +108,7 @@ async function createJob(req, res) {
       data: job
     })
   } catch (error) {
-    console.error('Create job error:', error)
+    console.error('Create job error:', error.message)
     res.status(error.status || 500).json({
       success: false,
       message: error.message || 'Failed to create job'
@@ -151,7 +151,7 @@ async function updateJob(req, res) {
       data: updated
     })
   } catch (error) {
-    console.error('Update job error:', error)
+    console.error('Update job error:', error.message)
     res.status(error.status || 500).json({
       success: false,
       message: error.message || 'Failed to update job'
@@ -191,7 +191,7 @@ async function applyToJob(req, res) {
       data: application
     })
   } catch (error) {
-    console.error('Apply to job error:', error)
+    console.error('Apply to job error:', error.message)
     res.status(error.status || 500).json({
       success: false,
       message: error.message || 'Failed to apply for job'
@@ -233,7 +233,7 @@ async function getApplicants(req, res) {
       data: applicants
     })
   } catch (error) {
-    console.error('Get applicants error:', error)
+    console.error('Get applicants error:', error.message)
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve applicants'
@@ -283,7 +283,7 @@ async function manageApplication(req, res) {
       data: result
     })
   } catch (error) {
-    console.error('Manage application error:', error)
+    console.error('Manage application error:', error.message)
     res.status(error.status || 500).json({
       success: false,
       message: error.message || 'Failed to update application status'
@@ -308,7 +308,7 @@ async function deleteJob (req, res) {
       data: deleted
     })
   } catch (error) {
-    console.error('Delete job error:', error)
+    console.error('Delete job error:', error.message)
     res.status(error.status || 500).json({
       success: false,
       message: error.message || 'Failed to delete job'
@@ -329,7 +329,7 @@ async function filterJobs (req, res) {
       data 
     })
   } catch (err) {
-    console.error('Filter jobs error:', err)
+    console.error('Filter jobs error:', err.message)
     res.status(500).json({
       success: false,
       message: 'Failed to filter jobs'
@@ -362,7 +362,7 @@ async function getMyApplications (req, res) {
       data: applications
     })
   } catch (error) {
-    console.error('Get my applications error:', error)
+    console.error('Get my applications error:', error.message)
     res.status(error.status || 500).json({
       success: false,
       message: error.message || 'Failed to retrieve applications'
