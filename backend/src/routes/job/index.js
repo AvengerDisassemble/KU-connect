@@ -54,8 +54,10 @@ router.get(
   jobController.getMyApplications
 )
 
-// GET /api/jobs?page=1&limit=5
-router.get('/', jobController.listJobs)
+// POST /api/job/list - List jobs with filters (accepts sensitive data in body)
+// SECURITY: Changed from GET to POST to prevent sensitive filter data (minSalary, maxSalary)
+// from being exposed in URLs, logs, browser history, and referrer headers
+router.post('/list', jobController.listJobs)
 
 // GET /api/job/search/:query
 // Rate limited: Search operations can be expensive
