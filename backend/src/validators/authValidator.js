@@ -8,7 +8,9 @@
  * @returns {boolean} True if valid email format
  */
 function isValidEmail (email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  // Use a more efficient regex pattern that avoids ReDoS vulnerability
+  // This pattern is simpler and doesn't have nested quantifiers that can cause catastrophic backtracking
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   return emailRegex.test(email)
 }
 
