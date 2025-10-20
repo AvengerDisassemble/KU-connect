@@ -195,13 +195,14 @@ describe('Job Routes (Integration)', () => {
   })
 
   // ───────────────────────────────
-  // GET /api/job
+  // POST /api/job/list - List jobs with filters
   // ───────────────────────────────
-  describe('GET /api/job', () => {
+  describe('POST /api/job/list', () => {
     it('should return paginated jobs list', async () => {
       const res = await request(app)
-        .get('/api/job?page=1&pageSize=1')
+        .post('/api/job/list')
         .set('Authorization', studentToken) // All job routes require auth
+        .send({ page: 1, pageSize: 1 }) // Send filters in body instead of query
       expect(res.status).toBe(200)
       expect(res.body.success).toBe(true)
       expect(Array.isArray(res.body.data.items)).toBe(true)
