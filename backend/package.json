@@ -11,6 +11,9 @@
   },
   "scripts": {
     "test": "jest",
+    "test:quiet": "jest --silent",
+    "test:summary": "jest --verbose=false",
+    "test:failures": "jest --onlyFailures --verbose=false",
     "start": "node server.js"
   },
   "dependencies": {

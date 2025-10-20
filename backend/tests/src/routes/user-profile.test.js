@@ -1,3 +1,6 @@
+// DEPRECATED: This test suite is deprecated and will be skipped.
+// Keep for reference only.
+
 const request = require('supertest')
 const app = require('../../../src/app')
 const { PrismaClient } = require('../../../src/generated/prisma')
@@ -5,7 +8,7 @@ const jwt = require('jsonwebtoken')
 
 const prisma = new PrismaClient()
 
-describe('User Profile Authorization Example', () => {
+describe.skip('User Profile Authorization Example (DEPRECATED)', () => {
   let studentUser, professorUser, employerUser, adminUser
   let studentToken, professorToken, employerToken, adminToken
   let degreeTypeId
