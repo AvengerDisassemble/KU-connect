@@ -4,6 +4,8 @@
  */
 
 const profileService = require('../services/profileService')
+const storageProvider = require('../services/storageFactory')
+const prisma = require('../models/prisma')
 
 /**
  * Updates an existing profile
@@ -140,8 +142,119 @@ async function listProfiles (req, res) {
   }
 }
 
+/**
+ * Upload user avatar
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
+async function uploadAvatar(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      })
+    }
+
+    const userId = req.user.id
+
+    // Fetch current user to check for existing avatar
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { avatarKey: true }
+    })
+
+    // Best-effort delete old avatar if exists
+    if (user && user.avatarKey) {
+      try {
+        await storageProvider.deleteFile(user.avatarKey)
+      } catch (error) {
+        console.error('Failed to delete old avatar:', error.message)
+        // Don't fail the request if old file deletion fails
+      }
+    }
+
+    // Upload new avatar
+    const fileKey = await storageProvider.uploadFile(
+      req.file.buffer,
+      req.file.originalname,
+      req.file.mimetype,
+      userId,
+      { prefix: 'avatars' }
+    )
+
+    // Update user record
+    await prisma.user.update({
+      where: { id: userId },
+      data: { avatarKey: fileKey }
+    })
+
+    res.status(200).json({
+      success: true,
+      message: 'Avatar uploaded successfully',
+      data: { fileKey }
+    })
+  } catch (error) {
+    console.error('Avatar upload error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload avatar'
+    })
+  }
+}
+
+/**
+ * Get avatar URL for a user
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
+async function getAvatarUrl(req, res) {
+  try {
+    const requestedUserId = req.params.userId
+
+    const user = await prisma.user.findUnique({
+      where: { id: requestedUserId },
+      select: { avatarKey: true }
+    })
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      })
+    }
+
+    if (!user.avatarKey) {
+      return res.status(404).json({
+        success: false,
+        message: 'No avatar found for this user',
+        data: { url: null }
+      })
+    }
+
+    const url = await storageProvider.getFileUrl(user.avatarKey)
+
+    res.status(200).json({
+      success: true,
+      message: 'Avatar URL retrieved successfully',
+      data: { url }
+    })
+  } catch (error) {
+    console.error('Get avatar URL error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get avatar URL'
+    })
+  }
+}
+
 module.exports = {
   updateProfile,
   getProfile,
-  listProfiles
+  listProfiles,
+  uploadAvatar,
+  getAvatarUrl
 }
+

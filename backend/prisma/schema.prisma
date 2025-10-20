@@ -53,6 +53,7 @@ model User {
   username     String?        @unique
   role         Role
   verified     Boolean        @default(false)
+  avatarKey    String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   professor    Professor?
@@ -91,8 +92,10 @@ model Student {
   degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
   degreeTypeId           Int
   address                String
-  gpa                    Float?          
-  expectedGraduationYear Int?             
+  gpa                    Float?
+  expectedGraduationYear Int?
+  resumeKey              String?
+  transcriptKey          String?
   interests              StudentInterest[]
   resumes                Resume[]
   createdAt              DateTime          @default(now())
@@ -106,7 +109,8 @@ model HR {
   address     String
   industry    Industry    @default(OTHER)
   companySize CompanySize @default(ONE_TO_TEN)
-  website     String?     
+  website     String?
+  verificationDocKey String?
   user        User        @relation(fields: [userId], references: [id])
   jobs        Job[]
   createdAt   DateTime    @default(now())
