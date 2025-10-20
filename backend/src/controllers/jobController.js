@@ -9,10 +9,23 @@ const jobService = require('../services/jobService')
 /**
  * List jobs with pagination (public)
  * @route GET /api/job
+ * 
+ * SECURITY NOTE: Sensitive filters (minSalary, maxSalary) are rejected from GET requests
+ * to prevent exposure via logs, browser history, and referrer headers.
  */
 async function listJobs(req, res) {
   try {
     const filters = req.query
+    
+    // SECURITY: Reject sensitive fields from GET/query parameters
+    // These fields should only be provided via POST with request body
+    if (filters.minSalary !== undefined || filters.maxSalary !== undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sensitive filter fields (minSalary, maxSalary) cannot be provided via query parameters. Use POST with request body instead.'
+      })
+    }
+    
     const result = await jobService.listJobs(filters)
     res.status(200).json({
       success: true,

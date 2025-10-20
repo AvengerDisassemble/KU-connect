@@ -8,6 +8,10 @@ const prisma = require('../models/prisma')
 /**
  * Builds a Prisma where clause from filters
  * Why: normalize inputs to avoid runtime errors and support flexible search
+ * 
+ * SECURITY NOTE: 'filters' must not contain sensitive fields (e.g., minSalary, maxSalary) 
+ * taken from GET/query params. These should only be provided via POST and body.
+ * 
  * @param {object} filters
  * @returns {object}
  */
@@ -55,6 +59,13 @@ function buildWhere (filters = {}) {
 /**
  * Lists jobs with pagination
  * Why: browse page requests 5 at a time
+ * 
+ * SECURITY NOTE:
+ *    Filters containing sensitive information (like minSalary, maxSalary)
+ *    MUST be provided via HTTP POST and the request body, NOT as URL query 
+ *    parameters. Passing sensitive info in GET/URL query params leaks data via
+ *    logs, referer, browser history, and proxies. See: CodeQL warning.
+ * 
  * @param {object} filters includes page/limit/keyword, etc.
  * @returns {Promise<{items:Array, total:number, page:number, limit:number}>}
  */
