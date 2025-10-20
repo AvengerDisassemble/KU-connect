@@ -35,8 +35,19 @@ function buildWhere (filters = {}) {
   if (jobType) where.jobType = jobType
   if (tags.length) where.tags = { some: { name: { in: tags } } }
 
-  if (filters.minSalary != null) where.minSalary = { gte: Number(filters.minSalary) }
-  if (filters.maxSalary != null) where.maxSalary = { lte: Number(filters.maxSalary) }
+  // Validate and convert salary filters safely
+  if (filters.minSalary != null) {
+    const minSalary = Number(filters.minSalary)
+    if (!isNaN(minSalary) && minSalary >= 0) {
+      where.minSalary = { gte: minSalary }
+    }
+  }
+  if (filters.maxSalary != null) {
+    const maxSalary = Number(filters.maxSalary)
+    if (!isNaN(maxSalary) && maxSalary >= 0) {
+      where.maxSalary = { lte: maxSalary }
+    }
+  }
 
   return where
 }
