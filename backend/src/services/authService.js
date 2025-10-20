@@ -175,7 +175,6 @@ async function refreshAccessToken (refreshToken) {
   if (!storedToken || storedToken.expiresAt < new Date()) {
     throw new Error('Refresh token expired or invalid')
   }
-
   // Generate new access token
   const newAccessToken = generateAccessToken({
     id: storedToken.user.id,
