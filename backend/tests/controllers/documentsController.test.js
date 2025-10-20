@@ -22,23 +22,32 @@ describe('Documents Controller', () => {
   let studentUserId, hrUserId, adminUserId
 
   beforeAll(async () => {
-    // Create test users
-    const studentUser = await prisma.user.create({
-      data: {
-        name: 'Test',
-        surname: 'Student',
-        email: 'student@test.com',
-        username: 'teststudent',
-        password: 'hashedpass',
-        role: 'STUDENT',
-        verified: true
+    try {
+      // Create or get a degreeType for testing
+      let degreeType = await prisma.degreeType.findFirst()
+      if (!degreeType) {
+        degreeType = await prisma.degreeType.create({
+          data: {
+            name: 'Test Degree for Upload Tests'
+          }
+        })
       }
-    })
-    studentUserId = studentUser.id
 
-    // Create student profile
-    const degreeType = await prisma.degreeType.findFirst()
-    if (degreeType) {
+      // Create test users
+      const studentUser = await prisma.user.create({
+        data: {
+          name: 'Test',
+          surname: 'Student',
+          email: `student-${Date.now()}@test.com`,
+          username: `teststudent-${Date.now()}`,
+          password: 'hashedpass',
+          role: 'STUDENT',
+          verified: true
+        }
+      })
+      studentUserId = studentUser.id
+
+      // Create student profile
       await prisma.student.create({
         data: {
           userId: studentUserId,
@@ -46,64 +55,83 @@ describe('Documents Controller', () => {
           address: '123 Test St'
         }
       })
+
+      const hrUser = await prisma.user.create({
+        data: {
+          name: 'Test',
+          surname: 'HR',
+          email: `hr-${Date.now()}@test.com`,
+          username: `testhr-${Date.now()}`,
+          password: 'hashedpass',
+          role: 'EMPLOYER',
+          verified: true
+        }
+      })
+      hrUserId = hrUser.id
+
+      // Create HR profile
+      await prisma.hR.create({
+        data: {
+          userId: hrUserId,
+          companyName: 'Test Company',
+          address: '456 Business Ave'
+        }
+      })
+
+      const adminUser = await prisma.user.create({
+        data: {
+          name: 'Test',
+          surname: 'Admin',
+          email: `admin-${Date.now()}@test.com`,
+          username: `testadmin-${Date.now()}`,
+          password: 'hashedpass',
+          role: 'ADMIN',
+          verified: true
+        }
+      })
+      adminUserId = adminUser.id
+
+      await prisma.admin.create({
+        data: { userId: adminUserId }
+      })
+
+      // Generate tokens using the same secret as the auth middleware
+      const secret = process.env.ACCESS_TOKEN_SECRET || 'your-access-token-secret'
+      studentToken = jwt.sign({ id: studentUserId, role: 'STUDENT' }, secret, { expiresIn: '1h' })
+      hrToken = jwt.sign({ id: hrUserId, role: 'EMPLOYER' }, secret, { expiresIn: '1h' })
+      adminToken = jwt.sign({ id: adminUserId, role: 'ADMIN' }, secret, { expiresIn: '1h' })
+    } catch (error) {
+      console.error('Setup error:', error)
+      throw error
     }
-
-    const hrUser = await prisma.user.create({
-      data: {
-        name: 'Test',
-        surname: 'HR',
-        email: 'hr@test.com',
-        username: 'testhr',
-        password: 'hashedpass',
-        role: 'EMPLOYER',
-        verified: true
-      }
-    })
-    hrUserId = hrUser.id
-
-    // Create HR profile
-    await prisma.hR.create({
-      data: {
-        userId: hrUserId,
-        companyName: 'Test Company',
-        address: '456 Business Ave'
-      }
-    })
-
-    const adminUser = await prisma.user.create({
-      data: {
-        name: 'Test',
-        surname: 'Admin',
-        email: 'admin@test.com',
-        username: 'testadmin',
-        password: 'hashedpass',
-        role: 'ADMIN',
-        verified: true
-      }
-    })
-    adminUserId = adminUser.id
-
-    await prisma.admin.create({
-      data: { userId: adminUserId }
-    })
-
-    // Generate tokens
-    studentToken = jwt.sign({ id: studentUserId, role: 'STUDENT' }, process.env.JWT_SECRET || 'test-secret')
-    hrToken = jwt.sign({ id: hrUserId, role: 'EMPLOYER' }, process.env.JWT_SECRET || 'test-secret')
-    adminToken = jwt.sign({ id: adminUserId, role: 'ADMIN' }, process.env.JWT_SECRET || 'test-secret')
   })
 
   afterAll(async () => {
-    // Cleanup test data
-    await prisma.student.deleteMany({ where: { userId: studentUserId } })
-    await prisma.hR.deleteMany({ where: { userId: hrUserId } })
-    await prisma.admin.deleteMany({ where: { userId: adminUserId } })
-    await prisma.user.deleteMany({
-      where: {
-        id: { in: [studentUserId, hrUserId, adminUserId] }
+    try {
+      // Cleanup test data
+      if (studentUserId) {
+        await prisma.student.deleteMany({ where: { userId: studentUserId } })
       }
-    })
-    await prisma.$disconnect()
+      if (hrUserId) {
+        await prisma.hR.deleteMany({ where: { userId: hrUserId } })
+      }
+      if (adminUserId) {
+        await prisma.admin.deleteMany({ where: { userId: adminUserId } })
+      }
+      
+      const userIdsToDelete = [studentUserId, hrUserId, adminUserId].filter(id => id !== undefined)
+      if (userIdsToDelete.length > 0) {
+        await prisma.user.deleteMany({
+          where: {
+            id: { in: userIdsToDelete }
+          }
+        })
+      }
+    } catch (error) {
+      console.error('Cleanup error:', error)
+    } finally {
+      await prisma.$disconnect()
+    }
   })
 
   describe('POST /api/documents/resume', () => {

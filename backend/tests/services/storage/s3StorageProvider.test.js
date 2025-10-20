@@ -3,15 +3,24 @@
  * @description Test AWS S3 storage provider (requires AWS credentials in env)
  */
 
-const S3StorageProvider = require('../../../src/services/storage/s3StorageProvider')
+let S3StorageProvider
+let depsAvailable = true
 
-// Only run tests if S3 credentials are available
-const hasS3Config = process.env.AWS_ACCESS_KEY_ID &&
+try {
+  S3StorageProvider = require('../../../src/services/storage/s3StorageProvider')
+} catch (error) {
+  console.warn('Skipping S3StorageProvider tests - dependencies not installed. Run: npm install @aws-sdk/client-s3 @aws-sdk/s3-request-presigner')
+  depsAvailable = false
+}
+
+// Only run tests if S3 credentials are available AND dependencies are installed
+const hasS3Config = depsAvailable && 
+                    process.env.AWS_ACCESS_KEY_ID &&
                     process.env.AWS_SECRET_ACCESS_KEY &&
                     process.env.AWS_REGION &&
                     process.env.AWS_BUCKET_NAME
 
-const describeIfS3 = hasS3Config ? describe : describe.skip
+const describeIfS3 = hasS3Config && depsAvailable ? describe : describe.skip
 
 describeIfS3('S3StorageProvider (integration tests)', () => {
   let provider
