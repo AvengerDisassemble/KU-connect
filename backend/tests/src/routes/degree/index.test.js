@@ -6,6 +6,7 @@
 const request = require('supertest')
 const prisma = require('../../../../src/models/prisma')
 const app = require('../../../../src/app')
+const { TEST_DEGREE_TYPES } = require('../../utils/testHelpers')
 
 describe('Degree Routes', () => {
   /**
@@ -14,15 +15,15 @@ describe('Degree Routes', () => {
   beforeAll(async () => {
     // Ensure at least one degree type exists
     await prisma.degreeType.upsert({
-      where: { name: 'Bachelor' },
+      where: { name: TEST_DEGREE_TYPES.BACHELOR },
       update: {},
-      create: { name: 'Bachelor' }
+      create: { name: TEST_DEGREE_TYPES.BACHELOR }
     })
 
     await prisma.degreeType.upsert({
-      where: { name: 'Master' },
+      where: { name: TEST_DEGREE_TYPES.MASTER },
       update: {},
-      create: { name: 'Master' }
+      create: { name: TEST_DEGREE_TYPES.MASTER }
     })
   })
 

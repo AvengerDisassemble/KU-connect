@@ -17,7 +17,7 @@ Object.keys(require.cache).forEach(key => {
 })
 
 const app = require('../../../../src/app')
-const jwt = require('jsonwebtoken')
+const { createTestToken, TEST_DEGREE_TYPES, TEST_EMAILS, TEST_COMPANY_INFO } = require('../../utils/testHelpers')
 
 describe('Student Applications (UC-S09: Check Application Status)', () => {
   let degreeType
@@ -32,19 +32,19 @@ describe('Student Applications (UC-S09: Check Application Status)', () => {
   beforeAll(async () => {
     // Use upsert for degreeType to handle race conditions
     degreeType = await prisma.degreeType.upsert({
-      where: { name: 'Bachelor' },
+      where: { name: TEST_DEGREE_TYPES.BACHELOR },
       update: {},
-      create: { name: 'Bachelor' }
+      create: { name: TEST_DEGREE_TYPES.BACHELOR }
     })
 
     // Create students (using unique emails to avoid conflicts with other test files)
     student = await prisma.user.upsert({
-      where: { email: 'student-myapp@test.com' },
+      where: { email: TEST_EMAILS.STUDENT_MYAPP },
       update: {},
       create: {
         name: 'Student',
         surname: 'MyApp',
-        email: 'student-myapp@test.com',
+        email: TEST_EMAILS.STUDENT_MYAPP,
         password: 'Pass',
         role: 'STUDENT',
         student: {
@@ -60,12 +60,12 @@ describe('Student Applications (UC-S09: Check Application Status)', () => {
     })
 
     student2 = await prisma.user.upsert({
-      where: { email: 'student2-myapp@test.com' },
+      where: { email: TEST_EMAILS.STUDENT2_MYAPP },
       update: {},
       create: {
         name: 'Student2',
         surname: 'MyApp',
-        email: 'student2-myapp@test.com',
+        email: TEST_EMAILS.STUDENT2_MYAPP,
         password: 'Pass',
         role: 'STUDENT',
         student: {
@@ -82,20 +82,20 @@ describe('Student Applications (UC-S09: Check Application Status)', () => {
 
     // Create HR (using unique email to avoid conflicts with other test files)
     hr = await prisma.user.upsert({
-      where: { email: 'hr-myapp@test.com' },
+      where: { email: TEST_EMAILS.HR_MYAPP },
       update: {},
       create: {
         name: 'HR',
         surname: 'MyApp',
-        email: 'hr-myapp@test.com',
+        email: TEST_EMAILS.HR_MYAPP,
         password: 'Pass',
         role: 'EMPLOYER',
         hr: {
           create: {
-            companyName: 'TestCorp MyApp',
-            address: 'Bangkok',
-            industry: 'IT_SOFTWARE',
-            companySize: 'ELEVEN_TO_FIFTY'
+            companyName: TEST_COMPANY_INFO.NAME + ' MyApp',
+            address: TEST_COMPANY_INFO.ADDRESS,
+            industry: TEST_COMPANY_INFO.INDUSTRY,
+            companySize: TEST_COMPANY_INFO.SIZE
           }
         }
       },
@@ -148,9 +148,8 @@ describe('Student Applications (UC-S09: Check Application Status)', () => {
     })
 
     // Generate tokens (use 'id' not 'userId', and include 'Bearer ' prefix)
-    const secret = process.env.ACCESS_TOKEN_SECRET
-    studentToken = `Bearer ${jwt.sign({ id: student.id, role: student.role }, secret)}`
-    student2Token = `Bearer ${jwt.sign({ id: student2.id, role: student2.role }, secret)}`
+    studentToken = createTestToken({ id: student.id, role: student.role })
+    student2Token = createTestToken({ id: student2.id, role: student2.role })
   })
 
   /**
@@ -386,8 +385,7 @@ describe('Student Applications (UC-S09: Check Application Status)', () => {
     })
 
     it('should only allow STUDENT role', async () => {
-      const secret = process.env.ACCESS_TOKEN_SECRET
-      const hrToken = `Bearer ${jwt.sign({ id: hr.id, role: 'EMPLOYER' }, secret)}`
+      const hrToken = createTestToken({ id: hr.id, role: 'EMPLOYER' })
 
       const response = await request(app)
         .get('/api/job/my-applications')

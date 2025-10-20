@@ -5,7 +5,7 @@
 const request = require('supertest')
 const prisma = require('../../../../src/models/prisma')
 const app = require('../../../../src/app')
-const jwt = require('jsonwebtoken')
+const { cleanupDatabase, createTestToken, TEST_DEGREE_TYPES } = require('../../utils/testHelpers')
 
 jest.setTimeout(30000)
 
@@ -16,35 +16,16 @@ let studentToken, hrToken, adminToken
 beforeAll(async () => {
   process.env.ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'your-access-token-secret'
 
-  // Cleanup in proper order - order matters for foreign keys
-  await prisma.jobReport.deleteMany()
-  await prisma.studentInterest.deleteMany()
-  await prisma.application.deleteMany()
-  await prisma.requirement.deleteMany()
-  await prisma.qualification.deleteMany()
-  await prisma.responsibility.deleteMany()
-  await prisma.benefit.deleteMany()
-  await prisma.job.deleteMany()
-  await prisma.resume.deleteMany()
-  await prisma.student.deleteMany()
-  await prisma.hR.deleteMany()
-  await prisma.admin.deleteMany()
-  await prisma.professor.deleteMany()
-  await prisma.refreshToken.deleteMany()
-  await prisma.user.deleteMany()
-  await prisma.tag.deleteMany()
-  await prisma.degreeType.deleteMany()
+  await cleanupDatabase(prisma, { logSuccess: false })
 
   // Create required DegreeType
   degreeType = await prisma.degreeType.create({
     data: {
-      name: 'Bachelor of Testing'
+      name: TEST_DEGREE_TYPES.BACHELOR
     }
   })
 
   // Create test users with auth tokens
-  const secret = process.env.ACCESS_TOKEN_SECRET
-
   adminUser = await prisma.user.create({
     data: {
       name: 'Admin',
@@ -55,7 +36,7 @@ beforeAll(async () => {
       admin: { create: {} }
     }
   })
-  adminToken = `Bearer ${jwt.sign({ id: adminUser.id, role: 'ADMIN' }, secret)}`
+  adminToken = createTestToken({ id: adminUser.id, role: 'ADMIN' })
 
   studentUser = await prisma.user.create({
     data: {
@@ -74,7 +55,7 @@ beforeAll(async () => {
     },
     include: { student: true }
   })
-  studentToken = `Bearer ${jwt.sign({ id: studentUser.id, role: 'STUDENT' }, secret)}`
+  studentToken = createTestToken({ id: studentUser.id, role: 'STUDENT' })
 
   hrUser = await prisma.user.create({
     data: {
@@ -94,29 +75,11 @@ beforeAll(async () => {
     },
     include: { hr: true }
   })
-  hrToken = `Bearer ${jwt.sign({ id: hrUser.id, role: 'EMPLOYER' }, secret)}`
+  hrToken = createTestToken({ id: hrUser.id, role: 'EMPLOYER' })
 })
 
 afterAll(async () => {
-  // Cleanup in proper order
-  await prisma.jobReport.deleteMany()
-  await prisma.studentInterest.deleteMany()
-  await prisma.application.deleteMany()
-  await prisma.requirement.deleteMany()
-  await prisma.qualification.deleteMany()
-  await prisma.responsibility.deleteMany()
-  await prisma.benefit.deleteMany()
-  await prisma.job.deleteMany()
-  await prisma.resume.deleteMany()
-  await prisma.student.deleteMany()
-  await prisma.hR.deleteMany()
-  await prisma.admin.deleteMany()
-  await prisma.professor.deleteMany()
-  await prisma.refreshToken.deleteMany()
-  await prisma.user.deleteMany()
-  await prisma.tag.deleteMany()
-  await prisma.degreeType.deleteMany()
-  
+  await cleanupDatabase(prisma)
   await prisma.$disconnect()
 })
 
@@ -194,7 +157,7 @@ describe('Profile routes (integration)', () => {
         .set('Authorization', studentToken)
         .send({ email: 'newemail@test.com', gpa: 3.9 })
         .expect(400)
-      expect(res.body.message).toMatch(/email cannot be changed/i)
+      expect(res.body.message).toMatch(/email.*not allowed/i)
     })
   })
 })

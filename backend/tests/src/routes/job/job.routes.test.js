@@ -17,7 +17,7 @@ Object.keys(require.cache).forEach(key => {
 })
 
 const app = require('../../../../src/app')
-const jwt = require('jsonwebtoken')
+const { createTestToken, TEST_DEGREE_TYPES } = require('../../utils/testHelpers')
 
 jest.setTimeout(30000) // give DB setup more time
 
@@ -36,9 +36,9 @@ describe('Job Routes (Integration)', () => {
     
     // Use upsert for degreeType to handle race conditions
     degreeType = await prisma.degreeType.upsert({
-      where: { name: 'Bachelor' },
+      where: { name: TEST_DEGREE_TYPES.BACHELOR },
       update: {},
-      create: { name: 'Bachelor' }
+      create: { name: TEST_DEGREE_TYPES.BACHELOR }
     })
 
     // Use upsert for atomic user creation to avoid race conditions
@@ -173,11 +173,10 @@ describe('Job Routes (Integration)', () => {
     }
 
     // --- Create tokens ---
-    const secret = process.env.ACCESS_TOKEN_SECRET
-    adminToken = `Bearer ${jwt.sign({ id: admin.id, role: 'ADMIN' }, secret)}`
-    hrToken = `Bearer ${jwt.sign({ id: hr.id, role: 'EMPLOYER', hr: { id: hr.hr.id } }, secret)}`
-    hr2Token = `Bearer ${jwt.sign({ id: hr2.id, role: 'EMPLOYER', hr: { id: hr2.hr.id } }, secret)}`
-    studentToken = `Bearer ${jwt.sign({ id: student.id, role: 'STUDENT' }, secret)}`
+    adminToken = createTestToken({ id: admin.id, role: 'ADMIN' })
+    hrToken = createTestToken({ id: hr.id, role: 'EMPLOYER', hr: { id: hr.hr.id } })
+    hr2Token = createTestToken({ id: hr2.id, role: 'EMPLOYER', hr: { id: hr2.hr.id } })
+    studentToken = createTestToken({ id: student.id, role: 'STUDENT' })
   })
 
   // Clean up applications between tests to avoid duplicates

@@ -8,10 +8,9 @@ process.env.ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'testsecret
 
 const request = require('supertest')
 const express = require('express')
-const jwt = require('jsonwebtoken')
-const { execSync } = require('child_process')
 // Use the same Prisma instance as the application to avoid cache issues
 const prisma = require('../../../../src/models/prisma')
+const { createTestToken, TEST_DEGREE_TYPES, cleanupDatabase } = require('../../utils/testHelpers')
 
 // Clear the require cache for auth-related modules to ensure they pick up the env var
 Object.keys(require.cache).forEach(key => {
@@ -20,28 +19,16 @@ Object.keys(require.cache).forEach(key => {
   }
 })
 
-function tokenFor (payload) {
-  return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET || 'testsecret', { algorithm: 'HS256' })
-}
-
-async function cleanDb () {
-  await prisma.$executeRawUnsafe('PRAGMA foreign_keys = OFF;')
-  const tables = await prisma.$queryRawUnsafe(`
-    SELECT name FROM sqlite_master
-    WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN ('_prisma_migrations')
-  `)
-  for (const { name } of tables) {
-    await prisma.$executeRawUnsafe(`DELETE FROM "${name}";`)
-  }
-  await prisma.$executeRawUnsafe('PRAGMA foreign_keys = ON;')
-}
+// Token creation is now handled by createTestToken utility from testHelpers
+// Database cleanup is now handled by cleanupDatabase utility from testHelpers
+// This maintains backward compatibility while using the shared function
 
 async function seedBase () {
   // Create a degree type for student (or use existing) - use upsert to handle race conditions
   let degreeType = await prisma.degreeType.upsert({
-    where: { name: 'Bachelor' },
+    where: { name: TEST_DEGREE_TYPES.BACHELOR },
     update: {},
-    create: { name: 'Bachelor' }
+    create: { name: TEST_DEGREE_TYPES.BACHELOR }
   })
 
   // Use upsert for atomic user creation to avoid race conditions
@@ -176,16 +163,16 @@ beforeAll(async () => {
   app.use('/api/job', require('../../../../src/routes/job'))
   
   // Clean and seed once for all tests
-  await cleanDb()
+  await cleanupDatabase(prisma, { logSuccess: false })
   
   seeded = await seedBase()
   
   // Generate tokens for all users
-  adminToken = 'Bearer ' + tokenFor({ id: seeded.admin.id, role: 'ADMIN' })
-  hrToken = 'Bearer ' + tokenFor({ id: seeded.hr.id, role: 'EMPLOYER', hr: { id: seeded.hr.hr.id } })
-  student1Token = 'Bearer ' + tokenFor({ id: seeded.student1.id, role: 'STUDENT' })
-  student2Token = 'Bearer ' + tokenFor({ id: seeded.student2.id, role: 'STUDENT' })
-  student3Token = 'Bearer ' + tokenFor({ id: seeded.student3.id, role: 'STUDENT' })
+  adminToken = createTestToken({ id: seeded.admin.id, role: 'ADMIN' })
+  hrToken = createTestToken({ id: seeded.hr.id, role: 'EMPLOYER', hr: { id: seeded.hr.hr.id } })
+  student1Token = createTestToken({ id: seeded.student1.id, role: 'STUDENT' })
+  student2Token = createTestToken({ id: seeded.student2.id, role: 'STUDENT' })
+  student3Token = createTestToken({ id: seeded.student3.id, role: 'STUDENT' })
 })
 
 beforeEach(async () => {

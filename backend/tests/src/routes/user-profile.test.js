@@ -2,6 +2,7 @@ const request = require('supertest')
 const app = require('../../../src/app')
 const { PrismaClient } = require('../../../src/generated/prisma')
 const jwt = require('jsonwebtoken')
+const { cleanupDatabase } = require('../utils/testHelpers')
 
 const prisma = new PrismaClient()
 
@@ -11,31 +12,7 @@ describe('User Profile Authorization Example', () => {
   let degreeTypeId
 
   beforeAll(async () => {
-    try {
-      // Proper cleanup order respecting foreign keys
-      await prisma.application.deleteMany()
-      await prisma.studentInterest.deleteMany()
-      await prisma.jobReport.deleteMany()
-      await prisma.requirement.deleteMany()
-      await prisma.qualification.deleteMany()
-      await prisma.responsibility.deleteMany()
-      await prisma.benefit.deleteMany()
-      await prisma.job.deleteMany()
-      await prisma.resume.deleteMany()
-      await prisma.refreshToken.deleteMany()
-      await prisma.student.deleteMany()
-      await prisma.professor.deleteMany()
-      await prisma.admin.deleteMany()
-      await prisma.hR.deleteMany()
-      await prisma.user.deleteMany()
-      await prisma.tag.deleteMany()
-      await prisma.degreeType.deleteMany()
-      
-      console.log('Complete database cleanup completed successfully')
-    } catch (resetError) {
-      console.log('Database cleanup error:', resetError.message)
-      throw resetError
-    }
+    await cleanupDatabase(prisma)
     
     // Create a degree type for testing
     const degreeType = await prisma.degreeType.create({
@@ -186,28 +163,8 @@ describe('User Profile Authorization Example', () => {
   }
 
   afterAll(async () => {
-    // Clean up test data - delete in correct order to avoid foreign key constraints
-    try {
-      await prisma.application.deleteMany()
-      await prisma.studentInterest.deleteMany()
-      await prisma.jobReport.deleteMany()
-      await prisma.requirement.deleteMany()
-      await prisma.qualification.deleteMany()
-      await prisma.responsibility.deleteMany()
-      await prisma.benefit.deleteMany()
-      await prisma.job.deleteMany()
-      await prisma.resume.deleteMany()
-      await prisma.refreshToken.deleteMany()
-      await prisma.student.deleteMany()
-      await prisma.professor.deleteMany()
-      await prisma.admin.deleteMany()
-      await prisma.hR.deleteMany()
-      await prisma.user.deleteMany()
-      await prisma.tag.deleteMany()
-      await prisma.degreeType.deleteMany()
-    } catch (error) {
-      console.log('Cleanup error:', error.message)
-    }
+    // Clean up test data using shared cleanup function
+    await cleanupDatabase(prisma)
     await prisma.$disconnect()
   })
 

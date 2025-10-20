@@ -1,40 +1,14 @@
 const request = require('supertest')
 const app = require('../../src/app')
 const { PrismaClient } = require('../../src/generated/prisma')
+const { cleanupDatabase } = require('./utils/testHelpers')
 
 const prisma = new PrismaClient()
 
 describe('Authentication Endpoints', () => {
   beforeAll(async () => {
-    // Clean up any existing test data - delete in correct order to avoid foreign key constraints
-    // 1. Delete applications first (they depend on jobs and students)
-    await prisma.application.deleteMany()
-    // 2. Delete job-related records (they depend on jobs)
-    await prisma.studentInterest.deleteMany()
-    await prisma.jobReport.deleteMany()
-    await prisma.requirement.deleteMany()
-    await prisma.qualification.deleteMany()
-    await prisma.responsibility.deleteMany()
-    await prisma.benefit.deleteMany()
-    // 3. Delete jobs (they depend on HR)
-    await prisma.job.deleteMany()
-    // 4. Delete resume records (they depend on students)
-    await prisma.resume.deleteMany()
-    // 5. Delete role-specific records (they depend on users)
-    await prisma.student.deleteMany()
-    await prisma.professor.deleteMany()
-    await prisma.admin.deleteMany()
-    await prisma.hR.deleteMany()
-    // 6. Delete refresh tokens (they depend on users)
-    await prisma.refreshToken.deleteMany()
-    // 7. Finally delete users
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          contains: 'test'
-        }
-      }
-    })
+    // Clean up any existing test data
+    await cleanupDatabase(prisma, { logSuccess: false })
 
     // Seed required degree types for testing
     await prisma.degreeType.upsert({
@@ -47,40 +21,8 @@ describe('Authentication Endpoints', () => {
   })
 
   afterAll(async () => {
-    // Clean up test data - delete in correct order to avoid foreign key constraints
-    // 1. Delete applications first (they depend on jobs and students)
-    await prisma.application.deleteMany()
-    // 2. Delete job-related records (they depend on jobs)
-    await prisma.studentInterest.deleteMany()
-    await prisma.jobReport.deleteMany()
-    await prisma.requirement.deleteMany()
-    await prisma.qualification.deleteMany()
-    await prisma.responsibility.deleteMany()
-    await prisma.benefit.deleteMany()
-    // 3. Delete jobs (they depend on HR)
-    await prisma.job.deleteMany()
-    // 4. Delete resume records (they depend on students)
-    await prisma.resume.deleteMany()
-    // 5. Delete role-specific records (they depend on users)
-    await prisma.student.deleteMany()
-    await prisma.professor.deleteMany()
-    await prisma.admin.deleteMany()
-    await prisma.hR.deleteMany()
-    // 6. Delete refresh tokens (they depend on users)
-    await prisma.refreshToken.deleteMany()
-    // 7. Finally delete users
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          contains: 'test'
-        }
-      }
-    })
-    await prisma.degreeType.deleteMany({
-      where: {
-        name: 'Computer Science'
-      }
-    })
+    // Clean up test data using shared cleanup function
+    await cleanupDatabase(prisma, { logSuccess: false })
     await prisma.$disconnect()
   })
 
