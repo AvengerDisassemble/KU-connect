@@ -29,13 +29,13 @@ function buildWhere (filters = {}) {
 
   if (keyword) {
     where.OR = [
-      { title: { contains: keyword, mode: 'insensitive' } },
-      { companyName: { contains: keyword, mode: 'insensitive' } },
-      { description: { contains: keyword, mode: 'insensitive' } },
-      { location: { contains: keyword, mode: 'insensitive' } }
+      { title: { contains: keyword } },
+      { companyName: { contains: keyword } },
+      { description: { contains: keyword } },
+      { location: { contains: keyword } }
     ]
   }
-  if (location) where.location = { contains: location, mode: 'insensitive' }
+  if (location) where.location = { contains: location}
   if (jobType) where.jobType = jobType
   if (tags.length) where.tags = { some: { name: { in: tags } } }
 
