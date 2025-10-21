@@ -187,10 +187,10 @@ afterAll(async () => {
 })
 
 describe('Job Report routes (integration)', () => {
-  describe('POST /api/job/report/:id/report', () => {
+  describe('POST /api/job/report/:id', () => {
     it('creates report by authenticated non-owner', async () => {
       const res = await request(app)
-        .post(`/api/job/${seeded.job.id}/report`)
+        .post(`/api/job/report/${seeded.job.id}`)
         .set('Authorization', student1Token)
         .send({ reason: 'This is a scam job posting' })
       
@@ -201,7 +201,7 @@ describe('Job Report routes (integration)', () => {
 
     it('403 when HR owner tries to report own job', async () => {
       const res = await request(app)
-        .post(`/api/job/${seeded.job.id}/report`)
+        .post(`/api/job/report/${seeded.job.id}`)
         .set('Authorization', hrToken)
         .send({ reason: 'This should not work for owner' })
       expect(res.status).toBe(403)
@@ -210,31 +210,31 @@ describe('Job Report routes (integration)', () => {
     it('400 duplicate when same user reports the same job twice', async () => {
       // First report via HTTP (using student2)
       const firstRes = await request(app)
-        .post(`/api/job/${seeded.job.id}/report`)
+        .post(`/api/job/report/${seeded.job.id}`)
         .set('Authorization', student2Token)
         .send({ reason: 'This is spam content' })
       expect(firstRes.status).toBe(201)
       
       // Second report with same user should fail
       const res = await request(app)
-        .post(`/api/job/${seeded.job.id}/report`)
+        .post(`/api/job/report/${seeded.job.id}`)
         .set('Authorization', student2Token)
         .send({ reason: 'Reporting again as spam' })
       expect(res.status).toBe(400)
     })
   })
 
-  describe('GET /api/job/reports', () => {
+  describe('GET /api/job/list', () => {
     it('Admin lists all reports', async () => {
       // Create a report via HTTP first (using student3)
       const createRes = await request(app)
-        .post(`/api/job/${seeded.job.id}/report`)
+        .post(`/api/job/report/${seeded.job.id}`)
         .set('Authorization', student3Token)
         .send({ reason: 'Contains bad content here' })
       expect(createRes.status).toBe(201)
       
       const res = await request(app)
-        .get('/api/job/reports')
+        .get('/api/job/list')
         .set('Authorization', adminToken)
       expect(res.status).toBe(200)
       expect(res.body.success).toBe(true)
@@ -244,24 +244,24 @@ describe('Job Report routes (integration)', () => {
 
     it('403 for non-Admin', async () => {
       const res = await request(app)
-        .get('/api/job/reports')
+        .get('/api/job/list')
         .set('Authorization', student1Token)
       expect(res.status).toBe(403)
     })
   })
 
-  describe('DELETE /api/job/reports/:reportId', () => {
+  describe('DELETE /api/job/report/:reportId', () => {
     it('Admin deletes a report', async () => {
       // Create report via HTTP (using student1 - reusing is OK since beforeEach cleans)
       const createRes = await request(app)
-        .post(`/api/job/${seeded.job.id}/report`)
+        .post(`/api/job/report/${seeded.job.id}`)
         .set('Authorization', student1Token)
         .send({ reason: 'This is a phishing attempt' })
       expect(createRes.status).toBe(201)
       const reportId = createRes.body.data.id
       
       const res = await request(app)
-        .delete(`/api/job/reports/${reportId}`)
+        .delete(`/api/job/report/${reportId}`)
         .set('Authorization', adminToken)
       expect(res.status).toBe(200)
       expect(res.body.success).toBe(true)
@@ -270,14 +270,14 @@ describe('Job Report routes (integration)', () => {
     it('forbidden for non-admin', async () => {
       // Create report via HTTP (using student2 - reusing is OK since beforeEach cleans)
       const createRes = await request(app)
-        .post(`/api/job/${seeded.job.id}/report`)
+        .post(`/api/job/report/${seeded.job.id}`)
         .set('Authorization', student2Token)
         .send({ reason: 'Testing delete permissions here' })
       expect(createRes.status).toBe(201)
       const reportId = createRes.body.data.id
       
       const res = await request(app)
-        .delete(`/api/job/reports/${reportId}`)
+        .delete(`/api/job/report/${reportId}`)
         .set('Authorization', student2Token)
       expect(res.status).toBe(403)
     })
