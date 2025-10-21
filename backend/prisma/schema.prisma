@@ -44,6 +44,11 @@ enum CompanySize {
   TWO_HUNDRED_PLUS
 }
 
+enum ResumeSource {
+  PROFILE
+  UPLOADED
+}
+
 model User {
   id           String         @id @default(cuid())
   name         String
@@ -148,10 +153,13 @@ model StudentInterest {
 }
 
 model Resume {
-  id        Int     @id @default(autoincrement())
-  student   Student @relation(fields: [studentId], references: [id])
+  id        Int          @id @default(autoincrement())
+  student   Student      @relation(fields: [studentId], references: [id])
   studentId Int
-  job       Job     @relation(fields: [jobId], references: [id])
+  job       Job          @relation(fields: [jobId], references: [id])
   jobId     Int
   link      String
+  source    ResumeSource @default(UPLOADED)
+
+  @@unique([studentId, jobId])
 }

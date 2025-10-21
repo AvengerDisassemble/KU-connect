@@ -6,7 +6,7 @@
 const express = require('express')
 const multer = require('multer')
 const router = express.Router()
-const documentsController = require('../../controllers/documentsController')
+const documentsController = require('../../controllers/documents-controller/documentsController')
 const auth = require('../../middlewares/authMiddleware')
 const role = require('../../middlewares/roleMiddleware')
 

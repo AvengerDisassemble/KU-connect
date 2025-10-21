@@ -158,6 +158,49 @@ Authorization: Bearer <token>
 ```
 *Access: Owner or ADMIN*
 
+### Job-Specific Resume Endpoints (Students)
+
+**Upsert Job Application Resume**
+```http
+POST /api/jobs/:jobId/resume
+Authorization: Bearer <token>
+Content-Type: multipart/form-data OR application/json
+
+Option 1 - Upload new resume:
+Body: resume (file, PDF, max 10MB)
+
+Option 2 - Use profile resume:
+Body: { "mode": "profile" }
+```
+*Access: STUDENT only*
+
+**Get Job Application Resume URL**
+```http
+GET /api/jobs/:jobId/resume/:studentUserId
+Authorization: Bearer <token>
+```
+*Access: Owner student, job's HR owner, or ADMIN*
+
+**Get Own Job Application Resume URL (convenience)**
+```http
+GET /api/jobs/:jobId/resume/self
+Authorization: Bearer <token>
+```
+*Access: STUDENT only (returns current user's resume)*
+
+**Delete Job Application Resume**
+```http
+DELETE /api/jobs/:jobId/resume
+Authorization: Bearer <token>
+```
+*Access: STUDENT only (owner)*
+
+**Note:** Each student can have only one resume per job. The endpoint supports two modes:
+- **UPLOAD mode**: Upload a PDF resume specifically for this job (stored in `resumes/job-applications/{jobId}/`)
+- **PROFILE mode**: Use the student's profile resume (references existing `Student.resumeKey`)
+
+When switching modes or uploading a new file, the old uploaded file is automatically cleaned up (profile resumes are never deleted).
+
 ## Testing
 
 ```bash
@@ -168,7 +211,8 @@ Test files:
 - `tests/services/storage/interface.test.js` - Provider interface compliance
 - `tests/services/storage/localStorageProvider.test.js` - Local storage operations
 - `tests/services/storage/s3StorageProvider.test.js` - S3 operations (requires AWS credentials)
-- `tests/controllers/documentsController.test.js` - API endpoint tests
+- `tests/controllers/documentsController.test.js` - Profile document API endpoint tests
+- `tests/controllers/jobDocumentController.test.js` - Job-specific resume API endpoint tests
 
 **Note:** S3 tests are skipped if AWS credentials are not configured.
 
@@ -187,6 +231,12 @@ class StorageProvider {
 - Stores files in `uploads/<prefix>/`
 - Returns URL: `/uploads/<prefix>/<filename>`
 - File naming: `<uuid>.<ext>`
+- Prefixes used:
+  - `avatars/` - User profile pictures
+  - `resumes/` - Student profile resumes
+  - `transcripts/` - Student transcripts
+  - `employer-docs/` - Employer verification documents
+  - `resumes/job-applications/{jobId}/` - Job-specific resumes
 
 ### S3 Provider
 - Stores in S3 bucket with prefix

@@ -3,8 +3,8 @@
  * @description Controller for user document uploads (resume, transcript, employer verification)
  */
 
-const storageProvider = require('../services/storageFactory')
-const prisma = require('../models/prisma')
+const storageProvider = require('../../services/storageFactory')
+const prisma = require('../../models/prisma')
 
 /**
  * Upload student resume
