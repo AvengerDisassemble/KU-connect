@@ -29,5 +29,11 @@ module.exports = {
   maxWorkers: 1,
   
   // Increase timeout for slow database operations
-  testTimeout: 10000
+  testTimeout: 10000,
+
+  // Force exit to prevent hanging
+  forceExit: true,
+
+  // Detect open handles to help debug
+  detectOpenHandles: false
 }

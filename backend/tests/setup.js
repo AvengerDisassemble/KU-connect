@@ -2,6 +2,9 @@
  * Jest setup file to suppress console logs during tests
  */
 
+const prisma = require('../src/models/prisma')
+const { cleanup: cleanupRateLimit } = require('../src/middlewares/downloadRateLimit')
+
 // Store original console methods
 const originalConsoleLog = console.log
 const originalConsoleError = console.error
@@ -36,8 +39,14 @@ console.error = (...args) => {
 }
 
 // Restore console methods after all tests
-afterAll(() => {
+afterAll(async () => {
   console.log = originalConsoleLog
   console.error = originalConsoleError
   console.warn = originalConsoleWarn
+  
+  // Clean up rate limiter interval
+  cleanupRateLimit()
+  
+  // Disconnect Prisma to close database connections
+  await prisma.$disconnect()
 })

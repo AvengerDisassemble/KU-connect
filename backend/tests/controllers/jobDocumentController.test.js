@@ -596,4 +596,9 @@ describe('Job Document Controller', () => {
       expect(response.body.message).toContain('No resume found')
     })
   })
+
+  // Clean up after all tests
+  afterAll(async () => {
+    await prisma.$disconnect()
+  })
 })

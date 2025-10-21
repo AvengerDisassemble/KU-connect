@@ -15,7 +15,7 @@ const MAX_DOWNLOADS_PER_WINDOW = 60 // 60 downloads per minute
 /**
  * Clean up old entries periodically
  */
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now()
   for (const [key, data] of downloadAttempts.entries()) {
     if (now - data.windowStart > RATE_LIMIT_WINDOW_MS) {
@@ -23,6 +23,11 @@ setInterval(() => {
     }
   }
 }, RATE_LIMIT_WINDOW_MS)
+
+// Don't prevent Node.js from exiting in test environment
+if (process.env.NODE_ENV === 'test') {
+  cleanupInterval.unref()
+}
 
 /**
  * Rate limiting middleware for downloads
@@ -64,4 +69,13 @@ function downloadRateLimit(req, res, next) {
   next()
 }
 
+/**
+ * Cleanup function to clear interval (for testing)
+ */
+function cleanup() {
+  clearInterval(cleanupInterval)
+  downloadAttempts.clear()
+}
+
 module.exports = downloadRateLimit
+module.exports.cleanup = cleanup

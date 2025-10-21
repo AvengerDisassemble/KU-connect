@@ -389,5 +389,10 @@ describe('Documents Controller', () => {
       expect(response.status).toBe(403)
     })
   })
+
+  // Clean up after all tests
+  afterAll(async () => {
+    await prisma.$disconnect()
+  })
 })
 
