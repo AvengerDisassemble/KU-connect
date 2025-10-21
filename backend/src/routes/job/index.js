@@ -11,6 +11,7 @@ const { authMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
 const { validate } = require('../../middlewares/validate')
 const { strictLimiter, writeLimiter } = require('../../middlewares/rateLimitMiddleware')
+const reportRouter = require('./report')
 
 // ===================== AUTH REQUIRED FOR ALL JOB ROUTES =====================
 router.use(authMiddleware)
@@ -99,5 +100,8 @@ router.post(
   validate(applyJobSchema),
   jobController.applyToJob
 )
+
+// ===================== JOB REPORT ROUTES =====================
+router.use('/', reportRouter)
 
 module.exports = router
