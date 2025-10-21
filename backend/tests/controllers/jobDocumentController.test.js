@@ -538,7 +538,7 @@ describe('Job Document Controller', () => {
         data: {
           studentId: studentId,
           jobId: jobId,
-          resumeKey: 'job-resumes/test-job-resume.pdf',
+          link: 'job-resumes/test-job-resume.pdf',
           source: 'UPLOADED'
         }
       })

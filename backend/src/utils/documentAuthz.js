@@ -48,7 +48,7 @@ function canViewHRDocument(requester, targetUserId) {
 /**
  * Check if user can view a job-specific resume
  * @param {Object} requester - Requesting user {id, role}
- * @param {string} jobId - Job posting ID
+ * @param {string|number} jobId - Job posting ID
  * @param {string} studentUserId - Student who uploaded resume
  * @returns {Promise<boolean>} True if authorized
  */
@@ -66,15 +66,15 @@ async function canViewJobResume(requester, jobId, studentUserId) {
   // HR who owns the job can view resumes for that job
   if (requester.role === 'EMPLOYER') {
     const job = await prisma.job.findUnique({
-      where: { id: jobId },
+      where: { id: Number(jobId) },
       select: { 
-        hR: {
+        hr: {
           select: { userId: true }
         }
       }
     })
     
-    if (job && job.hR && job.hR.userId === requester.id) {
+    if (job && job.hr && job.hr.userId === requester.id) {
       return true
     }
   }

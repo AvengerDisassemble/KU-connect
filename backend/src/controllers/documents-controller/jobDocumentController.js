@@ -398,10 +398,10 @@ async function downloadJobResume(req, res) {
           jobId: Number(jobId)
         }
       },
-      select: { resumeKey: true }
+      select: { link: true }
     })
 
-    if (!resume || !resume.resumeKey) {
+    if (!resume || !resume.link) {
       return res.status(404).json({
         success: false,
         message: 'No resume found for this job application'
@@ -419,14 +419,14 @@ async function downloadJobResume(req, res) {
     })
 
     // Try signed URL first (S3), fallback to streaming (local)
-    const signedUrl = await storageProvider.getSignedDownloadUrl(resume.resumeKey)
+    const signedUrl = await storageProvider.getSignedDownloadUrl(resume.link)
     
     if (signedUrl) {
       return res.redirect(signedUrl)
     }
 
     // Stream the file
-    const { stream, mimeType, filename } = await storageProvider.getReadStream(resume.resumeKey)
+    const { stream, mimeType, filename } = await storageProvider.getReadStream(resume.link)
     
     res.setHeader('Content-Type', mimeType)
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
