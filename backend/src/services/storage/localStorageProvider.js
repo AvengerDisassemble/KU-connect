@@ -63,6 +63,41 @@ class LocalStorageProvider extends StorageProvider {
   }
 
   /**
+   * Get a readable stream for a file
+   * @param {string} fileKey - File key to read
+   * @returns {Promise<{stream: ReadableStream, mimeType: string, filename: string}>}
+   */
+  async getReadStream(fileKey) {
+    const fullPath = path.join(this.baseDir, fileKey)
+    
+    // Check if file exists
+    const exists = await fs.pathExists(fullPath)
+    if (!exists) {
+      throw new Error(`File not found: ${fileKey}`)
+    }
+
+    // Extract filename from path
+    const filename = path.basename(fileKey)
+    
+    // Detect MIME type from extension
+    const mimeType = mime.lookup(fullPath) || 'application/octet-stream'
+    
+    // Create read stream
+    const stream = fs.createReadStream(fullPath)
+    
+    return { stream, mimeType, filename }
+  }
+
+  /**
+   * Get signed download URL - not supported for local storage
+   * @returns {Promise<null>}
+   */
+  async getSignedDownloadUrl(fileKey, expiresIn = 300) {
+    // Local storage doesn't support signed URLs; files will be streamed
+    return null
+  }
+
+  /**
    * Delete file from local storage
    * @param {string} fileKey - File key to delete
    * @returns {Promise<void>}

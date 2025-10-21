@@ -14,7 +14,13 @@ const fs = require('fs-extra')
 jest.mock('../../src/services/storageFactory', () => ({
   uploadFile: jest.fn().mockResolvedValue('mock-job-resume-key-12345'),
   getFileUrl: jest.fn().mockResolvedValue('https://mock-url.com/job-resume'),
-  deleteFile: jest.fn().mockResolvedValue(undefined)
+  deleteFile: jest.fn().mockResolvedValue(undefined),
+  getReadStream: jest.fn().mockResolvedValue({
+    stream: require('stream').Readable.from(Buffer.from('%PDF-1.4 mock job resume')),
+    mimeType: 'application/pdf',
+    filename: 'job-resume.pdf'
+  }),
+  getSignedDownloadUrl: jest.fn().mockResolvedValue(null) // Local storage returns null
 }))
 
 const storageProvider = require('../../src/services/storageFactory')
@@ -518,6 +524,76 @@ describe('Job Document Controller', () => {
         .set('Authorization', `Bearer ${hrToken}`)
 
       expect(response.status).toBe(403)
+    })
+  })
+
+  describe('GET /api/jobs/:jobId/resume/:studentUserId/download - Download job resume', () => {
+    beforeEach(async () => {
+      // Ensure a resume exists for testing
+      await prisma.resume.deleteMany({
+        where: { studentId: studentId, jobId: jobId }
+      })
+      
+      await prisma.resume.create({
+        data: {
+          studentId: studentId,
+          jobId: jobId,
+          resumeKey: 'job-resumes/test-job-resume.pdf',
+          source: 'UPLOADED'
+        }
+      })
+    })
+
+    it('should allow student to download their own job resume', async () => {
+      const response = await request(app)
+        .get(`/api/jobs/${jobId}/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${studentToken}`)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe('application/pdf')
+      expect(response.headers['content-disposition']).toContain('inline')
+      expect(response.headers['cache-control']).toContain('no-store')
+    })
+
+    it('should allow job HR to download applicant resume', async () => {
+      const response = await request(app)
+        .get(`/api/jobs/${jobId}/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${hrToken}`)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe('application/pdf')
+    })
+
+    it('should allow admin to download any job resume', async () => {
+      const response = await request(app)
+        .get(`/api/jobs/${jobId}/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${adminToken}`)
+
+      expect(response.status).toBe(200)
+    })
+
+    it('should deny other students from downloading', async () => {
+      const response = await request(app)
+        .get(`/api/jobs/${jobId}/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${student2Token}`)
+
+      expect(response.status).toBe(403)
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toBe('Access denied')
+    })
+
+    it('should return 404 when no resume exists', async () => {
+      // Delete the resume
+      await prisma.resume.deleteMany({
+        where: { studentId: studentId, jobId: jobId }
+      })
+
+      const response = await request(app)
+        .get(`/api/jobs/${jobId}/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${studentToken}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body.message).toContain('No resume found')
     })
   })
 })

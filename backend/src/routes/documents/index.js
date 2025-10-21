@@ -9,6 +9,7 @@ const router = express.Router()
 const documentsController = require('../../controllers/documents-controller/documentsController')
 const auth = require('../../middlewares/authMiddleware')
 const role = require('../../middlewares/roleMiddleware')
+const downloadRateLimit = require('../../middlewares/downloadRateLimit')
 
 // Configure multer for PDF documents (10 MB limit)
 const pdfUpload = multer({
@@ -44,17 +45,20 @@ const verificationUpload = multer({
 // All routes require authentication
 router.use(auth.authMiddleware)
 
-// Resume routes (students only)
+// Resume routes (students only for upload)
 router.post('/resume', role.roleMiddleware(['STUDENT']), pdfUpload.single('resume'), documentsController.uploadResume)
 router.get('/resume/:userId', documentsController.getResumeUrl)
+router.get('/resume/:userId/download', downloadRateLimit, documentsController.downloadResume)
 
-// Transcript routes (students only)
+// Transcript routes (students only for upload)
 router.post('/transcript', role.roleMiddleware(['STUDENT']), pdfUpload.single('transcript'), documentsController.uploadTranscript)
 router.get('/transcript/:userId', documentsController.getTranscriptUrl)
+router.get('/transcript/:userId/download', downloadRateLimit, documentsController.downloadTranscript)
 
-// Employer verification routes (HR/employer only)
+// Employer verification routes (HR/employer only for upload)
 router.post('/employer-verification', role.roleMiddleware(['EMPLOYER']), verificationUpload.single('verification'), documentsController.uploadEmployerVerification)
 router.get('/employer-verification/:userId', documentsController.getEmployerVerificationUrl)
+router.get('/employer-verification/:userId/download', downloadRateLimit, documentsController.downloadEmployerVerification)
 
 module.exports = router
 

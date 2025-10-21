@@ -32,6 +32,26 @@ class StorageProvider {
   }
 
   /**
+   * Get a readable stream for a file
+   * @param {string} fileKey - File key to read
+   * @returns {Promise<{stream: ReadableStream, mimeType: string, filename: string}>} Stream and metadata
+   */
+  async getReadStream(fileKey) {
+    throw new Error('getReadStream must be implemented by subclass')
+  }
+
+  /**
+   * Get a pre-signed download URL (for S3) or null (for local streaming)
+   * @param {string} fileKey - File key
+   * @param {number} [expiresIn=300] - Expiration in seconds
+   * @returns {Promise<string|null>} Signed URL or null if not supported
+   */
+  async getSignedDownloadUrl(fileKey, expiresIn = 300) {
+    // Default: return null; local storage will stream instead
+    return null
+  }
+
+  /**
    * Delete a file by key
    * @param {string} fileKey - File key to delete
    * @returns {Promise<void>}

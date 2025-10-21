@@ -14,7 +14,13 @@ const fs = require('fs-extra')
 jest.mock('../../src/services/storageFactory', () => ({
   uploadFile: jest.fn().mockResolvedValue('mock-file-key-12345'),
   getFileUrl: jest.fn().mockResolvedValue('https://mock-url.com/file'),
-  deleteFile: jest.fn().mockResolvedValue(undefined)
+  deleteFile: jest.fn().mockResolvedValue(undefined),
+  getReadStream: jest.fn().mockResolvedValue({
+    stream: require('stream').Readable.from(Buffer.from('%PDF-1.4 mock pdf')),
+    mimeType: 'application/pdf',
+    filename: 'test-resume.pdf'
+  }),
+  getSignedDownloadUrl: jest.fn().mockResolvedValue(null) // Local storage returns null
 }))
 
 describe('Documents Controller', () => {
@@ -258,6 +264,129 @@ describe('Documents Controller', () => {
         })
 
       expect(response.status).toBe(200)
+    })
+  })
+
+  describe('GET /api/documents/resume/:userId/download', () => {
+    beforeAll(async () => {
+      // Ensure resume key is set
+      await prisma.student.update({
+        where: { userId: studentUserId },
+        data: { resumeKey: 'resumes/test-resume.pdf' }
+      })
+    })
+
+    test('should allow student to download own resume', async () => {
+      const response = await request(app)
+        .get(`/api/documents/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${studentToken}`)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe('application/pdf')
+      expect(response.headers['content-disposition']).toContain('inline')
+      expect(response.headers['cache-control']).toContain('no-store')
+    })
+
+    test('should allow admin to download any student resume', async () => {
+      const response = await request(app)
+        .get(`/api/documents/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${adminToken}`)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe('application/pdf')
+    })
+
+    test('should deny other students from downloading', async () => {
+      const response = await request(app)
+        .get(`/api/documents/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${hrToken}`)
+
+      expect(response.status).toBe(403)
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toBe('Access denied')
+    })
+
+    test('should return 404 when no resume exists', async () => {
+      // Temporarily clear resume key
+      await prisma.student.update({
+        where: { userId: studentUserId },
+        data: { resumeKey: null }
+      })
+
+      const response = await request(app)
+        .get(`/api/documents/resume/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${studentToken}`)
+
+      expect(response.status).toBe(404)
+      expect(response.body.message).toBe('No resume found for this student')
+
+      // Restore resume key
+      await prisma.student.update({
+        where: { userId: studentUserId },
+        data: { resumeKey: 'resumes/test-resume.pdf' }
+      })
+    })
+  })
+
+  describe('GET /api/documents/transcript/:userId/download', () => {
+    beforeAll(async () => {
+      // Set a transcript key
+      await prisma.student.update({
+        where: { userId: studentUserId },
+        data: { transcriptKey: 'transcripts/test-transcript.pdf' }
+      })
+    })
+
+    test('should allow student to download own transcript', async () => {
+      const response = await request(app)
+        .get(`/api/documents/transcript/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${studentToken}`)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe('application/pdf')
+    })
+
+    test('should deny other users from downloading', async () => {
+      const response = await request(app)
+        .get(`/api/documents/transcript/${studentUserId}/download`)
+        .set('Authorization', `Bearer ${hrToken}`)
+
+      expect(response.status).toBe(403)
+    })
+  })
+
+  describe('GET /api/documents/employer-verification/:userId/download', () => {
+    beforeAll(async () => {
+      // Set a verification doc key
+      await prisma.hR.update({
+        where: { userId: hrUserId },
+        data: { verificationDocKey: 'employer-docs/test-verification.pdf' }
+      })
+    })
+
+    test('should allow HR to download own verification document', async () => {
+      const response = await request(app)
+        .get(`/api/documents/employer-verification/${hrUserId}/download`)
+        .set('Authorization', `Bearer ${hrToken}`)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe('application/pdf')
+    })
+
+    test('should allow admin to download any verification document', async () => {
+      const response = await request(app)
+        .get(`/api/documents/employer-verification/${hrUserId}/download`)
+        .set('Authorization', `Bearer ${adminToken}`)
+
+      expect(response.status).toBe(200)
+    })
+
+    test('should deny students from downloading', async () => {
+      const response = await request(app)
+        .get(`/api/documents/employer-verification/${hrUserId}/download`)
+        .set('Authorization', `Bearer ${studentToken}`)
+
+      expect(response.status).toBe(403)
     })
   })
 })

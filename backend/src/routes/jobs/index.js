@@ -9,6 +9,7 @@ const router = express.Router()
 const jobDocumentController = require('../../controllers/documents-controller/jobDocumentController')
 const auth = require('../../middlewares/authMiddleware')
 const role = require('../../middlewares/roleMiddleware')
+const downloadRateLimit = require('../../middlewares/downloadRateLimit')
 
 // Configure multer for PDF documents (10 MB limit) - same as profile resumes
 const pdfUpload = multer({
@@ -41,6 +42,13 @@ router.post(
 router.get(
   '/:jobId/resume/:studentUserId',
   jobDocumentController.getJobResumeUrl
+)
+
+// GET - Download job application resume (protected, owner/HR/admin)
+router.get(
+  '/:jobId/resume/:studentUserId/download',
+  downloadRateLimit,
+  jobDocumentController.downloadJobResume
 )
 
 // GET - Convenience endpoint to get current user's job resume

@@ -5,6 +5,8 @@
 
 const storageProvider = require('../../services/storageFactory')
 const prisma = require('../../models/prisma')
+const { canViewJobResume } = require('../../utils/documentAuthz')
+const { logDocumentAccess } = require('../../utils/auditLogger')
 
 /**
  * Helper function to check if a user is the HR owner of a job
@@ -344,9 +346,115 @@ async function getSelfJobResumeUrl(req, res) {
   return getJobResumeUrl(req, res)
 }
 
+/**
+ * Download job application resume (protected)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
+async function downloadJobResume(req, res) {
+  try {
+    const { jobId, studentUserId } = req.params
+    const requester = req.user
+
+    // Authorization check
+    const isAuthorized = await canViewJobResume(requester, jobId, studentUserId)
+    
+    if (!isAuthorized) {
+      logDocumentAccess({
+        userId: requester.id,
+        documentType: 'job-resume',
+        documentOwner: studentUserId,
+        action: 'download',
+        success: false,
+        reason: `Access denied for job ${jobId}`,
+        ip: req.ip
+      })
+      
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      })
+    }
+
+    // Get student record
+    const student = await prisma.student.findUnique({
+      where: { userId: studentUserId },
+      select: { id: true }
+    })
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found'
+      })
+    }
+
+    // Get resume record
+    const resume = await prisma.resume.findUnique({
+      where: {
+        studentId_jobId: {
+          studentId: student.id,
+          jobId: Number(jobId)
+        }
+      },
+      select: { resumeKey: true }
+    })
+
+    if (!resume || !resume.resumeKey) {
+      return res.status(404).json({
+        success: false,
+        message: 'No resume found for this job application'
+      })
+    }
+
+    // Log successful access
+    logDocumentAccess({
+      userId: requester.id,
+      documentType: 'job-resume',
+      documentOwner: studentUserId,
+      action: 'download',
+      success: true,
+      ip: req.ip
+    })
+
+    // Try signed URL first (S3), fallback to streaming (local)
+    const signedUrl = await storageProvider.getSignedDownloadUrl(resume.resumeKey)
+    
+    if (signedUrl) {
+      return res.redirect(signedUrl)
+    }
+
+    // Stream the file
+    const { stream, mimeType, filename } = await storageProvider.getReadStream(resume.resumeKey)
+    
+    res.setHeader('Content-Type', mimeType)
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    
+    stream.pipe(res)
+  } catch (error) {
+    console.error('Download job resume error:', error)
+    
+    if (error.message.includes('File not found')) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resume file not found'
+      })
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to download job resume'
+    })
+  }
+}
+
 module.exports = {
   upsertJobResume,
   getJobResumeUrl,
   deleteJobResume,
-  getSelfJobResumeUrl
+  getSelfJobResumeUrl,
+  downloadJobResume
 }

@@ -90,6 +90,49 @@ class S3StorageProvider extends StorageProvider {
   }
 
   /**
+   * Get a readable stream for a file from S3
+   * @param {string} fileKey - S3 object key
+   * @returns {Promise<{stream: ReadableStream, mimeType: string, filename: string}>}
+   */
+  async getReadStream(fileKey) {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileKey
+    })
+    
+    const response = await this.client.send(command)
+    
+    // Extract filename from key
+    const filename = path.basename(fileKey)
+    
+    // Use ContentType from S3 metadata, or detect from extension
+    const mimeType = response.ContentType || mime.lookup(fileKey) || 'application/octet-stream'
+    
+    return {
+      stream: response.Body,
+      mimeType,
+      filename
+    }
+  }
+
+  /**
+   * Get pre-signed download URL for S3 object
+   * @param {string} fileKey - S3 object key
+   * @param {number} [expiresIn=300] - Expiration in seconds
+   * @returns {Promise<string>} Signed URL
+   */
+  async getSignedDownloadUrl(fileKey, expiresIn = 300) {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: fileKey
+    })
+    
+    const signedUrl = await getSignedUrl(this.client, command, { expiresIn })
+    
+    return signedUrl
+  }
+
+  /**
    * Delete file from S3
    * @param {string} fileKey - S3 object key
    * @returns {Promise<void>}
