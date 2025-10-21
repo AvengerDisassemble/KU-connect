@@ -5,3 +5,6 @@ build/
 *.log
 /src/generated/prisma
 /prisma/dev.db
+
+# Local storage
+/uploads
