@@ -159,8 +159,9 @@ let seeded
 beforeAll(async () => {
   app = express()
   app.use(express.json())
-  // mount your job + job report routes root (assuming report lives under /api/job as specified)
-  app.use('/api/job', require('../../../../src/routes/job'))
+  // Mount job report routes at /api/job
+  // The report routes define paths like /:id/report, /reports, etc.
+  app.use('/api/job', require('../../../../src/routes/job/report'))
   
   // Clean and seed once for all tests
   await cleanupDatabase(prisma, { logSuccess: false })
@@ -186,7 +187,7 @@ afterAll(async () => {
 })
 
 describe('Job Report routes (integration)', () => {
-  describe('POST /api/job/:id/report', () => {
+  describe('POST /api/job/report/:id/report', () => {
     it('creates report by authenticated non-owner', async () => {
       const res = await request(app)
         .post(`/api/job/${seeded.job.id}/report`)
