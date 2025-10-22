@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
 
+import { createJob } from "@/services/jobs";
+import { getEmployerProfile, type EmployerProfileResponse } from "@/services/employerProfile";
+
+/* UI helpers */
 function FieldLabel({
   htmlFor,
   required,
@@ -50,18 +54,19 @@ function Chip({ text, onRemove }: { text: string; onRemove?: () => void }) {
   );
 }
 
+/* Types */
 type JobFormState = {
   title: string;
-  companyName: string;
+  companyName: string;         // view-only (prefilled)
   description: string;
   location: string;
   jobType: string;
   workArrangement: string;
   duration: string;
   tags: string[];
-  minSalary: string;
+  minSalary: string;           // input as string → number on submit
   maxSalary: string;
-  application_deadline: string;
+  application_deadline: string; // yyyy-mm-dd
   email: string;
   phone_number: string;
   other_contact_information: string;
@@ -71,10 +76,15 @@ type JobFormState = {
   benefits: string[];
 };
 
+type Props = { userId: string };
+
 const REQUIRED_TOAST_ID = "job-form-required";
 
-const JobPostingForm = () => {
+/* Component */
+const JobPostingForm = ({ userId }: Props) => {
   const [submitting, setSubmitting] = useState(false);
+  const [profile, setProfile] = useState<EmployerProfileResponse | null>(null);
+  const [lockCompanyName, setLockCompanyName] = useState(false);
 
   const [formData, setFormData] = useState<JobFormState>({
     title: "",
@@ -104,6 +114,27 @@ const JobPostingForm = () => {
   const [respInput, setRespInput] = useState("");
   const [benefitInput, setBenefitInput] = useState("");
 
+  /* Prefill companyName from employer profile (read-only for display) */
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const p = await getEmployerProfile(userId);
+        if (cancelled) return;
+        setProfile(p);
+        const company = p.hr?.companyName?.trim() ?? "";
+        if (company) {
+          setFormData(prev => ({ ...prev, companyName: company }));
+          setLockCompanyName(true);
+        }
+      } catch (e: any) {
+        console.warn("getEmployerProfile failed:", e?.message || e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  /* list helpers */
   const addToList = (
     value: string,
     key: keyof Pick<JobFormState, "tags" | "requirements" | "qualifications" | "responsibilities" | "benefits">,
@@ -125,13 +156,14 @@ const JobPostingForm = () => {
     }));
   };
 
+  /* submit */
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
 
     // Required checks
     const missing: string[] = [];
     if (!formData.title) missing.push("Title");
-    if (!formData.companyName) missing.push("Company");
     if (!formData.description) missing.push("Description");
     if (!formData.location) missing.push("Location");
     if (!formData.jobType) missing.push("Job Type");
@@ -145,7 +177,6 @@ const JobPostingForm = () => {
     if (missing.length > 0) {
       const idMap: Record<string, string> = {
         Title: "title",
-        Company: "companyName",
         Description: "description",
         Location: "location",
         "Job Type": "jobType",
@@ -181,47 +212,74 @@ const JobPostingForm = () => {
       return;
     }
 
-    // Date check
-    const deadline = new Date(formData.application_deadline);
-    if (isNaN(deadline.getTime())) {
+    // Date check (yyyy-mm-dd -> T23:59:59Z)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.application_deadline)) {
       document.getElementById("application_deadline")?.focus();
       toast.error("Invalid Application Deadline", { id: REQUIRED_TOAST_ID });
       return;
     }
+    const isoDeadline = `${formData.application_deadline}T23:59:59Z`;
 
     // Build payload
     const payload = {
-      title: formData.title,
-      companyName: formData.companyName,
-      description: formData.description,
-      location: formData.location,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      location: formData.location.trim(),
       jobType: formData.jobType,
       workArrangement: formData.workArrangement,
-      duration: formData.duration,
-      tags: formData.tags,
+      duration: formData.duration.trim(),
       minSalary: min,
       maxSalary: max,
-      application_deadline: deadline.toISOString(), // ISO string
-      email: formData.email || null,
-      phone_number: formData.phone_number,
-      other_contact_information: formData.other_contact_information || null,
-      requirements: formData.requirements,
-      qualifications: formData.qualifications,
-      responsibilities: formData.responsibilities,
-      benefits: formData.benefits,
+      application_deadline: isoDeadline,
+      email: formData.email.trim() || undefined,
+      phone_number: formData.phone_number.trim(),
+      other_contact_information: formData.other_contact_information.trim() || undefined,
+      requirements: formData.requirements.map(s => s.trim()).filter(Boolean),
+      qualifications: formData.qualifications.map(s => s.trim()).filter(Boolean),
+      responsibilities: formData.responsibilities.map(s => s.trim()).filter(Boolean),
+      benefits: formData.benefits.map(s => s.trim()).filter(Boolean),
+      tags: formData.tags.map(s => s.trim()).filter(Boolean),
     };
 
     try {
       setSubmitting(true);
-      console.log("Submitting payload:", payload);
-      toast.success("Job posted successfully");
+      const res = await createJob(payload as any);
+      toast.success("Job posted successfully", {
+        description: res?.title ? `Created: ${res.title}` : undefined,
+      });
+
+      // Reset form
+      setFormData({
+        title: "",
+        companyName: lockCompanyName ? (profile?.hr?.companyName ?? "") : "",
+        description: "",
+        location: "",
+        jobType: "",
+        workArrangement: "",
+        duration: "",
+        tags: [],
+        minSalary: "",
+        maxSalary: "",
+        application_deadline: "",
+        email: "",
+        phone_number: "",
+        other_contact_information: "",
+        requirements: [],
+        qualifications: [],
+        responsibilities: [],
+        benefits: [],
+      });
+      setTagInput(""); setReqInput(""); setQualInput(""); setRespInput(""); setBenefitInput("");
     } catch (err: any) {
-      toast.error("Network error", { description: String(err?.message || err) });
+      toast.error("Failed to post job", {
+        description: err?.message || "Unknown error",
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
+  /* UI */
   return (
     <div className="rounded-2xl bg-bg-2 p-6">
       <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
@@ -244,12 +302,12 @@ const JobPostingForm = () => {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="companyName" required>Company Name</FieldLabel>
+                <FieldLabel htmlFor="companyName">Company Name</FieldLabel>
                 <Input
                   id="companyName"
-                  placeholder="e.g., ACME Co., Ltd."
+                  placeholder="Company (prefilled)"
                   value={formData.companyName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
+                  readOnly
                   className="mt-2"
                 />
               </div>
@@ -267,8 +325,8 @@ const JobPostingForm = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="internship">Internship</SelectItem>
-                    <SelectItem value="full-time">Full-time</SelectItem>
-                    <SelectItem value="part-time">Part-time</SelectItem>
+                    <SelectItem value="fulltime">Full-time</SelectItem>
+                    <SelectItem value="parttime">Part-time</SelectItem>
                     <SelectItem value="contract">Contract</SelectItem>
                   </SelectContent>
                 </Select>
@@ -284,7 +342,7 @@ const JobPostingForm = () => {
                     <SelectValue placeholder="Select arrangement" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="on-site">On-site</SelectItem>
+                    <SelectItem value="onsite">On-site</SelectItem>
                     <SelectItem value="remote">Remote</SelectItem>
                     <SelectItem value="hybrid">Hybrid</SelectItem>
                   </SelectContent>
@@ -307,7 +365,7 @@ const JobPostingForm = () => {
               <FieldLabel htmlFor="duration" required>Duration</FieldLabel>
               <Input
                 id="duration"
-                placeholder="e.g., 6-month, 1-year"
+                placeholder="e.g., 6 months, 1 year"
                 value={formData.duration}
                 onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
                 className="mt-2"
@@ -318,7 +376,7 @@ const JobPostingForm = () => {
               <FieldLabel htmlFor="description" required>Job Description</FieldLabel>
               <Textarea
                 id="description"
-                placeholder="What will the students do day-to-day? What will they learn? What impact will they have?"
+                placeholder="What will they do day-to-day? What will they learn? What impact will they have?"
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 className="mt-2 min-h-[120px]"
@@ -340,7 +398,7 @@ const JobPostingForm = () => {
                 <Input
                   id="minSalary"
                   inputMode="numeric"
-                  placeholder="15000"
+                  placeholder="10000"
                   value={formData.minSalary}
                   onChange={(e) => setFormData(prev => ({ ...prev, minSalary: e.target.value }))}
                   className="flex-1"
@@ -349,7 +407,7 @@ const JobPostingForm = () => {
                 <Input
                   id="maxSalary"
                   inputMode="numeric"
-                  placeholder="25000"
+                  placeholder="15000"
                   value={formData.maxSalary}
                   onChange={(e) => setFormData(prev => ({ ...prev, maxSalary: e.target.value }))}
                   className="flex-1"
@@ -543,7 +601,7 @@ const JobPostingForm = () => {
                   {formData.title || "Job Title"}
                 </h3>
                 <p className="text-brand-teal font-medium">
-                  {formData.companyName || "Company Name"}
+                  {formData.companyName || "Company"}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
@@ -578,7 +636,7 @@ const JobPostingForm = () => {
         <div className="flex w-full items-center justify-end">
           <Button
             type="submit"
-            className="px-8 bg-brand-teal hover:bg-brand-teal-dark"
+            className="px-8 bg-brand-teal"
             disabled={submitting}
           >
             {submitting ? "Posting..." : "Post Job"}
