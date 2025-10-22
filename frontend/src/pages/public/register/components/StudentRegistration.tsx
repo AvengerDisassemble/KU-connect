@@ -16,6 +16,7 @@ import { z } from "zod";
 import { useNavigate, useLocation } from "react-router-dom";
 import { registerAlumni, login, setAuthSession } from "@/services/auth";
 import { API_BASE } from "@/services/api";
+import { fetchDegreeTypes } from "@/services/degree";
 
 type OAuthMessagePayload = {
   accessToken?: string;
@@ -31,11 +32,10 @@ interface OAuthMessageEventData {
   payload?: OAuthMessagePayload;
 }
 
-const DEGREE_OPTIONS = [
-  { id: 1, label: "Bachelor" },
-  { id: 2, label: "Master" },
-  { id: 3, label: "PhD" },
-];
+type DegreeOption = {
+  id: string;
+  label: string;
+};
 
 const alumniSchema = z
   .object({
@@ -47,10 +47,7 @@ const alumniSchema = z
       .min(8, { message: "Password must be at least 8 characters" }),
     confirmPassword: z.string(),
     address: z.string().min(1, { message: "Address is required" }),
-    degreeTypeId: z.coerce
-      .number()
-      .int()
-      .positive({ message: "Select a degree type" }),
+    degreeTypeId: z.string().min(1, { message: "Select a degree type" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -74,6 +71,9 @@ const StudentRegistration = () => {
     degreeTypeId: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [degreeOptions, setDegreeOptions] = useState<DegreeOption[]>([]);
+  const [isLoadingDegrees, setIsLoadingDegrees] = useState(false);
+  const [degreeFetchError, setDegreeFetchError] = useState<string | null>(null);
 
   const apiOrigin = useMemo(() => {
     try {
@@ -92,6 +92,41 @@ const StudentRegistration = () => {
       toast.error("Google sign-in failed. Please try again.");
     }
   }, [location.search]);
+
+  const loadDegreeOptions = useCallback(async () => {
+    setIsLoadingDegrees(true);
+    setDegreeFetchError(null);
+
+    try {
+      const types = await fetchDegreeTypes();
+      setDegreeOptions(
+        types.map((type) => ({
+          id: type.id,
+          label: type.name,
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to load degree types:", err);
+      const message =
+        err instanceof Error ? err.message : "Failed to load degree types";
+      setDegreeFetchError(message);
+    } finally {
+      setIsLoadingDegrees(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDegreeOptions();
+  }, [loadDegreeOptions]);
+
+  useEffect(() => {
+    if (
+      formData.degreeTypeId &&
+      !degreeOptions.some((option) => option.id === formData.degreeTypeId)
+    ) {
+      setFormData((prev) => ({ ...prev, degreeTypeId: "" }));
+    }
+  }, [degreeOptions, formData.degreeTypeId]);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent<OAuthMessageEventData>) => {
@@ -568,19 +603,26 @@ const StudentRegistration = () => {
           Degree Type
         </Label>
         <Select
-          value={formData.degreeTypeId?.toString() || ""}
+          value={formData.degreeTypeId}
           onValueChange={(val) => handleInputChange("degreeTypeId", val)}
         >
           <SelectTrigger
+            disabled={isLoadingDegrees || degreeOptions.length === 0}
             className={`h-11 sm:h-12 ${
               errors.degreeTypeId ? "border-destructive" : ""
             }`}
           >
-            <SelectValue placeholder="Select your degree type" />
+            <SelectValue
+              placeholder={
+                isLoadingDegrees
+                  ? "Loading degree types..."
+                  : "Select your degree type"
+              }
+            />
           </SelectTrigger>
           <SelectContent>
-            {DEGREE_OPTIONS.map((option) => (
-              <SelectItem key={option.id} value={option.id.toString()}>
+            {degreeOptions.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
                 {option.label}
               </SelectItem>
             ))}
@@ -588,6 +630,19 @@ const StudentRegistration = () => {
         </Select>
         {errors.degreeTypeId && (
           <p className="text-sm text-destructive">{errors.degreeTypeId}</p>
+        )}
+        {degreeFetchError && (
+          <div className="text-sm text-destructive flex items-center gap-2">
+            <span>{degreeFetchError}</span>
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0"
+              onClick={loadDegreeOptions}
+            >
+              Retry
+            </Button>
+          </div>
         )}
       </div>
       <div className="flex flex-col sm:flex-row gap-3">

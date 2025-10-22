@@ -61,7 +61,7 @@ export interface RegisterData {
   email: string;
   password: string;
   address: string;
-  degreeTypeId: number;
+  degreeTypeId: string;
 }
 
 export interface RegisterEmployerData {
