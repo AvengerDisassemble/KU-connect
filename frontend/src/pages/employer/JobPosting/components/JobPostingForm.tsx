@@ -636,7 +636,7 @@ const JobPostingForm = ({ userId }: Props) => {
         <div className="flex w-full items-center justify-end">
           <Button
             type="submit"
-            className="px-8 bg-brand-teal"
+            className="px-8 bg-brand-teal hover:bg-brand-teal/90"
             disabled={submitting}
           >
             {submitting ? "Posting..." : "Post Job"}

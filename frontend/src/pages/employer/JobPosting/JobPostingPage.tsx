@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import EmployerSidebar from "@/components/EmployerSideBar";
 import CompanyProfileCard from "@/pages/employer/JobPosting/components/CompanyProfileCard";
 import JobPostingForm from "@/pages/employer/JobPosting/components/JobPostingForm";
+import { Card, CardContent } from "@/components/ui/card";
 
 const SIDEBAR_W = 280;
 
@@ -57,12 +58,12 @@ export default function JobPostingPage() {
             </p>
           </div>
 
-          <section className="rounded-2xl bg-white p-8">
-            <div className="flex flex-col gap-8">
+          <Card className="border-none shadow-sm rounded-2xl">
+            <CardContent className="p-8">
               <CompanyProfileCard userId={user.id} />
               <JobPostingForm userId={user.id} />
-            </div>
-          </section>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </>
