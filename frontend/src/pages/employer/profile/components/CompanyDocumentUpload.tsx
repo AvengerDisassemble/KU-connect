@@ -59,7 +59,7 @@ export default function CompanyDocumentUpload({
         <div className="mt-4">
           <Button
             onClick={onSubmit}
-            className="px-8 bg-brand-lime hover:bg-brand-lime-dark"
+            className="px-8 bg-brand-lime hover:bg-brand-lime/90"
           >
             Submit for Verification
           </Button>
