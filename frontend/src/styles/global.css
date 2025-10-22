@@ -41,9 +41,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --color-brand-teal: var(--brand-teal);
-  --color-brand-teal-dark: var(--brand-teal-dark);
   --color-brand-lime: var(--brand-lime);
-  --color-brand-lime-dark: var(--brand-lime-dark);
   --color-bg-1: var(--neutral-bg-1);
   --color-bg-2: var(--neutral-bg-2);
   --color-text-primary: var(--neutral-text-primary);
@@ -85,9 +83,7 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   --brand-teal: #006664;              /* Teal Green */
-  --brand-teal-dark: #004e4d;         /* Darker Teal for hover */
   --brand-lime: #B2BB1E;              /* Lime Green */
-  --brand-lime-dark: #899005;         /* Darker Lime for hover */
   --neutral-bg-1: #F7F8F9;            /* Background 1 */
   --neutral-bg-2: #FFFFFF;            /* Background 2 */
   --neutral-text-primary: #111827;    /* Text Primary */
