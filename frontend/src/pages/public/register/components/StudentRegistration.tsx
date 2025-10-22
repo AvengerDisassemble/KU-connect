@@ -667,18 +667,4 @@ const StudentRegistration = () => {
 
 export default StudentRegistration;
 
-function getRoleDestination(role?: string) {
-  const normalized = typeof role === "string" ? role.toUpperCase() : undefined;
-  switch (normalized) {
-    case "STUDENT":
-      return "/student/dashboard";
-    case "EMPLOYER":
-      return "/employer";
-    case "ADMIN":
-      return "/admin";
-    case "PROFESSOR":
-      return "/professor";
-    default:
-      return "/";
-  }
-}
+import { getRoleDestination } from "@/utils/navigation";
