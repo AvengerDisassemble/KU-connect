@@ -1,6 +1,6 @@
 import EmployerSidebar from '@/components/EmployerSideBar';
-import CompanyProfileCard from '@/pages/employer/job-posting/components/CompanyProfileCard';
-import JobPostingForm from '@/pages/employer/job-posting/components/JobPostingForm';
+import CompanyProfileCard from '@/pages/employer/JobPosting/components/CompanyProfileCard';
+import JobPostingForm from '@/pages/employer/JobPosting/components/JobPostingForm';
 
 const SIDEBAR_W = 280;
 

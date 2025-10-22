@@ -5,10 +5,10 @@ import LandingPage from "@/pages/public/LandingPage";
 import LoginPage from "@/pages/public/LoginPage";
 import NotFoundPage from "@/pages/public/NotFoundPage";
 import StudentDashboardPage from "@/pages/student/DashboardPage";
-import EmployerDashboardPage from "@/pages/employer/dashboard/DashboardPage";
+import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/DashboardPage";
-import JobPostingPage from "./pages/employer/job-posting/JobPostingPage";
+import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 
 const App: React.FC = () => {
   return (
