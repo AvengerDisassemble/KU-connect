@@ -26,7 +26,7 @@ function extractUserUpdateFields(fields) {
  * @param {number} [data.gpa] - New GPA
  * @param {number} [data.expectedGraduationYear] - New expected graduation year
  * @param {string} [data.address] - New address
- * @param {number} [data.degreeTypeId] - New degree type ID
+ * @param {string} [data.degreeTypeId] - New degree type ID
  * @returns {Promise<Object>} Updated user with student profile
  */
 async function updateStudentProfile(userId, data) {

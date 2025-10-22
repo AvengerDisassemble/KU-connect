@@ -8,7 +8,9 @@
  * @returns {boolean} True if valid email format
  */
 function isValidEmail (email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  // Use a more efficient regex pattern that avoids ReDoS vulnerability
+  // This pattern is simpler and doesn't have nested quantifiers that can cause catastrophic backtracking
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
   return emailRegex.test(email)
 }
 
@@ -116,10 +118,8 @@ function validateAlumniRegistration (req, res, next) {
     }
   }
 
-  if (!degreeTypeId) {
-    errors.push('Degree type is required')
-  } else if (isNaN(parseInt(degreeTypeId))) {
-    errors.push('Degree type must be a valid number')
+  if (!degreeTypeId || typeof degreeTypeId !== 'string' || degreeTypeId.trim().length === 0) {
+    errors.push('Degree type is required and must be a valid ID')
   }
 
   if (!address || address.trim().length < 5) {

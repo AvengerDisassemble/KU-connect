@@ -1,5 +1,5 @@
 /**
- * @module validators/profile.validator
+ * @module validators/profileValidator
  * @description Joi validation schemas for profile operations
  */
 
@@ -17,7 +17,7 @@ const updateProfileSchema = Joi.object({
   name: Joi.string().max(100).optional(),
   surname: Joi.string().max(100).optional(),
   email: Joi.any().forbidden().messages({
-  'any.unknown': 'Email cannot be changed. Please contact support.'
+  'any.forbidden': 'Email cannot be changed. Please contact support.'
   }),
   phoneNumber: Joi.string()
     .pattern(/^[0-9+\-()\s]+$/)
@@ -29,7 +29,7 @@ const updateProfileSchema = Joi.object({
 
   // Student-specific fields
   address: Joi.string().max(255).optional(),
-  degreeTypeId: Joi.number().integer().positive().optional(),
+  degreeTypeId: Joi.string().optional(), // Changed from number to string (cuid)
 
   gpa: Joi.number()
     .precision(2)

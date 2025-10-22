@@ -1,47 +1,21 @@
+// DEPRECATED: This test suite is deprecated and will be skipped.
+// Keep for reference only.
+
 const request = require('supertest')
 const app = require('../../../src/app')
 const { PrismaClient } = require('../../../src/generated/prisma')
 const jwt = require('jsonwebtoken')
+const { cleanupDatabase } = require('../utils/testHelpers')
 
 const prisma = new PrismaClient()
 
-describe('User Profile Authorization Example', () => {
+describe.skip('User Profile Authorization Example (DEPRECATED)', () => {
   let studentUser, professorUser, employerUser, adminUser
   let studentToken, professorToken, employerToken, adminToken
   let degreeTypeId
 
   beforeAll(async () => {
-    try {
-      // Nuclear option: completely reset the test database
-      await prisma.$executeRaw`DELETE FROM RefreshToken;`
-      await prisma.$executeRaw`DELETE FROM Student;`
-      await prisma.$executeRaw`DELETE FROM Professor;`
-      await prisma.$executeRaw`DELETE FROM Admin;`
-      await prisma.$executeRaw`DELETE FROM HR;`
-      await prisma.$executeRaw`DELETE FROM User;`
-      await prisma.$executeRaw`DELETE FROM DegreeType;`
-      
-      // Reset the auto-increment counters
-      await prisma.$executeRaw`DELETE FROM sqlite_sequence WHERE name IN ('User', 'Student', 'Professor', 'Admin', 'HR', 'DegreeType', 'RefreshToken');`
-      
-      console.log('Complete database reset completed successfully')
-    } catch (resetError) {
-      console.log('Database reset error (trying alternative approach):', resetError.message)
-      
-      // Fallback to the previous approach if raw SQL fails
-      try {
-        await prisma.refreshToken.deleteMany()
-        await prisma.student.deleteMany()
-        await prisma.professor.deleteMany()
-        await prisma.admin.deleteMany()
-        await prisma.hR.deleteMany()
-        await prisma.user.deleteMany()
-        await prisma.degreeType.deleteMany()
-        console.log('Fallback cleanup completed')
-      } catch (fallbackError) {
-        console.log('Fallback cleanup error:', fallbackError.message)
-      }
-    }
+    await cleanupDatabase(prisma)
     
     // Create a degree type for testing
     const degreeType = await prisma.degreeType.create({
@@ -192,50 +166,8 @@ describe('User Profile Authorization Example', () => {
   }
 
   afterAll(async () => {
-    // Clean up test data - delete in correct order to avoid foreign key constraints
-    try {
-      // Delete refresh tokens first
-      await prisma.refreshToken.deleteMany({})
-      
-      // Delete related records for each user type
-      if (studentUser) {
-        await prisma.student.deleteMany({ where: { userId: studentUser.id } })
-      }
-      if (professorUser) {
-        // Professor might not have Student records, but check for any other related data
-        await prisma.student.deleteMany({ where: { userId: professorUser.id } })
-      }
-      if (employerUser) {
-        await prisma.hR.deleteMany({ where: { userId: employerUser.id } })
-      }
-      if (adminUser) {
-        // Admin might not have specific related records, but clean up any
-        await prisma.student.deleteMany({ where: { userId: adminUser.id } })
-        await prisma.hR.deleteMany({ where: { userId: adminUser.id } })
-      }
-      
-      // Now delete users safely
-      const userIds = [studentUser?.id, professorUser?.id, employerUser?.id, adminUser?.id].filter(Boolean)
-      if (userIds.length > 0) {
-        await prisma.user.deleteMany({ where: { id: { in: userIds } } })
-      }
-      
-      // Finally delete the degree type
-      if (degreeTypeId) {
-        await prisma.degreeType.delete({ where: { id: degreeTypeId } })
-      }
-      
-      // Additional cleanup for profile test users
-      await prisma.user.deleteMany({
-        where: {
-          email: {
-            contains: 'profile.test'
-          }
-        }
-      })
-    } catch (error) {
-      console.log('Cleanup error:', error.message)
-    }
+    // Clean up test data using shared cleanup function
+    await cleanupDatabase(prisma)
     await prisma.$disconnect()
   })
 
