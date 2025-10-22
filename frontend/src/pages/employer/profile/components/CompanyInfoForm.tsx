@@ -15,7 +15,6 @@ import { z, ZodError } from "zod";
 import {
   getEmployerProfile,
   updateEmployerProfile,
-  type EmployerProfileResponse,
   type UpdateEmployerProfileRequest,
 } from "@/services/employerProfile";
 import { Edit } from "lucide-react";
