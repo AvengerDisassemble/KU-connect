@@ -1,24 +1,35 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// ===============================
+//  Prisma Schema for KU Connect
+//  (Job Posting Feature Updated)
+// ===============================
 
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
-// Test SQLite datasource for local/test usage
+// Use SQLite for test/dev
 datasource test_db {
   provider = "sqlite"
   url      = env("TEST_DATABASE_URL")
 }
 
+// Uncomment for production PostgreSQL
 // datasource db {
 //   provider = "postgresql"
 //   url      = env("DATABASE_URL")
 // }
+
+// ------------------------------
+//  ENUMS
+// ------------------------------
+
+enum Role {
+  STUDENT
+  PROFESSOR
+  EMPLOYER
+  ADMIN
+}
 
 enum Industry {
   IT_HARDWARE_AND_DEVICES
@@ -37,59 +48,82 @@ enum CompanySize {
   TWO_HUNDRED_PLUS
 }
 
+enum ApplicationStatus {
+  PENDING
+  QUALIFIED
+  REJECTED
+}
+
+// ------------------------------
+//  MODELS
+// ------------------------------
+
 model User {
-  id          Int       @id @default(autoincrement())
-  name        String
-  surname     String
-  username    String    @unique
-  password    String
-  email       String    @unique
-  phoneNumber String?   @unique
-  verified    Boolean   @default(false)
-  professor   Professor?
-  admin       Admin?
-  student     Student?
-  hr          HR?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now())
+  id            String         @id @default(cuid())
+  name          String
+  surname       String
+  password      String
+  email         String         @unique
+  username      String?        @unique
+  role          Role
+  verified      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  professor     Professor?
+  admin         Admin?
+  student       Student?
+  hr            HR?
+  refreshTokens RefreshToken[]
+  reports       JobReport[]
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Professor {
-  id         Int    @id @default(autoincrement())
-  userId     Int    @unique
+  id         String @id @default(cuid())
+  userId     String @unique
   department String
   user       User   @relation(fields: [userId], references: [id])
 }
 
 model Admin {
-  id     Int  @id @default(autoincrement())
-  userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 }
 
 model Student {
-  id                     Int               @id @default(autoincrement())
-  userId                 Int               @unique
-  degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
-  degreeTypeId           Int
-  address                String
-  gpa                    Float?          
-  expectedGraduationYear Int?             
+  id                     String            @id @default(cuid())
+  userId                 String            @unique
   user                   User              @relation(fields: [userId], references: [id])
+  degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
+  degreeTypeId           String
+  address                String
+  gpa                    Float?
+  expectedGraduationYear Int?
   interests              StudentInterest[]
   resumes                Resume[]
+  applications           Application[]
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
 }
 
 model HR {
-  id          Int         @id @default(autoincrement())
-  userId      Int         @unique
+  id          String      @id @default(cuid())
+  userId      String      @unique
   companyName String
+  description String?
   address     String
   industry    Industry    @default(OTHER)
   companySize CompanySize @default(ONE_TO_TEN)
-  website     String?     
+  website     String?
   user        User        @relation(fields: [userId], references: [id])
   jobs        Job[]
   createdAt   DateTime    @default(now())
@@ -97,40 +131,121 @@ model HR {
 }
 
 model DegreeType {
-  id    Int    @id @default(autoincrement())
-  name  String
+  id       String    @id @default(cuid())
+  name     String    @unique
   students Student[]
 }
 
+// ------------------------------
+//  JOB FEATURE MODELS
+// ------------------------------
+
 model Job {
-  id                     Int      @id @default(autoincrement())
-  hrId                   Int
-  hr                     HR @relation(fields: [hrId], references: [id])
-  title                  String
-  description            String
-  location               String
-  application_deadline   DateTime
-  email                  String
-  phone_number           String
-  other_contact_information String
-  requirements           String
-  interests              StudentInterest[]
-  resumes                Resume[]
+  id                        String            @id @default(cuid())
+  hrId                      String
+  hr                        HR                @relation(fields: [hrId], references: [id])
+  title                     String
+  companyName               String
+  description               String
+  location                  String
+  jobType                   String // internship, part-time, full-time, contract
+  workArrangement           String // on-site, remote, hybrid
+  duration                  String // e.g. 6-month, 1-year
+  minSalary                 Int
+  maxSalary                 Int
+  application_deadline      DateTime
+  email                     String?
+  phone_number              String
+  other_contact_information String?
+  interests                 StudentInterest[]
+  requirements              Requirement[]
+  qualifications            Qualification[]
+  responsibilities          Responsibility[]
+  benefits                  Benefit[]
+  tags                      Tag[]             @relation("JobTags")
+  applications              Application[]
+  reports                   JobReport[]
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+  jobs Job[]  @relation("JobTags")
+}
+
+model Requirement {
+  id    String @id @default(cuid())
+  jobId String
+  text  String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Qualification {
+  id    String @id @default(cuid())
+  jobId String
+  text  String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Responsibility {
+  id    String @id @default(cuid())
+  jobId String
+  text  String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model Benefit {
+  id    String @id @default(cuid())
+  jobId String
+  text  String
+  job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------
+//  APPLICATION & SUPPORT MODELS
+// ------------------------------
+
+model Application {
+  id        String            @id @default(cuid())
+  jobId     String
+  studentId String
+  resumeId  String?
+  status    ApplicationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  job     Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  resume  Resume? @relation(fields: [resumeId], references: [id])
+
+  @@unique([jobId, studentId])
+}
+
+model JobReport {
+  id        String   @id @default(cuid())
+  jobId     String
+  userId    String
+  reason    String
+  createdAt DateTime @default(now())
+
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StudentInterest {
-  id        Int     @id @default(autoincrement())
-  student   Student @relation(fields: [studentId], references: [id])
-  studentId Int
-  job       Job     @relation(fields: [jobId], references: [id])
-  jobId     Int
+  id        String  @id @default(cuid())
+  studentId String
+  jobId     String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  job       Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
 
 model Resume {
-  id        Int     @id @default(autoincrement())
-  student   Student @relation(fields: [studentId], references: [id])
-  studentId Int
-  job       Job     @relation(fields: [jobId], references: [id])
-  jobId     Int
-  link      String
+  id           String        @id @default(cuid())
+  studentId    String
+  link         String
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  applications Application[]
 }
