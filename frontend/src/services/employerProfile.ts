@@ -12,17 +12,19 @@ export interface EmployerProfileResponse {
   id: string;
   name: string;
   surname: string;
-  username?: string;
+  username?: string | null;
   email: string;
   verified: boolean;
-  employer?: {
-    id: number;
+  hr?: {
+    id: string;
     userId: string;
-    companyName?: string;
-    address?: string;
-    website?: string;
-    industry?: string;
-    companySize?: string;
+    companyName?: string | null;
+    address?: string | null;
+    website?: string | null;
+    industry?: string | null;
+    companySize?: string | null;
+    // description?: string | null; // will be added later
+    // phoneNumber?: string | null; // will be added later
   };
 }
 
