@@ -12,8 +12,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { z, ZodError } from "zod";
-
-
 import {
   getEmployerProfile,
   updateEmployerProfile,
@@ -109,8 +107,8 @@ const formSchema = z.object({
   address: z.string().min(1, "Address is required"),
   contactEmail: z.string().email("Please enter a valid email address"),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  description: z.string().optional(),
-  phoneNumber: z.string().optional(),
+  // description: z.string().optional(), // will be enabled when backend is ready
+  // phoneNumber: z.string().optional(), // will be enabled when backend is ready
 });
 
 // inline email validator (realtime)
@@ -154,22 +152,20 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
   });
 
   useEffect(() => {
-    if (!profile) return;
-    const p = profile as EmployerProfileResponse as any;
-    const hr = p.hr ?? {};
+  if (!profile) return;
 
-    setFormData({
-      companyName: hr.companyName ?? "",
-      industry: API_TO_INDUSTRY_UI[hr.industry ?? ""] ?? "",
-      companySize: API_TO_COMPANY_SIZE_UI[hr.companySize ?? ""] ?? "",
-      website: hr.website ?? "",
-      address: hr.address ?? "",
-      // UI-only
-      description: "",
-      contactEmail: p.email ?? "",
-      phoneNumber: "",
-    });
-  }, [profile]);
+  setFormData({
+    companyName: profile.hr?.companyName ?? "",
+    industry: API_TO_INDUSTRY_UI[profile.hr?.industry ?? ""] ?? "",
+    companySize: API_TO_COMPANY_SIZE_UI[profile.hr?.companySize ?? ""] ?? "",
+    website: profile.hr?.website ?? "",
+    address: profile.hr?.address ?? "",
+    // UI-only
+    description: "",
+    contactEmail: profile.email ?? "",
+    phoneNumber: "",
+  });
+}, [profile]);
 
   // PATCH profile
   const mutation = useMutation({
@@ -201,8 +197,8 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
         address: (formData.address ?? "").trim(),
         contactEmail: (formData.contactEmail ?? "").trim(),
         website: (formData.website ?? "").trim(),
-        description: formData.description ?? "",
-        phoneNumber: formData.phoneNumber ?? "",
+        // description: formData.description ?? "",  // not validated yet
+        // phoneNumber: formData.phoneNumber ?? "",  // not validated yet
       });
       setErrors({});
       return true;
@@ -219,7 +215,6 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
       }
       return false;
     }
-
   };
 
   const submit = () => {
@@ -259,18 +254,17 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
         <div>
           {/* Profile Avatar */}
           <div className="text-center mb-8">
-          <div className="relative inline-block mb-4">
+            <div className="relative inline-block mb-4">
               <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
                 <div className="w-8 h-8 bg-muted-foreground/30 rounded-full"></div>
               </div>
               {/* Verification badge */}
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-              <Edit className="w-3 h-3 text-primary-foreground" />
+                <Edit className="w-3 h-3 text-primary-foreground" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-
 
         {/* Company Name */}
         <div>
@@ -340,7 +334,7 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
           )}
         </div>
 
-        {/* Description */}
+        {/* Company Description (coming soon) */}
         <div>
           <FieldLabel htmlFor="description">Company Description</FieldLabel>
           <Textarea
@@ -348,8 +342,10 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
             value={formData.description ?? ""}
             onChange={(e) => set("description", e.target.value)}
             className="mt-2 min-h-[100px]"
-            placeholder="Brief intro about your company..."
+            placeholder="(Coming soon) This won't be saved yet."
+            disabled
           />
+          <p className="text-xs text-muted-foreground mt-1">Not saved yet</p>
         </div>
 
         {/* Contact Email */}
@@ -379,7 +375,7 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
           )}
         </div>
 
-        {/* Phone */}
+        {/* Phone Number (coming soon) */}
         <div>
           <FieldLabel htmlFor="phoneNumber">Phone Number</FieldLabel>
           <Input
@@ -389,8 +385,10 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
             className="mt-2"
             inputMode="tel"
             autoComplete="tel"
-            placeholder="e.g. 081-234-5678"
+            placeholder="(Coming soon) e.g. 081-234-5678"
+            disabled
           />
+          <p className="text-xs text-muted-foreground mt-1">Not saved yet</p>
         </div>
 
         {/* Address */}
