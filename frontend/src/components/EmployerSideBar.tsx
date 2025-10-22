@@ -71,7 +71,7 @@ export default function EmployerSidebar() {
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `block px-8 py-4 font-medium transition-colors border-l-3 ${
+              `block px-8 py-4 font-medium transition-colors border-l-[3px] ${
                 isActive
                   ? "bg-teal-700 text-white border-l-brand-lime"
                   : "text-gray-600 hover:bg-gray-50 border-l-transparent"
