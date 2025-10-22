@@ -5,6 +5,7 @@ const {
   getProfile,
 } = require("../controllers/authController");
 const { authMiddleware } = require("../middlewares/authMiddleware");
+const { authLimiter } = require("../middlewares/rateLimitMiddleware");
 const passport = require("../utils/passport");
 const {
   generateAccessToken,
@@ -242,17 +243,15 @@ router.get(
  * @route POST /auth/refresh
  * @desc Refresh access token using refresh token
  * @access Public
- * Rate limited to 5 requests per 15 minutes to prevent token abuse
  */
-router.post('/refresh', authLimiter, refreshToken)
+router.post("/refresh", authLimiter, refreshToken);
 
 /**
  * @route POST /auth/logout
  * @desc Logout user and invalidate refresh token
  * @access Public
- * Rate limited to 5 requests per 15 minutes to prevent abuse
  */
-router.post('/logout', authLimiter, logout)
+router.post("/logout", authLimiter, logout);
 
 /**
  * @route GET /auth/me
