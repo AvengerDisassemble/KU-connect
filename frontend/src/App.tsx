@@ -9,15 +9,17 @@ import NotFoundPage from "@/pages/public/NotFoundPage";
 import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
 import StudentProfilePage from "@/pages/student/profile/ProfilePage";
 // import BrowserJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
-import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/EmployerDashboard/DashboardPage";
+import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
+import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 
+
 const App: React.FC = () => {
   return (
     <div className="min-h-dvh">
-      <Header />
+      {/* <Header /> */}
       <main className="container mx-auto max-w-screen-xl px-4 py-6">
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -52,6 +54,14 @@ const App: React.FC = () => {
             element={
               <Guard role="employer">
                 <EmployerDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer/profile/:userId"
+            element={
+              <Guard role="employer">
+                <EmployerProfilePage />
               </Guard>
             }
           />
