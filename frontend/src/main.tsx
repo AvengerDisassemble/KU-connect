@@ -10,7 +10,7 @@ import "@fontsource/poppins/400.css";
 import "@fontsource/poppins/700.css";
 import "@fontsource/volkhov/400.css";
 import "@fontsource/volkhov/700.css";
-import "./styles/lovable.css";
+import "./styles/global.css";
 
 const queryClient = new QueryClient();
 
