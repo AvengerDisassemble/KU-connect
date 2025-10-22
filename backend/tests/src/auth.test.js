@@ -1,66 +1,49 @@
 const request = require('supertest')
 const app = require('../../src/app')
 const { PrismaClient } = require('../../src/generated/prisma')
+const { cleanupDatabase } = require('./utils/testHelpers')
 
 const prisma = new PrismaClient()
 
 describe('Authentication Endpoints', () => {
   beforeAll(async () => {
-    // Clean up any existing test data - delete in correct order to avoid foreign key constraints
-    await prisma.refreshToken.deleteMany()
-    await prisma.student.deleteMany()
-    await prisma.professor.deleteMany()
-    await prisma.admin.deleteMany()
-    await prisma.hR.deleteMany()
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          contains: 'test'
-        }
-      }
-    })
+    // Clean up any existing test data
+    await cleanupDatabase(prisma, { logSuccess: false })
 
     // Seed required degree types for testing
     await prisma.degreeType.upsert({
-      where: { id: 1 },
+      where: { name: 'Computer Science' },
       update: {},
       create: {
-        id: 1,
         name: 'Computer Science'
       }
     })
   })
 
   afterAll(async () => {
-    // Clean up test data - delete in correct order to avoid foreign key constraints
-    await prisma.refreshToken.deleteMany()
-    await prisma.student.deleteMany()
-    await prisma.professor.deleteMany()
-    await prisma.admin.deleteMany()
-    await prisma.hR.deleteMany()
-    await prisma.user.deleteMany({
-      where: {
-        email: {
-          contains: 'test'
-        }
-      }
-    })
-    await prisma.degreeType.deleteMany({
-      where: {
-        id: 1
-      }
-    })
+    // Clean up test data using shared cleanup function
+    await cleanupDatabase(prisma, { logSuccess: false })
     await prisma.$disconnect()
   })
 
   describe('POST /api/register/alumni', () => {
+    let degreeTypeId
+
+    beforeAll(async () => {
+      // Get the degree type ID for testing
+      const degreeType = await prisma.degreeType.findUnique({
+        where: { name: 'Computer Science' }
+      })
+      degreeTypeId = degreeType.id
+    })
+
     it('should register a new alumni successfully', async () => {
       const alumniData = {
         name: 'John',
         surname: 'Doe',
         email: 'john.alumni.test@ku.th',
         password: 'Password123',
-        degreeTypeId: 1,
+        degreeTypeId,
         address: '123 Test Street, Bangkok, Thailand'
       }
 
@@ -74,6 +57,13 @@ describe('Authentication Endpoints', () => {
       expect(response.body.data.user.email).toBe(alumniData.email)
       expect(response.body.data.user.role).toBe('STUDENT')
       expect(response.body.data.user.password).toBeUndefined()
+      
+      // Verify that student record was created with degreeTypeId
+      const student = await prisma.student.findUnique({
+        where: { userId: response.body.data.user.id }
+      })
+      expect(student).not.toBeNull()
+      expect(student.degreeTypeId).toBe(degreeTypeId)
     })
 
     it('should not register alumni with invalid data', async () => {
@@ -98,7 +88,7 @@ describe('Authentication Endpoints', () => {
         surname: 'Doe',
         email: 'john.alumni.test@ku.th', // Same email as above
         password: 'Password123',
-        degreeTypeId: 1,
+        degreeTypeId,
         address: '456 Test Street, Bangkok, Thailand'
       }
 
