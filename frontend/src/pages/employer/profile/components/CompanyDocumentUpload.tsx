@@ -36,14 +36,18 @@ export default function CompanyDocumentUpload({
         {!uploadedFile ? (
           <label
             htmlFor="file-upload"
-            className="block border-2 border-dashed border-gray-300 rounded-lg p-12 text-center cursor-pointer hover:bg-muted/30"
+            className="block border-2 border-dashed border-border rounded-lg p-12 text-center cursor-pointer hover:bg-muted/40"
           >
             <FileUp className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-sm">Click to upload business registration certificate</p>
-            <p className="text-xs text-muted-foreground">PDF, JPG, PNG up to 10MB</p>
+            <p className="text-sm text-foreground">
+              Click to upload business registration certificate
+            </p>
+            <p className="text-xs text-muted-foreground">
+              PDF, JPG, PNG up to 10MB
+            </p>
           </label>
         ) : (
-          <div className="border rounded-lg p-4 flex items-center justify-between">
+          <div className="border border-border rounded-lg p-4 flex items-center justify-between bg-card">
             <div>
               <p className="text-sm font-medium">{uploadedFile.name}</p>
               <p className="text-xs text-muted-foreground">
@@ -59,7 +63,7 @@ export default function CompanyDocumentUpload({
         <div className="mt-4">
           <Button
             onClick={onSubmit}
-            className="px-8 bg-brand-lime hover:bg-brand-lime/90"
+            className="px-8 bg-accent text-accent-foreground hover:bg-accent/90"
           >
             Submit for Verification
           </Button>
