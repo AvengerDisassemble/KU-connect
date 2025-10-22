@@ -271,8 +271,11 @@ const JobPostingForm = ({ userId }: Props) => {
       });
       setTagInput(""); setReqInput(""); setQualInput(""); setRespInput(""); setBenefitInput("");
     } catch (err: any) {
+      let message = err?.message || "Unknown error";
+      message = message.replace(/^HTTP\s\d+\s*[-–]\s*/i, "");
+
       toast.error("Failed to post job", {
-        description: err?.message || "Unknown error",
+        description: message,
       });
     } finally {
       setSubmitting(false);
@@ -325,8 +328,8 @@ const JobPostingForm = ({ userId }: Props) => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="internship">Internship</SelectItem>
-                    <SelectItem value="fulltime">Full-time</SelectItem>
-                    <SelectItem value="parttime">Part-time</SelectItem>
+                    <SelectItem value="full-time">Full-time</SelectItem>
+                    <SelectItem value="part-time">Part-time</SelectItem>
                     <SelectItem value="contract">Contract</SelectItem>
                   </SelectContent>
                 </Select>
@@ -342,7 +345,7 @@ const JobPostingForm = ({ userId }: Props) => {
                     <SelectValue placeholder="Select arrangement" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="onsite">On-site</SelectItem>
+                    <SelectItem value="on-site">On-site</SelectItem>
                     <SelectItem value="remote">Remote</SelectItem>
                     <SelectItem value="hybrid">Hybrid</SelectItem>
                   </SelectContent>
@@ -568,7 +571,7 @@ const JobPostingForm = ({ userId }: Props) => {
                 <FieldLabel htmlFor="phone_number" required>Phone</FieldLabel>
                 <Input
                   id="phone_number"
-                  placeholder="+66-xxx-xxx-xxx"
+                  placeholder="+66-xxxxxxxxx"
                   value={formData.phone_number}
                   onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
                   className="mt-2"

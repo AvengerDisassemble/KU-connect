@@ -79,12 +79,46 @@ const authorizedFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
 
 // POST /api/job
 export const createJob = async (payload: CreateJobRequest): Promise<CreatedJobResponse> => {
+  console.log("[jobs.createJob] payload:", payload);
+
   const res = await authorizedFetch(`${BASE_URL}/job`, {
     method: "POST",
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("Failed to create job");
+
+  if (!res.ok) {
+    let serverMsg = `HTTP ${res.status}`;
+    let serverBody: unknown = null;
+
+    try {
+      serverBody = await res.json();
+      const msg =
+        (serverBody as any)?.message ||
+        (serverBody as any)?.error ||
+        (serverBody as any)?.errors ||
+        (serverBody as any)?.detail ||
+        (serverBody as any)?.details;
+
+      if (typeof msg === "string") serverMsg = `${serverMsg} – ${msg}`;
+      else if (msg) serverMsg = `${serverMsg} – ${JSON.stringify(msg)}`;
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) serverMsg = `${serverMsg} – ${text}`;
+      } catch {
+        /* ignore */
+      }
+    }
+
+    console.error("[jobs.createJob] server error:", serverBody || serverMsg);
+    throw new Error(serverMsg);
+  }
+
   const body: ApiResponse<CreatedJobResponse> = await res.json();
-  if (!body.success) throw new Error(body.message || "Failed to create job");
+  if (!body.success) {
+    console.error("[jobs.createJob] api error body:", body);
+    throw new Error(body.message || "Failed to create job");
+  }
+
   return body.data;
 };
