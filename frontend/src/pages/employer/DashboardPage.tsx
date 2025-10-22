@@ -1,4 +1,5 @@
 import EmployerSidebar from "@/components/EmployerSideBar";
+import EmployerDashboardContent from "./dashboard/components/DashboardContent";
 
 export default function EmployerDashboardPage() {
   return (
@@ -10,7 +11,7 @@ export default function EmployerDashboardPage() {
       </aside>
 
       <main className="min-h-screen pl-[280px] p-6">
-        Employer Dashboard (placeholder)
+        <EmployerDashboardContent />
       </main>
     </>
   );
