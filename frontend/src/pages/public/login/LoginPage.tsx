@@ -57,7 +57,7 @@ const LoginPage = () => {
       toast.success(
         `Welcome back, ${user?.name ?? ""}`.trim() || "Signed in successfully"
       );
-      const destination = getRoleDestination(user?.role);
+      const destination = getRoleDestination(user?.role, user?.id);
       navigate(destination, { replace: true });
     };
 
@@ -118,7 +118,7 @@ const LoginPage = () => {
       const { user } = response.data;
 
       toast.success(`Welcome back, ${user.name}!`);
-      const destination = getRoleDestination(user.role);
+      const destination = getRoleDestination(user.role, user.id);
       navigate(destination, { replace: true });
     } catch (error: unknown) {
       console.error(error);
@@ -250,6 +250,7 @@ interface OAuthMessagePayload {
   accessToken?: string;
   refreshToken?: string;
   user?: {
+    id?: string;
     role?: string;
     name?: string;
   } & Record<string, unknown>;
@@ -260,14 +261,17 @@ interface OAuthMessageEventData {
   payload?: OAuthMessagePayload;
 }
 
-function getRoleDestination(role?: string) {
+function getRoleDestination(role?: string, userId?: string) {
   const normalizedRole =
     typeof role === "string" ? role.toUpperCase() : undefined;
+  if (normalizedRole === "PROFESSOR" && userId) {
+    return `/employer/profile/${userId}`;
+  }
   switch (normalizedRole) {
     case "STUDENT":
       return "/student/dashboard";
     case "EMPLOYER":
-      return "/employer";
+      return userId ? `/employer/profile/${userId}` : "/employer";
     case "ADMIN":
       return "/admin";
     case "PROFESSOR":
