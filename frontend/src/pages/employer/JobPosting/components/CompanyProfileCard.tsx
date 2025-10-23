@@ -69,7 +69,7 @@ const CompanyProfileCard = ({ userId }: Props) => {
   if (loading) {
     return (
       <div className="bg-card rounded-lg border p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <Skeleton className="h-12 w-12 rounded-lg" />
             <div className="flex-1 space-y-3">
@@ -93,7 +93,7 @@ const CompanyProfileCard = ({ userId }: Props) => {
 
   return (
     <div className="bg-card rounded-lg border border-border p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: avatar + info */}
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-brand-teal rounded-lg flex items-center justify-center">
@@ -128,7 +128,7 @@ const CompanyProfileCard = ({ userId }: Props) => {
         <Button
           asChild
           variant="outline"
-          className="px-8 border-brand-teal text-brand-teal hover:bg-brand-teal hover:text-white"
+          className="w-full lg:w-auto lg:ml-auto lg:flex-none px-4 lg:px-8 border-brand-teal text-brand-teal hover:bg-brand-teal hover:text-white"
         >
           <Link to={`/employer/profile/${userId}`}>Edit Company Profile</Link>
         </Button>

@@ -86,6 +86,38 @@ type Props = { userId: string };
 
 const REQUIRED_TOAST_ID = "job-form-required";
 
+const PHONE_MIN_DIGITS = 7;
+const PHONE_MAX_DIGITS = 15;
+
+const phoneDigitCount = (value: string) => value.replace(/\D/g, "").length;
+
+const sanitizePhoneInput = (input: string) => {
+  let cleaned = "";
+  let digitsSeen = 0;
+  let hasLeadingPlus = false;
+
+  for (const char of input) {
+    if (char === "+" && !hasLeadingPlus && cleaned.length === 0) {
+      hasLeadingPlus = true;
+      cleaned += char;
+      continue;
+    }
+
+    if (/\d/.test(char)) {
+      if (digitsSeen >= PHONE_MAX_DIGITS) continue;
+      digitsSeen += 1;
+      cleaned += char;
+      continue;
+    }
+
+    if (char === " " || char === "-") {
+      cleaned += char;
+    }
+  }
+
+  return cleaned;
+};
+
 /* Component */
 const JobPostingForm = ({ userId }: Props) => {
   const [submitting, setSubmitting] = useState(false);
@@ -214,6 +246,17 @@ const JobPostingForm = ({ userId }: Props) => {
       return;
     }
 
+    const digitsInPhone = phoneDigitCount(formData.phone_number);
+    if (digitsInPhone < PHONE_MIN_DIGITS || digitsInPhone > PHONE_MAX_DIGITS) {
+      setFieldErrors(prev => ({
+        ...prev,
+        phone_number: `Phone number must be ${PHONE_MIN_DIGITS}-${PHONE_MAX_DIGITS} digits`,
+      }));
+      document.getElementById("phone_number")?.focus();
+      toast.error("Invalid phone number", { id: REQUIRED_TOAST_ID });
+      return;
+    }
+
     // Numeric checks
     const min = Number(formData.minSalary);
     const max = Number(formData.maxSalary);
@@ -300,7 +343,7 @@ const JobPostingForm = ({ userId }: Props) => {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-full" />
@@ -352,7 +395,7 @@ const JobPostingForm = ({ userId }: Props) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <FieldLabel htmlFor="jobType" required>Job Type</FieldLabel>
                 <Select
@@ -613,7 +656,7 @@ const JobPostingForm = ({ userId }: Props) => {
             <CardTitle className="text-xl font-semibold">Application & Contact</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <FieldLabel htmlFor="application_deadline" required>Application Deadline</FieldLabel>
                 <Input
@@ -644,10 +687,14 @@ const JobPostingForm = ({ userId }: Props) => {
                 <FieldLabel htmlFor="phone_number" required>Phone</FieldLabel>
                 <Input
                   id="phone_number"
-                  placeholder="+66-xxxxxxxxx"
+                  placeholder="+66 1234 5678"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  maxLength={20}
                   value={formData.phone_number}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, phone_number: e.target.value }));
+                    const sanitized = sanitizePhoneInput(e.target.value);
+                    setFormData(prev => ({ ...prev, phone_number: sanitized }));
                     setFieldErrors(prev => ({ ...prev, phone_number: "" }));
                   }}
                   className={`mt-2 ${fieldErrors.phone_number ? "border-destructive" : ""}`}
@@ -713,7 +760,7 @@ const JobPostingForm = ({ userId }: Props) => {
         </Card>
 
         {/* Actions: Clear + Confirm Modal */}
-        <div className="flex w-full items-center justify-end gap-3">
+        <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
           <Button
             type="button"
             variant="outline"
@@ -721,7 +768,7 @@ const JobPostingForm = ({ userId }: Props) => {
               setFormData(initialForm(lockCompanyName ? (profile?.hr?.companyName ?? "") : ""));
               setFieldErrors({});
             }}
-            className="border-brand-teal text-brand-teal hover:text-brand-teal"
+            className="justify-center border-brand-teal text-brand-teal hover:text-brand-teal sm:w-auto"
           >
             Clear Form
           </Button>
@@ -730,7 +777,7 @@ const JobPostingForm = ({ userId }: Props) => {
             <AlertDialogTrigger asChild>
               <Button
                 type="button"
-                className="px-8 bg-brand-teal hover:bg-brand-teal/90"
+                className="w-full sm:w-auto px-8 bg-brand-teal hover:bg-brand-teal/90"
                 disabled={submitting}
               >
                 {submitting ? "Posting..." : "Post Job"}
