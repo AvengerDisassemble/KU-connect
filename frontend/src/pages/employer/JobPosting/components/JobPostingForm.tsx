@@ -727,7 +727,7 @@ const JobPostingForm = ({ userId }: Props) => {
                 <h3 className="text-lg font-semibold text-foreground">
                   {formData.title || "Job Title"}
                 </h3>
-                <p className="text-brand-teal font-medium">
+                <p className="text-primary font-medium">
                   {formData.companyName || "Company"}
                 </p>
               </div>
@@ -768,7 +768,7 @@ const JobPostingForm = ({ userId }: Props) => {
               setFormData(initialForm(lockCompanyName ? (profile?.hr?.companyName ?? "") : ""));
               setFieldErrors({});
             }}
-            className="justify-center border-brand-teal text-brand-teal hover:text-brand-teal sm:w-auto"
+            className="justify-center border-primary text-primary hover:text-primary hover:bg-gray-200 sm:w-auto"
           >
             Clear Form
           </Button>
@@ -777,7 +777,7 @@ const JobPostingForm = ({ userId }: Props) => {
             <AlertDialogTrigger asChild>
               <Button
                 type="button"
-                className="w-full sm:w-auto px-8 bg-brand-teal hover:bg-brand-teal/90"
+                className="w-full sm:w-auto px-8 bg-primary hover:bg-primary/90"
                 disabled={submitting}
               >
                 {submitting ? "Posting..." : "Post Job"}
@@ -791,8 +791,8 @@ const JobPostingForm = ({ userId }: Props) => {
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="border-brand-teal text-brand-teal hover:text-brand-teal">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => doSubmit()} className="bg-brand-teal hover:bg-brand-teal/90">
+                <AlertDialogCancel className="border-primary text-primary hover:text-primary hover:bg-gray-200">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => doSubmit()} className="bg-primary hover:bg-primary/90">
                   Confirm
                 </AlertDialogAction>
               </AlertDialogFooter>

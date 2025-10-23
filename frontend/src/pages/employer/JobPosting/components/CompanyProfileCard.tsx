@@ -96,7 +96,7 @@ const CompanyProfileCard = ({ userId }: Props) => {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {/* Left: avatar + info */}
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-brand-teal rounded-lg flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-lg">
               {initialsOf(companyName)}
             </span>
@@ -128,7 +128,7 @@ const CompanyProfileCard = ({ userId }: Props) => {
         <Button
           asChild
           variant="outline"
-          className="w-full lg:w-auto lg:ml-auto lg:flex-none px-4 lg:px-8 border-brand-teal text-brand-teal hover:bg-brand-teal hover:text-white"
+          className="w-full lg:w-auto lg:ml-auto lg:flex-none px-4 lg:px-8 border-primary text-primary hover:bg-primary hover:text-white"
         >
           <Link to={`/employer/profile/${userId}`}>Edit Company Profile</Link>
         </Button>

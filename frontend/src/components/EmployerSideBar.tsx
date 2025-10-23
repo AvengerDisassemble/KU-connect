@@ -58,7 +58,7 @@ export default function EmployerSidebar() {
             draggable={false}
           />
         </div>
-        <div className="text-sm text-brand-lime font-medium">
+        <div className="text-sm text-accent font-medium">
           for employer
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function EmployerSidebar() {
             className={({ isActive }) =>
               `block px-8 py-4 font-medium transition-colors border-l-[3px] ${
                 isActive
-                  ? "bg-teal-700 text-white border-l-brand-lime"
+                  ? "bg-teal-700 text-white border-l-accent"
                   : "text-gray-600 hover:bg-gray-50 border-l-transparent"
               }`
             }

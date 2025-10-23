@@ -52,7 +52,7 @@ export default function JobPostingPage() {
       <main className="min-h-screen" style={{ paddingLeft: SIDEBAR_W }}>
         <div className="max-w-4xl mx-auto p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-8 text-brand-lime">Post a Job</h1>
+            <h1 className="text-3xl font-bold mb-8 text-accent">Post a Job</h1>
             <p className="text-muted-foreground">
               Connect with talented KU engineering students ready to join your team
             </p>
