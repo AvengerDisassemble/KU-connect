@@ -7,6 +7,7 @@ import {
   getEmployerProfile,
   type EmployerProfileResponse,
 } from "@/services/employerProfile";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const initialsOf = (name?: string | null) =>
   (name ?? "")
@@ -65,13 +66,29 @@ const CompanyProfileCard = ({ userId }: Props) => {
     };
   }, [userId]);
 
+  if (loading) {
+    return (
+      <div className="bg-card rounded-lg border p-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-12 w-12 rounded-lg" />
+            <div className="flex-1 space-y-3">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-3 w-1/4" />
+            </div>
+          </div>
+          <Skeleton className="h-10 w-40 rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
   const companyName = profile?.hr?.companyName ?? "Your Company";
   const industryRaw = profile?.hr?.industry ?? "";
-  const industry =
-    INDUSTRY_LABEL[industryRaw] || industryRaw || "—";
+  const industry = INDUSTRY_LABEL[industryRaw] || industryRaw || "—";
   const sizeRaw = profile?.hr?.companySize ?? "";
-  const companySize =
-    COMPANY_SIZE_LABEL[sizeRaw] || sizeRaw || "";
+  const companySize = COMPANY_SIZE_LABEL[sizeRaw] || sizeRaw || "";
   const address = profile?.hr?.address ?? "";
 
   return (
@@ -87,14 +104,12 @@ const CompanyProfileCard = ({ userId }: Props) => {
 
           <div>
             <h2 className="text-xl font-semibold text-foreground">
-              {loading ? "Loading..." : companyName}
+              {companyName}
             </h2>
 
-            {!loading && err && (
-              <p className="text-destructive text-sm">{err}</p>
-            )}
+            {!!err && <p className="text-destructive text-sm">{err}</p>}
 
-            {!loading && !err && (
+            {!err && (
               <>
                 <p className="text-muted-foreground text-sm">
                   {address ? `${address} • ${industry}` : industry}
@@ -115,9 +130,7 @@ const CompanyProfileCard = ({ userId }: Props) => {
           variant="outline"
           className="px-8 border-brand-teal text-brand-teal hover:bg-brand-teal hover:text-white"
         >
-          <Link to={`/employer/profile/${userId}`}>
-            Edit Company Profile
-          </Link>
+          <Link to={`/employer/profile/${userId}`}>Edit Company Profile</Link>
         </Button>
       </div>
     </div>

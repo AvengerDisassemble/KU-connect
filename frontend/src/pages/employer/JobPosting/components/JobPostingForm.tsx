@@ -15,6 +15,12 @@ import { X } from "lucide-react";
 
 import { createJob } from "@/services/jobs";
 import { getEmployerProfile, type EmployerProfileResponse } from "@/services/employerProfile";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 /* UI helpers */
 function FieldLabel({
@@ -86,9 +92,15 @@ const JobPostingForm = ({ userId }: Props) => {
   const [profile, setProfile] = useState<EmployerProfileResponse | null>(null);
   const [lockCompanyName, setLockCompanyName] = useState(false);
 
-  const [formData, setFormData] = useState<JobFormState>({
+  // field-level errors
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  // skeleton state for initial mount
+  const [initializing, setInitializing] = useState(true);
+
+  const initialForm = (companyFromProfile: string): JobFormState => ({
     title: "",
-    companyName: "",
+    companyName: companyFromProfile,
     description: "",
     location: "",
     jobType: "",
@@ -107,6 +119,8 @@ const JobPostingForm = ({ userId }: Props) => {
     benefits: [],
   });
 
+  const [formData, setFormData] = useState<JobFormState>(initialForm(""));
+
   // inputs for "press Enter to add"
   const [tagInput, setTagInput] = useState("");
   const [reqInput, setReqInput] = useState("");
@@ -123,12 +137,15 @@ const JobPostingForm = ({ userId }: Props) => {
         if (cancelled) return;
         setProfile(p);
         const company = p.hr?.companyName?.trim() ?? "";
-        if (company) {
-          setFormData(prev => ({ ...prev, companyName: company }));
-          setLockCompanyName(true);
-        }
+        setFormData(initialForm(company));
+        setLockCompanyName(!!company);
       } catch (e: any) {
         console.warn("getEmployerProfile failed:", e?.message || e);
+        setFormData(initialForm(""));
+        setLockCompanyName(false);
+      } finally {
+        // หน่วงสั้น ๆ กัน flash
+        setTimeout(() => !cancelled && setInitializing(false), 250);
       }
     })();
     return () => { cancelled = true; };
@@ -156,39 +173,38 @@ const JobPostingForm = ({ userId }: Props) => {
     }));
   };
 
-  /* submit */
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  /* helper: only digits for salary */
+  const onlyDigits = (s: string) => s.replace(/[^\d]/g, "");
+
+  /* -------- validation & submit ---------- */
+
+  const validateAndGetMissing = (): string[] => {
+    const missing: string[] = [];
+    if (!formData.title) missing.push("title");
+    if (!formData.description) missing.push("description");
+    if (!formData.location) missing.push("location");
+    if (!formData.jobType) missing.push("jobType");
+    if (!formData.workArrangement) missing.push("workArrangement");
+    if (!formData.phone_number) missing.push("phone_number");
+    if (!formData.minSalary) missing.push("minSalary");
+    if (!formData.maxSalary) missing.push("maxSalary");
+    if (!formData.duration) missing.push("duration");
+    if (!formData.application_deadline) missing.push("application_deadline");
+    return missing;
+  };
+
+  const doSubmit = async () => {
     if (submitting) return;
 
     // Required checks
-    const missing: string[] = [];
-    if (!formData.title) missing.push("Title");
-    if (!formData.description) missing.push("Description");
-    if (!formData.location) missing.push("Location");
-    if (!formData.jobType) missing.push("Job Type");
-    if (!formData.workArrangement) missing.push("Work Arrangement");
-    if (!formData.phone_number) missing.push("Phone");
-    if (!formData.minSalary) missing.push("Min Salary");
-    if (!formData.maxSalary) missing.push("Max Salary");
-    if (!formData.duration) missing.push("Duration");
-    if (!formData.application_deadline) missing.push("Application Deadline");
-
+    const missing = validateAndGetMissing();
     if (missing.length > 0) {
-      const idMap: Record<string, string> = {
-        Title: "title",
-        Description: "description",
-        Location: "location",
-        "Job Type": "jobType",
-        "Work Arrangement": "workArrangement",
-        Phone: "phone_number",
-        "Min Salary": "minSalary",
-        "Max Salary": "maxSalary",
-        Duration: "duration",
-        "Application Deadline": "application_deadline",
-      };
-      const firstId = idMap[missing[0]];
-      if (firstId) document.getElementById(firstId)?.focus();
+      const errs: Record<string, string> = {};
+      missing.forEach((k) => (errs[k] = "Required"));
+      setFieldErrors(errs);
+
+      const firstId = missing[0];
+      document.getElementById(firstId)?.focus();
 
       toast.error("Please fill all required (*) fields", {
         id: REQUIRED_TOAST_ID,
@@ -202,11 +218,14 @@ const JobPostingForm = ({ userId }: Props) => {
     const min = Number(formData.minSalary);
     const max = Number(formData.maxSalary);
     if (!Number.isFinite(min) || !Number.isFinite(max) || min <= 0 || max <= 0) {
-      document.getElementById(!Number.isFinite(min) ? "minSalary" : "maxSalary")?.focus();
+      const which = !Number.isFinite(min) || min <= 0 ? "minSalary" : "maxSalary";
+      setFieldErrors(prev => ({ ...prev, [which]: "Invalid number" }));
+      document.getElementById(which)?.focus();
       toast.error("Salary must be positive numbers", { id: REQUIRED_TOAST_ID });
       return;
     }
     if (min > max) {
+      setFieldErrors(prev => ({ ...prev, minSalary: "Must be ≤ Max Salary" }));
       document.getElementById("minSalary")?.focus();
       toast.error("Min Salary must be less than or equal to Max Salary", { id: REQUIRED_TOAST_ID });
       return;
@@ -214,6 +233,7 @@ const JobPostingForm = ({ userId }: Props) => {
 
     // Date check (yyyy-mm-dd -> T23:59:59Z)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.application_deadline)) {
+      setFieldErrors(prev => ({ ...prev, application_deadline: "Invalid date" }));
       document.getElementById("application_deadline")?.focus();
       toast.error("Invalid Application Deadline", { id: REQUIRED_TOAST_ID });
       return;
@@ -248,27 +268,9 @@ const JobPostingForm = ({ userId }: Props) => {
         description: res?.title ? `Created: ${res.title}` : undefined,
       });
 
-      // Reset form
-      setFormData({
-        title: "",
-        companyName: lockCompanyName ? (profile?.hr?.companyName ?? "") : "",
-        description: "",
-        location: "",
-        jobType: "",
-        workArrangement: "",
-        duration: "",
-        tags: [],
-        minSalary: "",
-        maxSalary: "",
-        application_deadline: "",
-        email: "",
-        phone_number: "",
-        other_contact_information: "",
-        requirements: [],
-        qualifications: [],
-        responsibilities: [],
-        benefits: [],
-      });
+      // reset
+      setFormData(initialForm(lockCompanyName ? (profile?.hr?.companyName ?? "") : ""));
+      setFieldErrors({});
       setTagInput(""); setReqInput(""); setQualInput(""); setRespInput(""); setBenefitInput("");
     } catch (err: any) {
       let message = err?.message || "Unknown error";
@@ -282,7 +284,37 @@ const JobPostingForm = ({ userId }: Props) => {
     }
   };
 
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    doSubmit();
+  };
+
   /* UI */
+
+  // initial skeleton
+  if (initializing) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-6 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-2xl bg-bg-2 p-6">
       <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
@@ -300,9 +332,13 @@ const JobPostingForm = ({ userId }: Props) => {
                   id="title"
                   placeholder="e.g., Frontend Developer Intern"
                   value={formData.title}
-                  onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                  className="mt-2"
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, title: e.target.value }));
+                    setFieldErrors(prev => ({ ...prev, title: "" }));
+                  }}
+                  className={`mt-2 ${fieldErrors.title ? "border-destructive" : ""}`}
                 />
+                {fieldErrors.title && <p className="text-xs text-destructive mt-1">{fieldErrors.title}</p>}
               </div>
               <div>
                 <FieldLabel htmlFor="companyName">Company Name</FieldLabel>
@@ -321,9 +357,12 @@ const JobPostingForm = ({ userId }: Props) => {
                 <FieldLabel htmlFor="jobType" required>Job Type</FieldLabel>
                 <Select
                   value={formData.jobType}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, jobType: value }))}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, jobType: value }));
+                    setFieldErrors(prev => ({ ...prev, jobType: "" }));
+                  }}
                 >
-                  <SelectTrigger id="jobType" className="mt-2">
+                  <SelectTrigger id="jobType" className={`mt-2 ${fieldErrors.jobType ? "border-destructive" : ""}`}>
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -333,15 +372,19 @@ const JobPostingForm = ({ userId }: Props) => {
                     <SelectItem value="contract">Contract</SelectItem>
                   </SelectContent>
                 </Select>
+                {fieldErrors.jobType && <p className="text-xs text-destructive mt-1">{fieldErrors.jobType}</p>}
               </div>
 
               <div>
                 <FieldLabel htmlFor="workArrangement" required>Work Arrangement</FieldLabel>
                 <Select
                   value={formData.workArrangement}
-                  onValueChange={(value) => setFormData(prev => ({ ...prev, workArrangement: value }))}
+                  onValueChange={(value) => {
+                    setFormData(prev => ({ ...prev, workArrangement: value }));
+                    setFieldErrors(prev => ({ ...prev, workArrangement: "" }));
+                  }}
                 >
-                  <SelectTrigger id="workArrangement" className="mt-2">
+                  <SelectTrigger id="workArrangement" className={`mt-2 ${fieldErrors.workArrangement ? "border-destructive" : ""}`}>
                     <SelectValue placeholder="Select arrangement" />
                   </SelectTrigger>
                   <SelectContent>
@@ -350,6 +393,7 @@ const JobPostingForm = ({ userId }: Props) => {
                     <SelectItem value="hybrid">Hybrid</SelectItem>
                   </SelectContent>
                 </Select>
+                {fieldErrors.workArrangement && <p className="text-xs text-destructive mt-1">{fieldErrors.workArrangement}</p>}
               </div>
 
               <div>
@@ -358,9 +402,13 @@ const JobPostingForm = ({ userId }: Props) => {
                   id="location"
                   placeholder="e.g., Bangkok, Thailand"
                   value={formData.location}
-                  onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                  className="mt-2"
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, location: e.target.value }));
+                    setFieldErrors(prev => ({ ...prev, location: "" }));
+                  }}
+                  className={`mt-2 ${fieldErrors.location ? "border-destructive" : ""}`}
                 />
+                {fieldErrors.location && <p className="text-xs text-destructive mt-1">{fieldErrors.location}</p>}
               </div>
             </div>
 
@@ -370,9 +418,13 @@ const JobPostingForm = ({ userId }: Props) => {
                 id="duration"
                 placeholder="e.g., 6 months, 1 year"
                 value={formData.duration}
-                onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
-                className="mt-2"
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, duration: e.target.value }));
+                  setFieldErrors(prev => ({ ...prev, duration: "" }));
+                }}
+                className={`mt-2 ${fieldErrors.duration ? "border-destructive" : ""}`}
               />
+              {fieldErrors.duration && <p className="text-xs text-destructive mt-1">{fieldErrors.duration}</p>}
             </div>
 
             <div>
@@ -381,9 +433,13 @@ const JobPostingForm = ({ userId }: Props) => {
                 id="description"
                 placeholder="What will they do day-to-day? What will they learn? What impact will they have?"
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                className="mt-2 min-h-[120px]"
+                onChange={(e) => {
+                  setFormData(prev => ({ ...prev, description: e.target.value }));
+                  setFieldErrors(prev => ({ ...prev, description: "" }));
+                }}
+                className={`mt-2 min-h-[120px] ${fieldErrors.description ? "border-destructive" : ""}`}
               />
+              {fieldErrors.description && <p className="text-xs text-destructive mt-1">{fieldErrors.description}</p>}
             </div>
           </CardContent>
         </Card>
@@ -403,8 +459,11 @@ const JobPostingForm = ({ userId }: Props) => {
                   inputMode="numeric"
                   placeholder="10000"
                   value={formData.minSalary}
-                  onChange={(e) => setFormData(prev => ({ ...prev, minSalary: e.target.value }))}
-                  className="flex-1"
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, minSalary: onlyDigits(e.target.value) }));
+                    setFieldErrors(prev => ({ ...prev, minSalary: "" }));
+                  }}
+                  className={`flex-1 ${fieldErrors.minSalary ? "border-destructive" : ""}`}
                 />
                 <span className="text-muted-foreground">to</span>
                 <Input
@@ -412,11 +471,19 @@ const JobPostingForm = ({ userId }: Props) => {
                   inputMode="numeric"
                   placeholder="15000"
                   value={formData.maxSalary}
-                  onChange={(e) => setFormData(prev => ({ ...prev, maxSalary: e.target.value }))}
-                  className="flex-1"
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, maxSalary: onlyDigits(e.target.value) }));
+                    setFieldErrors(prev => ({ ...prev, maxSalary: "" }));
+                  }}
+                  className={`flex-1 ${fieldErrors.maxSalary ? "border-destructive" : ""}`}
                 />
                 <span className="text-muted-foreground font-medium">THB</span>
               </div>
+              {(fieldErrors.minSalary || fieldErrors.maxSalary) && (
+                <p className="text-xs text-destructive mt-1">
+                  {fieldErrors.minSalary || fieldErrors.maxSalary}
+                </p>
+              )}
             </div>
 
             <div>
@@ -526,7 +593,8 @@ const JobPostingForm = ({ userId }: Props) => {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    addToList(benefitInput, "benefits", () => setBenefitInput(""));}
+                    addToList(benefitInput, "benefits", () => setBenefitInput(""));
+                  }
                 }}
                 className="mt-2"
               />
@@ -551,10 +619,15 @@ const JobPostingForm = ({ userId }: Props) => {
                 <Input
                   id="application_deadline"
                   type="date"
+                  min={new Date().toISOString().slice(0,10)}
                   value={formData.application_deadline}
-                  onChange={(e) => setFormData(prev => ({ ...prev, application_deadline: e.target.value }))}
-                  className="mt-2"
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, application_deadline: e.target.value }));
+                    setFieldErrors(prev => ({ ...prev, application_deadline: "" }));
+                  }}
+                  className={`mt-2 ${fieldErrors.application_deadline ? "border-destructive" : ""}`}
                 />
+                {fieldErrors.application_deadline && <p className="text-xs text-destructive mt-1">{fieldErrors.application_deadline}</p>}
               </div>
               <div>
                 <FieldLabel htmlFor="email">Email (optional)</FieldLabel>
@@ -573,9 +646,13 @@ const JobPostingForm = ({ userId }: Props) => {
                   id="phone_number"
                   placeholder="+66-xxxxxxxxx"
                   value={formData.phone_number}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
-                  className="mt-2"
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, phone_number: e.target.value }));
+                    setFieldErrors(prev => ({ ...prev, phone_number: "" }));
+                  }}
+                  className={`mt-2 ${fieldErrors.phone_number ? "border-destructive" : ""}`}
                 />
+                {fieldErrors.phone_number && <p className="text-xs text-destructive mt-1">{fieldErrors.phone_number}</p>}
               </div>
             </div>
 
@@ -635,15 +712,45 @@ const JobPostingForm = ({ userId }: Props) => {
           </CardContent>
         </Card>
 
-        {/* Actions */}
-        <div className="flex w-full items-center justify-end">
+        {/* Actions: Clear + Confirm Modal */}
+        <div className="flex w-full items-center justify-end gap-3">
           <Button
-            type="submit"
-            className="px-8 bg-brand-teal hover:bg-brand-teal/90"
-            disabled={submitting}
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setFormData(initialForm(lockCompanyName ? (profile?.hr?.companyName ?? "") : ""));
+              setFieldErrors({});
+            }}
+            className="border-brand-teal text-brand-teal hover:text-brand-teal"
           >
-            {submitting ? "Posting..." : "Post Job"}
+            Clear Form
           </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                className="px-8 bg-brand-teal hover:bg-brand-teal/90"
+                disabled={submitting}
+              >
+                {submitting ? "Posting..." : "Post Job"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Post this job?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Please confirm. You can edit or remove later.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="border-brand-teal text-brand-teal hover:text-brand-teal">Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => doSubmit()} className="bg-brand-teal hover:bg-brand-teal/90">
+                  Confirm
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </form>
     </div>
