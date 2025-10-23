@@ -5,6 +5,7 @@ const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
 const cookieParser = require('cookie-parser')
+const passport = require('./utils/passport')
 const routes = require('./routes')
 const { errorHandler } = require('./middlewares/errorHandler')
 
@@ -18,6 +19,9 @@ app.use(express.json())
 app.use(cookieParser())
 app.use(morgan('dev'))
 app.use(express.urlencoded({ extended: true }))
+
+// Initialize Passport (without sessions)
+app.use(passport.initialize())
 
 // Mount API routes
 app.use('/api', routes)

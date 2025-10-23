@@ -47,19 +47,19 @@ export default function EmployerSidebar() {
   };
 
   return (
-    <aside className="w-60 bg-white min-h-screen flex flex-col">
+    <aside className="w-60 min-h-screen bg-card border-r border-border flex flex-col">
       {/* Logo */}
-      <div className="p-8 pt-8 border-b border-gray-200 text-center">
+      <div className="p-8 pt-8 border-b border-border text-center">
         <div className="flex items-center justify-center">
           <img
             src={Logo}
             alt="KU Connect Logo"
-            className="block h-12 w-auto max-w-[260px] object-contain select-none ml-12"
+            className="block h-12 w-auto max-w-[220px] object-contain select-none"
             draggable={false}
           />
         </div>
-        <div className="text-sm text-brand-lime font-medium">
-          for employer
+        <div className="text-xs font-medium uppercase tracking-wide text-accent mt-4">
+          Employer Portal
         </div>
       </div>
 
@@ -71,12 +71,15 @@ export default function EmployerSidebar() {
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `block px-8 py-4 font-medium transition-colors border-l-[3px] ${
+              `block px-8 py-4 font-medium transition-colors border-l-[3px] rounded-r-lg ${
                 isActive
-                  ? "bg-teal-700 text-white border-l-brand-lime"
-                  : "text-gray-600 hover:bg-gray-50 border-l-transparent"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/60"
               }`
             }
+            style={({ isActive }) => ({
+              borderLeftColor: isActive ? "var(--color-accent)" : "transparent",
+            })}
           >
             {item.label}
           </NavLink>
@@ -87,7 +90,7 @@ export default function EmployerSidebar() {
       <div className="px-6 pb-6">
         <Button
           variant="outline"
-          className="w-full justify-center"
+          className="w-full justify-center border-border"
           onClick={handleLogout}
           disabled={isSigningOut}
         >

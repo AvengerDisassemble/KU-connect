@@ -18,7 +18,7 @@ import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/Dashboa
 const App: React.FC = () => {
   return (
     <div className="min-h-dvh">
-      {/* <Header /> */}
+      <Header />
       <main className="container mx-auto max-w-screen-xl px-4 py-6">
         <Routes>
           <Route path="/" element={<LandingPage />} />

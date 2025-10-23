@@ -10,10 +10,7 @@ export interface VerificationItem {
 }
 
 function StatusDot({ status }: { status: VerificationStatus }) {
-  const color = {
-    completed: "bg-brand-lime",
-    waiting: "bg-slate-400",
-  }[status];
+  const color = status === "completed" ? "bg-accent" : "bg-muted-foreground/40";
   return (
     <span
       className={`inline-block h-3 w-3 rounded-full ${color}`}
@@ -22,7 +19,11 @@ function StatusDot({ status }: { status: VerificationStatus }) {
   );
 }
 
-export default function VerificationChecklist({ items }: { items: VerificationItem[] }) {
+export default function VerificationChecklist({
+  items,
+}: {
+  items: VerificationItem[];
+}) {
   return (
     <Card className="border-none">
       <CardHeader>
@@ -36,7 +37,9 @@ export default function VerificationChecklist({ items }: { items: VerificationIt
             <StatusDot status={item.status} />
             <div>
               <p className="text-sm font-medium">{item.title}</p>
-              <p className="text-xs text-muted-foreground">{item.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {item.description}
+              </p>
             </div>
           </div>
         ))}

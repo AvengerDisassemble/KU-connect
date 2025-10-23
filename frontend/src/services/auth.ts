@@ -1,6 +1,42 @@
 import { BASE_URL } from "@/lib/config";
 
-const AUTH_EVENT = "ku-connect-auth";
+export const AUTH_EVENT = "ku-connect-auth";
+
+export interface AuthSessionPayload {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  user?: unknown | null;
+}
+
+export function setAuthSession({
+  accessToken,
+  refreshToken,
+  user,
+}: AuthSessionPayload): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (typeof accessToken === "string") {
+    localStorage.setItem("accessToken", accessToken);
+  } else if (accessToken === null) {
+    localStorage.removeItem("accessToken");
+  }
+
+  if (typeof refreshToken === "string") {
+    localStorage.setItem("refreshToken", refreshToken);
+  } else if (refreshToken === null) {
+    localStorage.removeItem("refreshToken");
+  }
+
+  if (user && typeof user === "object") {
+    localStorage.setItem("user", JSON.stringify(user));
+  } else if (user === null) {
+    localStorage.removeItem("user");
+  }
+
+  window.dispatchEvent(new Event(AUTH_EVENT));
+}
 
 export interface LoginResponse {
   success: boolean;
@@ -25,7 +61,7 @@ export interface RegisterData {
   email: string;
   password: string;
   address: string;
-  degreeTypeId: number;
+  degreeTypeId: string;
 }
 
 export interface RegisterEmployerData {
@@ -66,26 +102,13 @@ export async function login(
 
   const data = await response.json();
 
-  if (data.success && typeof window !== "undefined") {
+  if (data.success) {
     const { accessToken, refreshToken, user } = data.data ?? {};
-
-    if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
-    } else {
-      localStorage.removeItem("accessToken");
-    }
-
-    if (refreshToken) {
-      localStorage.setItem("refreshToken", refreshToken);
-    } else {
-      localStorage.removeItem("refreshToken");
-    }
-
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    }
-
-    window.dispatchEvent(new Event(AUTH_EVENT));
+    setAuthSession({
+      accessToken: accessToken ?? null,
+      refreshToken: refreshToken ?? null,
+      user: user ?? null,
+    });
   }
 
   return data;
@@ -116,11 +139,7 @@ export async function logout(): Promise<void> {
     }
   }
 
-  // Clear localStorage regardless of API call success
-  localStorage.removeItem("accessToken");
-  localStorage.removeItem("refreshToken");
-  localStorage.removeItem("user");
-  window.dispatchEvent(new Event(AUTH_EVENT));
+  setAuthSession({ accessToken: null, refreshToken: null, user: null });
 }
 
 /**
@@ -136,33 +155,21 @@ export async function refreshAccessToken(): Promise<LoginResponse> {
   });
 
   if (!response.ok) {
-  const errorText = await response.text();
-  console.error("Token refresh failed:", errorText);
-  throw new Error(errorText || "Token refresh failed");
-}
+    const errorText = await response.text();
+    console.error("Token refresh failed:", errorText);
+    throw new Error(errorText || "Token refresh failed");
+  }
 
   const data = await response.json();
 
   // Update stored tokens
-  if (data.success && typeof window !== "undefined") {
+  if (data.success) {
     const { accessToken, refreshToken, user } = data.data ?? {};
-
-    if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
-    } else {
-      localStorage.removeItem("accessToken");
-    }
-
-    if (refreshToken) {
-      localStorage.setItem("refreshToken", refreshToken);
-    } else {
-      localStorage.removeItem("refreshToken");
-    }
-
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-      window.dispatchEvent(new Event(AUTH_EVENT));
-    }
+    setAuthSession({
+      accessToken: accessToken ?? null,
+      refreshToken: refreshToken ?? null,
+      user: user ?? null,
+    });
   }
 
   return data;
