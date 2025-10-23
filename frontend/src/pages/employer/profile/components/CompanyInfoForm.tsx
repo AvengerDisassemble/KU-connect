@@ -465,7 +465,7 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
           type="button"
           onClick={submit}
           disabled={mutation.isPending}
-          className="px-8 bg-brand-teal hover:bg-brand-teal/90"
+          className="px-8 bg-primary hover:bg-brand-teal/90"
         >
           {mutation.isPending ? "Saving..." : "Save Changes"}
         </Button>
