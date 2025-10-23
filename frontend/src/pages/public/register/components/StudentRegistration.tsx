@@ -17,6 +17,18 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { registerAlumni, login, setAuthSession } from "@/services/auth";
 import { API_BASE } from "@/services/api";
 import { fetchDegreeTypes } from "@/services/degree";
+const getRoleDestination = (role?: string) => {
+  switch (role) {
+    case "student":
+    case "alumni":
+      return "/student/browsejobs";
+    case "employer":
+    case "professor":
+      return "/employer/profile";
+    default:
+      return "/";
+  }
+};
 
 type OAuthMessagePayload = {
   accessToken?: string;
@@ -666,5 +678,3 @@ const StudentRegistration = () => {
 };
 
 export default StudentRegistration;
-
-import { getRoleDestination } from "@/utils/navigation";
