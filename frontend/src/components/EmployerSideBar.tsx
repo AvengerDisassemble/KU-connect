@@ -47,34 +47,34 @@ export default function EmployerSidebar() {
   };
 
   return (
-    <aside className="w-60 bg-white min-h-screen flex flex-col">
+    <aside className="flex min-h-screen w-60 flex-col border-r border-border bg-card">
       {/* Logo */}
-      <div className="p-8 pt-8 border-b border-gray-200 text-center">
+      <div className="border-border border-b p-8 pt-8 text-center">
         <div className="flex items-center justify-center">
           <img
             src={Logo}
             alt="KU Connect Logo"
-            className="block h-12 w-auto max-w-[260px] object-contain select-none ml-12"
+            className="ml-12 block h-12 w-auto max-w-[260px] select-none object-contain"
             draggable={false}
           />
         </div>
-        <div className="text-sm text-accent font-medium">
+        <div className="text-sm font-medium text-accent">
           for employer
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-5 space-y-2 text-sm">
+      <nav className="flex-1 space-y-2 py-5 text-sm">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `block px-8 py-4 font-medium transition-colors border-l-[3px] ${
+              `block border-l-[3px] px-8 py-4 font-medium transition-colors ${
                 isActive
-                  ? "bg-teal-700 text-white border-l-accent"
-                  : "text-gray-600 hover:bg-gray-50 border-l-transparent"
+                  ? "border-l-accent bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/60"
               }`
             }
           >
@@ -87,11 +87,11 @@ export default function EmployerSidebar() {
       <div className="px-6 pb-6">
         <Button
           variant="outline"
-          className="w-full justify-center"
+          className="w-full justify-center border-border"
           onClick={handleLogout}
           disabled={isSigningOut}
         >
-          <LogOut className="w-4 h-4 mr-2" />
+          <LogOut className="mr-2 h-4 w-4" />
           {isSigningOut ? "Signing out..." : "Sign out"}
         </Button>
       </div>

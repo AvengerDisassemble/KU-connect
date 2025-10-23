@@ -176,7 +176,6 @@ const JobPostingForm = ({ userId }: Props) => {
         setFormData(initialForm(""));
         setLockCompanyName(false);
       } finally {
-        // หน่วงสั้น ๆ กัน flash
         setTimeout(() => !cancelled && setInitializing(false), 250);
       }
     })();
@@ -208,7 +207,7 @@ const JobPostingForm = ({ userId }: Props) => {
   /* helper: only digits for salary */
   const onlyDigits = (s: string) => s.replace(/[^\d]/g, "");
 
-  /* -------- validation & submit ---------- */
+  /* validation & submit */
 
   const validateAndGetMissing = (): string[] => {
     const missing: string[] = [];
@@ -338,39 +337,82 @@ const JobPostingForm = ({ userId }: Props) => {
   if (initializing) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-6 w-48" />
+        <Skeleton
+          className="h-6 w-48"
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton
+            className="h-10 w-full"
+          />
+
+          <Skeleton
+            className="h-10 w-full"
+          />
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton
+            className="h-10 w-full"
+          />
+
+          <Skeleton
+            className="h-10 w-full"
+          />
+
+          <Skeleton
+            className="h-10 w-full"
+          />
         </div>
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-28 w-full" />
+
+        <Skeleton
+          className="h-10 w-full"
+        />
+
+        <Skeleton
+          className="h-28 w-full"
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
+          <Skeleton
+            className="h-10 w-full"
+          />
+
+          <Skeleton
+            className="h-10 w-full"
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl bg-bg-2 p-6">
-      <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
+    <div
+      className="rounded-2xl bg-bg-2 p-6"
+    >
+      <form
+        className="flex flex-col gap-8"
+        onSubmit={handleSubmit}
+      >
         {/* Job Basics */}
-        <Card className="border-0 shadow-none bg-transparent">
+        <Card
+          className="border-0 shadow-none bg-transparent"
+        >
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Job Details</CardTitle>
-            <p className="text-muted-foreground text-sm">Tell others about this role</p>
+            <CardTitle className="text-xl font-semibold">
+              Job Details
+            </CardTitle>
+
+            <p className="text-muted-foreground text-sm">
+              Tell others about this role
+            </p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <FieldLabel htmlFor="title" required>Job Title</FieldLabel>
+                <FieldLabel htmlFor="title" required>
+                  Job Title
+                </FieldLabel>
                 <Input
                   id="title"
                   placeholder="e.g., Frontend Developer Intern"
@@ -384,7 +426,9 @@ const JobPostingForm = ({ userId }: Props) => {
                 {fieldErrors.title && <p className="text-xs text-destructive mt-1">{fieldErrors.title}</p>}
               </div>
               <div>
-                <FieldLabel htmlFor="companyName">Company Name</FieldLabel>
+                <FieldLabel htmlFor="companyName">
+                  Company Name
+                </FieldLabel>
                 <Input
                   id="companyName"
                   placeholder="Company (prefilled)"
@@ -397,7 +441,9 @@ const JobPostingForm = ({ userId }: Props) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <FieldLabel htmlFor="jobType" required>Job Type</FieldLabel>
+                <FieldLabel htmlFor="jobType" required>
+                  Job Type
+                </FieldLabel>
                 <Select
                   value={formData.jobType}
                   onValueChange={(value) => {
@@ -405,7 +451,10 @@ const JobPostingForm = ({ userId }: Props) => {
                     setFieldErrors(prev => ({ ...prev, jobType: "" }));
                   }}
                 >
-                  <SelectTrigger id="jobType" className={`mt-2 ${fieldErrors.jobType ? "border-destructive" : ""}`}>
+                  <SelectTrigger
+                    id="jobType"
+                    className={`mt-2 ${fieldErrors.jobType ? "border-destructive" : ""}`}
+                  >
                     <SelectValue placeholder="Select job type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -419,7 +468,9 @@ const JobPostingForm = ({ userId }: Props) => {
               </div>
 
               <div>
-                <FieldLabel htmlFor="workArrangement" required>Work Arrangement</FieldLabel>
+                <FieldLabel htmlFor="workArrangement" required>
+                  Work Arrangement
+                </FieldLabel>
                 <Select
                   value={formData.workArrangement}
                   onValueChange={(value) => {
@@ -427,7 +478,10 @@ const JobPostingForm = ({ userId }: Props) => {
                     setFieldErrors(prev => ({ ...prev, workArrangement: "" }));
                   }}
                 >
-                  <SelectTrigger id="workArrangement" className={`mt-2 ${fieldErrors.workArrangement ? "border-destructive" : ""}`}>
+                  <SelectTrigger
+                    id="workArrangement"
+                    className={`mt-2 ${fieldErrors.workArrangement ? "border-destructive" : ""}`}
+                  >
                     <SelectValue placeholder="Select arrangement" />
                   </SelectTrigger>
                   <SelectContent>
@@ -440,7 +494,9 @@ const JobPostingForm = ({ userId }: Props) => {
               </div>
 
               <div>
-                <FieldLabel htmlFor="location" required>Location</FieldLabel>
+                <FieldLabel htmlFor="location" required>
+                  Location
+                </FieldLabel>
                 <Input
                   id="location"
                   placeholder="e.g., Bangkok, Thailand"
@@ -456,7 +512,9 @@ const JobPostingForm = ({ userId }: Props) => {
             </div>
 
             <div>
-              <FieldLabel htmlFor="duration" required>Duration</FieldLabel>
+              <FieldLabel htmlFor="duration" required>
+                Duration
+              </FieldLabel>
               <Input
                 id="duration"
                 placeholder="e.g., 6 months, 1 year"
@@ -471,7 +529,9 @@ const JobPostingForm = ({ userId }: Props) => {
             </div>
 
             <div>
-              <FieldLabel htmlFor="description" required>Job Description</FieldLabel>
+              <FieldLabel htmlFor="description" required>
+                Job Description
+              </FieldLabel>
               <Textarea
                 id="description"
                 placeholder="What will they do day-to-day? What will they learn? What impact will they have?"
@@ -488,15 +548,24 @@ const JobPostingForm = ({ userId }: Props) => {
         </Card>
 
         {/* Compensation & Tags */}
-        <Card className="border-0 shadow-none bg-transparent">
+        <Card
+          className="border-0 shadow-none bg-transparent"
+        >
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Compensation & Tags</CardTitle>
-            <p className="text-muted-foreground text-sm">Set a salary range and helpful tags</p>
+            <CardTitle className="text-xl font-semibold">
+              Compensation & Tags
+            </CardTitle>
+
+            <p className="text-muted-foreground text-sm">
+              Set a salary range and helpful tags
+            </p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <FieldLabel required>Salary Range</FieldLabel>
-              <div className="flex items-center gap-4 mt-2">
+              <FieldLabel required>
+                Salary Range
+              </FieldLabel>
+              <div className="mt-2 flex items-center gap-4">
                 <Input
                   id="minSalary"
                   inputMode="numeric"
@@ -530,7 +599,9 @@ const JobPostingForm = ({ userId }: Props) => {
             </div>
 
             <div>
-              <FieldLabel htmlFor="tags">Tags</FieldLabel>
+              <FieldLabel htmlFor="tags">
+                Tags
+              </FieldLabel>
               <Input
                 id="tags"
                 placeholder="Type a tag and press Enter (e.g., React, Python, FinTech)"
@@ -546,7 +617,11 @@ const JobPostingForm = ({ userId }: Props) => {
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {formData.tags.map((t, idx) => (
-                  <Chip key={`${t}-${idx}`} text={t} onRemove={() => removeFromList(idx, "tags")} />
+                  <Chip
+                    key={`${t}-${idx}`}
+                    text={t}
+                    onRemove={() => removeFromList(idx, "tags")}
+                  />
                 ))}
               </div>
             </div>
@@ -554,14 +629,23 @@ const JobPostingForm = ({ userId }: Props) => {
         </Card>
 
         {/* Role Details */}
-        <Card className="border-0 shadow-none bg-transparent">
+        <Card
+          className="border-0 shadow-none bg-transparent"
+        >
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Role Details</CardTitle>
-            <p className="text-muted-foreground text-sm">Type items and press Enter to add</p>
+            <CardTitle className="text-xl font-semibold">
+              Role Details
+            </CardTitle>
+
+            <p className="text-muted-foreground text-sm">
+              Type items and press Enter to add
+            </p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <FieldLabel htmlFor="requirements">Requirements</FieldLabel>
+              <FieldLabel htmlFor="requirements">
+                Requirements
+              </FieldLabel>
               <Input
                 id="requirements"
                 placeholder="e.g., Currently enrolled, basic Git, SQL fundamentals"
@@ -577,13 +661,19 @@ const JobPostingForm = ({ userId }: Props) => {
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {formData.requirements.map((t, i) => (
-                  <Chip key={`req-${i}`} text={t} onRemove={() => removeFromList(i, "requirements")} />
+                  <Chip
+                    key={`req-${i}`}
+                    text={t}
+                    onRemove={() => removeFromList(i, "requirements")}
+                  />
                 ))}
               </div>
             </div>
 
             <div>
-              <FieldLabel htmlFor="qualifications">Qualifications</FieldLabel>
+              <FieldLabel htmlFor="qualifications">
+                Qualifications
+              </FieldLabel>
               <Input
                 id="qualifications"
                 placeholder="e.g., GPA > 3.0, TOEIC 700+, portfolio link"
@@ -599,13 +689,19 @@ const JobPostingForm = ({ userId }: Props) => {
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {formData.qualifications.map((t, i) => (
-                  <Chip key={`qual-${i}`} text={t} onRemove={() => removeFromList(i, "qualifications")} />
+                  <Chip
+                    key={`qual-${i}`}
+                    text={t}
+                    onRemove={() => removeFromList(i, "qualifications")}
+                  />
                 ))}
               </div>
             </div>
 
             <div>
-              <FieldLabel htmlFor="responsibilities">Responsibilities</FieldLabel>
+              <FieldLabel htmlFor="responsibilities">
+                Responsibilities
+              </FieldLabel>
               <Input
                 id="responsibilities"
                 placeholder="e.g., Implement UI components, write unit tests, join daily standups"
@@ -621,13 +717,19 @@ const JobPostingForm = ({ userId }: Props) => {
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {formData.responsibilities.map((t, i) => (
-                  <Chip key={`resp-${i}`} text={t} onRemove={() => removeFromList(i, "responsibilities")} />
+                  <Chip
+                    key={`resp-${i}`}
+                    text={t}
+                    onRemove={() => removeFromList(i, "responsibilities")}
+                  />
                 ))}
               </div>
             </div>
 
             <div>
-              <FieldLabel htmlFor="benefits">Benefits</FieldLabel>
+              <FieldLabel htmlFor="benefits">
+                Benefits
+              </FieldLabel>
               <Input
                 id="benefits"
                 placeholder="e.g., Health insurance, mentorship, free lunch"
@@ -643,7 +745,11 @@ const JobPostingForm = ({ userId }: Props) => {
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {formData.benefits.map((t, i) => (
-                  <Chip key={`benefit-${i}`} text={t} onRemove={() => removeFromList(i, "benefits")} />
+                  <Chip
+                    key={`benefit-${i}`}
+                    text={t}
+                    onRemove={() => removeFromList(i, "benefits")}
+                  />
                 ))}
               </div>
             </div>
@@ -651,14 +757,20 @@ const JobPostingForm = ({ userId }: Props) => {
         </Card>
 
         {/* Contact & Deadline */}
-        <Card className="border-0 shadow-none bg-transparent">
+        <Card
+          className="border-0 shadow-none bg-transparent"
+        >
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Application & Contact</CardTitle>
+            <CardTitle className="text-xl font-semibold">
+              Application & Contact
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <FieldLabel htmlFor="application_deadline" required>Application Deadline</FieldLabel>
+                <FieldLabel htmlFor="application_deadline" required>
+                  Application Deadline
+                </FieldLabel>
                 <Input
                   id="application_deadline"
                   type="date"
@@ -673,7 +785,9 @@ const JobPostingForm = ({ userId }: Props) => {
                 {fieldErrors.application_deadline && <p className="text-xs text-destructive mt-1">{fieldErrors.application_deadline}</p>}
               </div>
               <div>
-                <FieldLabel htmlFor="email">Email (optional)</FieldLabel>
+                <FieldLabel htmlFor="email">
+                  Email (optional)
+                </FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -684,7 +798,9 @@ const JobPostingForm = ({ userId }: Props) => {
                 />
               </div>
               <div>
-                <FieldLabel htmlFor="phone_number" required>Phone</FieldLabel>
+                <FieldLabel htmlFor="phone_number" required>
+                  Phone
+                </FieldLabel>
                 <Input
                   id="phone_number"
                   placeholder="+66 1234 5678"
@@ -704,7 +820,9 @@ const JobPostingForm = ({ userId }: Props) => {
             </div>
 
             <div>
-              <FieldLabel htmlFor="other_contact_information">Other Contact (optional)</FieldLabel>
+              <FieldLabel htmlFor="other_contact_information">
+                Other Contact (optional)
+              </FieldLabel>
               <Textarea
                 id="other_contact_information"
                 placeholder="e.g., Line ID, LinkedIn, application form URL"
@@ -717,9 +835,13 @@ const JobPostingForm = ({ userId }: Props) => {
         </Card>
 
         {/* Preview */}
-        <Card className="border-0 shadow-none bg-transparent">
+        <Card
+          className="border-0 shadow-none bg-transparent"
+        >
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Job Preview</CardTitle>
+            <CardTitle className="text-xl font-semibold">
+              Job Preview
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="bg-muted/50 rounded-lg p-6 space-y-4">
@@ -752,7 +874,12 @@ const JobPostingForm = ({ userId }: Props) => {
               </div>
               {!!formData.tags.length && (
                 <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((t, i) => <Chip key={`pv-tag-${i}`} text={t} />)}
+                  {formData.tags.map((t, i) => (
+                    <Chip
+                      key={`pv-tag-${i}`}
+                      text={t}
+                    />
+                  ))}
                 </div>
               )}
             </div>

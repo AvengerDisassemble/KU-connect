@@ -130,7 +130,9 @@ const CompanyProfileCard = ({ userId }: Props) => {
           variant="outline"
           className="w-full lg:w-auto lg:ml-auto lg:flex-none px-4 lg:px-8 border-primary text-primary hover:bg-primary hover:text-white"
         >
-          <Link to={`/employer/profile/${userId}`}>Edit Company Profile</Link>
+          <Link to={`/employer/profile/${userId}`}>
+            Edit Company Profile
+          </Link>
         </Button>
       </div>
     </div>
