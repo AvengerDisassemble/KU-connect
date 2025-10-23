@@ -44,6 +44,9 @@ function errorHandler (err, req, res, next) {
     if (err.message.includes('Invalid credentials')) {
       error.message = 'Invalid credentials'
       error.statusCode = 401
+    } else if (err.message.includes('refresh token') || err.message.includes('Refresh token')) {
+      error.message = err.message
+      error.statusCode = 401
     } else if (err.message.includes('already registered') || err.message.includes('already exists')) {
       error.message = err.message
       error.statusCode = 409

@@ -5,9 +5,9 @@ const request = require('supertest')
 const app = require('../../../src/app')
 const { PrismaClient } = require('../../../src/generated/prisma')
 const jwt = require('jsonwebtoken')
-const { cleanupDatabase } = require('../utils/testHelpers')
+// const { cleanupDatabase } = require('../utils/testHelpers')
 
-// const prisma = new PrismaClient()
+const prisma = new PrismaClient()
 
 describe.skip('User Profile Authorization Example (DEPRECATED)', () => {
   let studentUser, professorUser, employerUser, adminUser
@@ -15,7 +15,7 @@ describe.skip('User Profile Authorization Example (DEPRECATED)', () => {
   let degreeTypeId
 
   beforeAll(async () => {
-    await cleanupDatabase(prisma)
+    // await cleanupDatabase(prisma)
     
 //     // Create a degree type for testing
 //     const degreeType = await prisma.degreeType.create({
@@ -165,9 +165,16 @@ describe.skip('User Profile Authorization Example (DEPRECATED)', () => {
 //     return null
 //   }
 
+  })  // Close beforeAll
+
+  // Placeholder test to satisfy Jest requirements since describe.skip is used
+  it('placeholder - this suite is deprecated', () => {
+    expect(true).toBe(true)
+  })
+
   afterAll(async () => {
     // Clean up test data using shared cleanup function
-    await cleanupDatabase(prisma)
+    // await cleanupDatabase(prisma)
     await prisma.$disconnect()
   })
 
@@ -387,3 +394,4 @@ describe.skip('User Profile Authorization Example (DEPRECATED)', () => {
 //     })
 //   })
 // })
+})

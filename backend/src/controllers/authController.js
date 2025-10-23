@@ -183,7 +183,8 @@ const registerAdmin = asyncErrorHandler(async (req, res) => {
  * POST /auth/refresh
  */
 const refreshToken = asyncErrorHandler(async (req, res) => {
-  const refreshToken = req.cookies?.refreshToken
+  // Accept refresh token from either cookies or request body
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken
 
   if (!refreshToken) {
     return res.status(401).json({
@@ -206,7 +207,8 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
     success: true,
     message: 'Token refreshed successfully',
     data: {
-      user: result.user
+      user: result.user,
+      accessToken: result.accessToken  // Include token in response for clients that can't use cookies
     }
   })
 })
@@ -216,7 +218,8 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
  * POST /auth/logout
  */
 const logout = asyncErrorHandler(async (req, res) => {
-  const refreshToken = req.cookies?.refreshToken
+  // Accept refresh token from either cookies or request body
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken
 
   if (refreshToken) {
     await logoutUser(refreshToken)
