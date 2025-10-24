@@ -60,5 +60,10 @@ router.post('/employer-verification', role.roleMiddleware(['EMPLOYER']), verific
 router.get('/employer-verification/:userId', documentsController.getEmployerVerificationUrl)
 router.get('/employer-verification/:userId/download', downloadRateLimit, documentsController.downloadEmployerVerification)
 
+// Student verification routes (unverified students can upload, admins can view)
+router.post('/student-verification', role.roleMiddleware(['STUDENT']), verificationUpload.single('verification'), documentsController.uploadStudentVerification)
+router.get('/student-verification/:userId', role.roleMiddleware(['ADMIN', 'STUDENT']), documentsController.getStudentVerificationUrl)
+router.get('/student-verification/:userId/download', downloadRateLimit, documentsController.downloadStudentVerification)
+
 module.exports = router
 

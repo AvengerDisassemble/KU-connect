@@ -101,6 +101,7 @@ model Student {
   expectedGraduationYear Int?
   resumeKey              String?
   transcriptKey          String?
+  verificationDocKey     String?
   interests              StudentInterest[]
   resumes                Resume[]
   createdAt              DateTime          @default(now())

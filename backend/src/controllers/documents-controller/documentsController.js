@@ -609,6 +609,217 @@ async function downloadEmployerVerification(req, res) {
   }
 }
 
+/**
+ * Upload student verification document (for unverified accounts)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
+async function uploadStudentVerification(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded'
+      })
+    }
+
+    const userId = req.user.id
+
+    // Fetch student record
+    const student = await prisma.student.findUnique({
+      where: { userId },
+      select: { 
+        id: true, 
+        verificationDocKey: true,
+        user: {
+          select: { verified: true }
+        }
+      }
+    })
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found'
+      })
+    }
+
+    // Allow only unverified students to upload verification docs
+    if (student.user.verified) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your account is already verified'
+      })
+    }
+
+    // Best-effort delete old verification document
+    if (student.verificationDocKey) {
+      try {
+        await storageProvider.deleteFile(student.verificationDocKey)
+      } catch (error) {
+        console.error('Failed to delete old student verification:', error.message)
+      }
+    }
+
+    // Upload new verification document
+    const fileName = `student-verification-${userId}-${Date.now()}.${req.file.mimetype.split('/')[1]}`
+    const fileKey = await storageProvider.uploadFile(
+      req.file.buffer,
+      fileName,
+      req.file.mimetype,
+      'student-verifications'
+    )
+
+    // Update student record
+    await prisma.student.update({
+      where: { userId },
+      data: { verificationDocKey: fileKey }
+    })
+
+    res.status(200).json({
+      success: true,
+      message: 'Student verification document uploaded successfully. Pending admin review.'
+    })
+  } catch (error) {
+    console.error('Upload student verification error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload student verification document'
+    })
+  }
+}
+
+/**
+ * Get student verification document URL (admin only)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
+async function getStudentVerificationUrl(req, res) {
+  try {
+    const { userId } = req.params
+    const requester = req.user
+
+    // Only admins can access student verification documents
+    if (requester.role !== 'ADMIN' && requester.id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      })
+    }
+
+    const student = await prisma.student.findUnique({
+      where: { userId },
+      select: { verificationDocKey: true }
+    })
+
+    if (!student || !student.verificationDocKey) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student verification document not found'
+      })
+    }
+
+    const url = await storageProvider.getFileUrl(student.verificationDocKey)
+
+    res.status(200).json({
+      success: true,
+      url
+    })
+  } catch (error) {
+    console.error('Get student verification URL error:', error)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get student verification document URL'
+    })
+  }
+}
+
+/**
+ * Download student verification document (protected)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Promise<void>}
+ */
+async function downloadStudentVerification(req, res) {
+  try {
+    const { userId } = req.params
+    const requester = req.user
+
+    // Only admins or the student themselves can download verification
+    if (requester.role !== 'ADMIN' && requester.id !== userId) {
+      logDocumentAccess({
+        userId: requester.id,
+        documentType: 'student-verification',
+        documentOwner: userId,
+        action: 'download',
+        success: false,
+        reason: 'Access denied',
+        ip: req.ip
+      })
+      
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      })
+    }
+
+    const student = await prisma.student.findUnique({
+      where: { userId },
+      select: { verificationDocKey: true }
+    })
+
+    if (!student || !student.verificationDocKey) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student verification document not found'
+      })
+    }
+
+    // Log successful access
+    logDocumentAccess({
+      userId: requester.id,
+      documentType: 'student-verification',
+      documentOwner: userId,
+      action: 'download',
+      success: true,
+      ip: req.ip
+    })
+
+    // Try signed URL first (S3), fallback to streaming (local)
+    const signedUrl = await storageProvider.getSignedDownloadUrl(student.verificationDocKey)
+    
+    if (signedUrl) {
+      return res.redirect(signedUrl)
+    }
+
+    // Stream the file
+    const { stream, mimeType, filename } = await storageProvider.getReadStream(student.verificationDocKey)
+    
+    res.setHeader('Content-Type', mimeType)
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    
+    stream.pipe(res)
+  } catch (error) {
+    console.error('Download student verification error:', error)
+    
+    if (error.message.includes('File not found')) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student verification document file not found'
+      })
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to download student verification document'
+    })
+  }
+}
+
 module.exports = {
   uploadResume,
   getResumeUrl,
@@ -618,6 +829,9 @@ module.exports = {
   downloadTranscript,
   uploadEmployerVerification,
   getEmployerVerificationUrl,
-  downloadEmployerVerification
+  downloadEmployerVerification,
+  uploadStudentVerification,
+  getStudentVerificationUrl,
+  downloadStudentVerification
 }
 
