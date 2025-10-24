@@ -24,7 +24,9 @@ CREATE TABLE "new_HR" (
     "updatedAt" DATETIME NOT NULL,
     CONSTRAINT "HR_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
-INSERT INTO "new_HR" ("address", "companyName", "companySize", "createdAt", "description", "id", "industry", "updatedAt", "userId", "website") SELECT "address", "companyName", "companySize", "createdAt", "description", "id", "industry", "updatedAt", "userId", "website" FROM "HR";
+INSERT INTO "new_HR" ("address", "companyName", "companySize", "createdAt", "description", "id", "industry", "updatedAt", "userId", "website", "phoneNumber")
+SELECT "address", "companyName", "companySize", "createdAt", "description", "id", "industry", "updatedAt", "userId", "website", 
+'000-000-0000' AS "phoneNumber" FROM "HR";
 DROP TABLE "HR";
 ALTER TABLE "new_HR" RENAME TO "HR";
 CREATE UNIQUE INDEX "HR_userId_key" ON "HR"("userId");
