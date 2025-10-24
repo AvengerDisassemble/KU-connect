@@ -61,10 +61,12 @@ async function updateStudentProfile(userId, data) {
  * @param {string} [data.website] - New website
  * @param {string} [data.companyName] - New company name
  * @param {string} [data.address] - New address
+ * @param {string} [data.description] - New company description
+ * @param {string} [data.phoneNumber] - New company phone number
  * @returns {Promise<Object>} Updated user with HR profile
  */
 async function updateEmployerProfile(userId, data) {
-  const { companyName, address, industry, companySize, website, ...userFields } = data
+  const { companyName, address, industry, companySize, website, description, phoneNumber, ...userFields } = data
 
   const hrUpdate = {}
   if (companyName !== undefined) hrUpdate.companyName = companyName
@@ -72,6 +74,8 @@ async function updateEmployerProfile(userId, data) {
   if (industry !== undefined) hrUpdate.industry = industry
   if (companySize !== undefined) hrUpdate.companySize = companySize
   if (website !== undefined) hrUpdate.website = website
+  if (description !== undefined) hrUpdate.description = description
+  if (phoneNumber !== undefined) hrUpdate.phoneNumber = phoneNumber
 
   const userUpdate = extractUserUpdateFields(userFields)
 

@@ -109,7 +109,8 @@ describe('Authentication Endpoints', () => {
         email: 'alice.enterprise.test@company.com',
         password: 'Password123',
         companyName: 'Test Company Ltd.',
-        address: '789 Business District, Bangkok, Thailand'
+        address: '789 Business District, Bangkok, Thailand',
+        phoneNumber: '02-999-1111'
       }
 
       const response = await request(app)

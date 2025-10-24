@@ -87,13 +87,13 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
  * POST /register/enterprise
  */
 const registerEnterprise = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, companyName, address } = req.body
+  const { name, surname, email, password, companyName, address, phoneNumber } = req.body
 
   // Validate input
-  if (!name || !surname || !email || !password || !companyName || !address) {
+  if (!name || !surname || !email || !password || !companyName || !address || !phoneNumber) {
     return res.status(400).json({
       success: false,
-      message: 'All fields are required: name, surname, email, password, companyName, address'
+      message: 'All fields are required: name, surname, email, password, companyName, address, phoneNumber'
     })
   }
 
@@ -108,7 +108,8 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
     },
     {
       companyName,
-      address
+      address,
+      phoneNumber
     }
   )
 

@@ -54,7 +54,7 @@ async function seedBase () {
       email: 'hr@test.com',
       password: 'pass',
       role: 'EMPLOYER',
-      hr: { create: { companyName: 'TestCorp', address: 'Bangkok', industry: 'IT_SOFTWARE', companySize: 'ELEVEN_TO_FIFTY' } }
+      hr: { create: { companyName: 'TestCorp', address: 'Bangkok', industry: 'IT_SOFTWARE', companySize: 'ELEVEN_TO_FIFTY', phoneNumber: '02-555-6666' } }
     },
     include: { hr: true }
   })

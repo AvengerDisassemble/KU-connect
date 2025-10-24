@@ -71,7 +71,8 @@ describe('Job Routes (Integration)', () => {
             companyName: 'TestCorp',
             address: 'Bangkok',
             industry: 'IT_SOFTWARE',
-            companySize: 'ELEVEN_TO_FIFTY'
+            companySize: 'ELEVEN_TO_FIFTY',
+            phoneNumber: '02-111-2222'
           }
         }
       },
@@ -92,7 +93,8 @@ describe('Job Routes (Integration)', () => {
             companyName: 'OtherCorp',
             address: 'Bangkok',
             industry: 'IT_SOFTWARE',
-            companySize: 'ELEVEN_TO_FIFTY'
+            companySize: 'ELEVEN_TO_FIFTY',
+            phoneNumber: '02-333-4444'
           }
         }
       },
