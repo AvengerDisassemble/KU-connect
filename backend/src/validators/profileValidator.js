@@ -25,11 +25,11 @@ const updateProfileSchema = Joi.object({
   
   // phoneNumber is optional for updates (database schema allows NULL)
   phoneNumber: Joi.string()
-    .pattern(/^[0-9+\-()\s]+$/)
+    .pattern(/^[0-9+\-()\s]{8,15}$/)
     .optional()
     .allow(null, '')
     .messages({
-      'string.pattern.base': 'Phone number must contain only numbers, +, -, (), and spaces'
+      'string.pattern.base': 'Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces'
     }),
 
   // Student-specific fields
@@ -59,7 +59,7 @@ const updateProfileSchema = Joi.object({
 
   // HR-specific fields
   companyName: Joi.string().max(255).optional(),
-  description: Joi.string().max(1000).optional().allow(null, ''),
+  description: Joi.string().max(1000).optional().allow(null),
   industry: Joi.string().optional(),
   companySize: Joi.string().optional(),
   website: Joi.string().uri().optional().allow(null, ''),
