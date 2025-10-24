@@ -47,33 +47,33 @@ export default function EmployerSidebar() {
   };
 
   return (
-    <aside className="w-60 min-h-screen bg-card border-r border-border flex flex-col">
+    <aside className="flex min-h-screen w-60 flex-col border-r border-border bg-card">
       {/* Logo */}
-      <div className="p-8 pt-8 border-b border-border text-center">
+      <div className="border-border border-b p-8 pt-8 text-center">
         <div className="flex items-center justify-center">
           <img
             src={Logo}
             alt="KU Connect Logo"
-            className="block h-12 w-auto max-w-[220px] object-contain select-none"
+            className="ml-12 block h-12 w-auto max-w-[260px] select-none object-contain"
             draggable={false}
           />
         </div>
-        <div className="text-xs font-medium uppercase tracking-wide text-accent mt-4">
-          Employer Portal
+        <div className="text-sm font-medium text-accent">
+          for employer
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-5 space-y-2 text-sm">
+      <nav className="flex-1 space-y-2 py-5 text-sm">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
             className={({ isActive }) =>
-              `block px-8 py-4 font-medium transition-colors border-l-[3px] rounded-r-lg ${
+              `block border-l-[3px] px-8 py-4 font-medium transition-colors ${
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "border-l-accent bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted/60"
               }`
             }
@@ -94,7 +94,7 @@ export default function EmployerSidebar() {
           onClick={handleLogout}
           disabled={isSigningOut}
         >
-          <LogOut className="w-4 h-4 mr-2" />
+          <LogOut className="mr-2 h-4 w-4" />
           {isSigningOut ? "Signing out..." : "Sign out"}
         </Button>
       </div>
