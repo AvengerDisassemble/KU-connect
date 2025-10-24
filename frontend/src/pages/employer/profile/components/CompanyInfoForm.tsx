@@ -9,7 +9,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { z, ZodError } from "zod";
 import {
@@ -25,23 +29,23 @@ type Option = { value: string; label: string };
 // UI values → label
 const INDUSTRY_OPTIONS_BASE: Option[] = [
   { value: "it-hardware-and-devices", label: "IT Hardware & Devices" },
-  { value: "it-software",             label: "IT Software" },
-  { value: "it-services",             label: "IT Services" },
-  { value: "network-services",        label: "Network Services" },
-  { value: "emerging-tech",           label: "Emerging Tech" },
-  { value: "e-commerce",              label: "E-commerce" },
-  { value: "other",                   label: "Other" },
+  { value: "it-software", label: "IT Software" },
+  { value: "it-services", label: "IT Services" },
+  { value: "network-services", label: "Network Services" },
+  { value: "emerging-tech", label: "Emerging Tech" },
+  { value: "e-commerce", label: "E-commerce" },
+  { value: "other", label: "Other" },
 ];
 
 // UI → API enum
 const INDUSTRY_UI_TO_API: Record<string, string> = {
   "it-hardware-and-devices": "IT_HARDWARE_AND_DEVICES",
-  "it-software":             "IT_SOFTWARE",
-  "it-services":             "IT_SERVICES",
-  "network-services":        "NETWORK_SERVICES",
-  "emerging-tech":           "EMERGING_TECH",
-  "e-commerce":              "E_COMMERCE",
-  "other":                   "OTHER",
+  "it-software": "IT_SOFTWARE",
+  "it-services": "IT_SERVICES",
+  "network-services": "NETWORK_SERVICES",
+  "emerging-tech": "EMERGING_TECH",
+  "e-commerce": "E_COMMERCE",
+  other: "OTHER",
 };
 
 // API enum → UI (prefill)
@@ -58,11 +62,11 @@ const COMPANY_SIZE_OPTIONS_BASE: Option[] = [
 ];
 
 const COMPANY_SIZE_UI_TO_API: Record<string, string> = {
-  "1-10":    "ONE_TO_TEN",
-  "11-50":   "ELEVEN_TO_FIFTY",
-  "51-200":  "FIFTY_ONE_TO_TWO_HUNDRED",
+  "1-10": "ONE_TO_TEN",
+  "11-50": "ELEVEN_TO_FIFTY",
+  "51-200": "FIFTY_ONE_TO_TWO_HUNDRED",
   "201-500": "TWO_HUNDRED_ONE_TO_FIVE_HUNDRED",
-  "500+":    "FIVE_HUNDRED_PLUS",
+  "500+": "FIVE_HUNDRED_PLUS",
 };
 const API_TO_COMPANY_SIZE_UI: Record<string, string> = Object.fromEntries(
   Object.entries(COMPANY_SIZE_UI_TO_API).map(([ui, api]) => [api, ui])
@@ -72,8 +76,16 @@ const valuesOf = (ops: Option[]) => ops.map((o) => o.value);
 const isIn = (ops: Option[], v?: string) => !!v && valuesOf(ops).includes(v);
 
 function FieldLabel({
-  htmlFor, required, children, className = "text-sm font-medium",
-}: { htmlFor?: string; required?: boolean; children: ReactNode; className?: string }) {
+  htmlFor,
+  required,
+  children,
+  className = "text-sm font-medium",
+}: {
+  htmlFor?: string;
+  required?: boolean;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <Label htmlFor={htmlFor} className={className} aria-required={required}>
       {children}
@@ -99,10 +111,16 @@ const formSchema = z.object({
   companyName: z.string().min(1, "Company name is required"),
   industry: z
     .string()
-    .refine((v) => isIn(INDUSTRY_OPTIONS_BASE, v), "Industry must be selected from the list"),
+    .refine(
+      (v) => isIn(INDUSTRY_OPTIONS_BASE, v),
+      "Industry must be selected from the list"
+    ),
   companySize: z
     .string()
-    .refine((v) => isIn(COMPANY_SIZE_OPTIONS_BASE, v), "Company Size must be selected from the list"),
+    .refine(
+      (v) => isIn(COMPANY_SIZE_OPTIONS_BASE, v),
+      "Company Size must be selected from the list"
+    ),
   address: z.string().min(1, "Address is required"),
   contactEmail: z.string().email("Please enter a valid email address"),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
@@ -117,11 +135,11 @@ const validateEmailInline = (
 ) => {
   const s = value.trim();
   if (s.length === 0) {
-    setErrors(prev => ({ ...prev, contactEmail: "" }));
+    setErrors((prev) => ({ ...prev, contactEmail: "" }));
     return;
   }
   const ok = z.string().email().safeParse(s).success;
-  setErrors(prev => ({
+  setErrors((prev) => ({
     ...prev,
     contactEmail: ok ? "" : "Please enter a valid email address",
   }));
@@ -151,24 +169,25 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
   });
 
   useEffect(() => {
-  if (!profile) return;
+    if (!profile) return;
 
-  setFormData({
-    companyName: profile.hr?.companyName ?? "",
-    industry: API_TO_INDUSTRY_UI[profile.hr?.industry ?? ""] ?? "",
-    companySize: API_TO_COMPANY_SIZE_UI[profile.hr?.companySize ?? ""] ?? "",
-    website: profile.hr?.website ?? "",
-    address: profile.hr?.address ?? "",
-    // UI-only
-    description: "",
-    contactEmail: profile.email ?? "",
-    phoneNumber: "",
-  });
-}, [profile]);
+    setFormData({
+      companyName: profile.hr?.companyName ?? "",
+      industry: API_TO_INDUSTRY_UI[profile.hr?.industry ?? ""] ?? "",
+      companySize: API_TO_COMPANY_SIZE_UI[profile.hr?.companySize ?? ""] ?? "",
+      website: profile.hr?.website ?? "",
+      address: profile.hr?.address ?? "",
+      // UI-only
+      description: "",
+      contactEmail: profile.email ?? "",
+      phoneNumber: "",
+    });
+  }, [profile]);
 
   // PATCH profile
   const mutation = useMutation({
-    mutationFn: (payload: UpdateEmployerProfileRequest) => updateEmployerProfile(payload),
+    mutationFn: (payload: UpdateEmployerProfileRequest) =>
+      updateEmployerProfile(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["employerProfile", userId] });
       toast.success("Profile Updated", {
@@ -238,7 +257,9 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
   if (isLoading) {
     return (
       <Card className="border-none">
-        <CardHeader><CardTitle>Company Information</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Company Information</CardTitle>
+        </CardHeader>
         <CardContent>Loading profile...</CardContent>
       </Card>
     );
@@ -267,52 +288,78 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
 
         {/* Company Name */}
         <div>
-          <FieldLabel htmlFor="companyName" required>Company Name</FieldLabel>
+          <FieldLabel htmlFor="companyName" required>
+            Company Name
+          </FieldLabel>
           <Input
             id="companyName"
             value={formData.companyName ?? ""}
             onChange={(e) => set("companyName", e.target.value)}
-            className={`mt-2 ${!!errors.companyName ? "border-red-500" : ""}`}
+            className={`mt-2 ${errors.companyName ? "border-red-500" : ""}`}
             placeholder="e.g. Tech Solutions Co., Ltd."
           />
-          {!!errors.companyName && (
-            <p className="text-xs text-destructive mt-1">{errors.companyName}</p>
+          {errors.companyName && (
+            <p className="text-xs text-destructive mt-1">
+              {errors.companyName}
+            </p>
           )}
         </div>
 
         {/* Industry */}
         <div>
-          <FieldLabel htmlFor="industry" required>Industry</FieldLabel>
-          <Select value={formData.industry || undefined} onValueChange={(val) => set("industry", val)}>
-            <SelectTrigger id="industry" className={`mt-2 ${!!errors.industry ? "border-red-500" : ""}`}>
+          <FieldLabel htmlFor="industry" required>
+            Industry
+          </FieldLabel>
+          <Select
+            value={formData.industry || undefined}
+            onValueChange={(val) => set("industry", val)}
+          >
+            <SelectTrigger
+              id="industry"
+              className={`mt-2 ${errors.industry ? "border-red-500" : ""}`}
+            >
               <SelectValue placeholder="Select industry" />
             </SelectTrigger>
             <SelectContent>
               {INDUSTRY_OPTIONS_BASE.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {!!errors.industry && (
+          {errors.industry && (
             <p className="text-xs text-destructive mt-1">{errors.industry}</p>
           )}
         </div>
 
         {/* Company Size */}
         <div>
-          <FieldLabel htmlFor="companySize" required>Company Size</FieldLabel>
-          <Select value={formData.companySize || undefined} onValueChange={(val) => set("companySize", val)}>
-            <SelectTrigger id="companySize" className={`mt-2 ${!!errors.companySize ? "border-red-500" : ""}`}>
+          <FieldLabel htmlFor="companySize" required>
+            Company Size
+          </FieldLabel>
+          <Select
+            value={formData.companySize || undefined}
+            onValueChange={(val) => set("companySize", val)}
+          >
+            <SelectTrigger
+              id="companySize"
+              className={`mt-2 ${errors.companySize ? "border-red-500" : ""}`}
+            >
               <SelectValue placeholder="Select company size" />
             </SelectTrigger>
             <SelectContent>
               {COMPANY_SIZE_OPTIONS_BASE.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          {!!errors.companySize && (
-            <p className="text-xs text-destructive mt-1">{errors.companySize}</p>
+          {errors.companySize && (
+            <p className="text-xs text-destructive mt-1">
+              {errors.companySize}
+            </p>
           )}
         </div>
 
@@ -323,12 +370,12 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
             id="website"
             value={formData.website ?? ""}
             onChange={(e) => set("website", e.target.value)}
-            className={`mt-2 ${!!errors.website ? "border-red-500" : ""}`}
+            className={`mt-2 ${errors.website ? "border-red-500" : ""}`}
             placeholder="https://example.com"
             inputMode="url"
             autoComplete="url"
           />
-          {!!errors.website && (
+          {errors.website && (
             <p className="text-xs text-destructive mt-1">{errors.website}</p>
           )}
         </div>
@@ -349,7 +396,9 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
 
         {/* Contact Email */}
         <div>
-          <FieldLabel htmlFor="contactEmail" required>Contact Email</FieldLabel>
+          <FieldLabel htmlFor="contactEmail" required>
+            Contact Email
+          </FieldLabel>
           <Input
             id="contactEmail"
             type="email"
@@ -360,15 +409,20 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
               validateEmailInline(v, setErrors); // realtime
             }}
             onBlur={(e) => validateEmailInline(e.target.value, setErrors)}
-            className={`mt-2 ${!!errors.contactEmail ? "border-red-500" : ""}`}
+            className={`mt-2 ${errors.contactEmail ? "border-red-500" : ""}`}
             placeholder="hr@company.com"
             autoComplete="email"
             inputMode="email"
-            aria-invalid={!!errors.contactEmail}
-            aria-describedby={!!errors.contactEmail ? "contact-email-error" : undefined}
+            aria-invalid={Boolean(errors.contactEmail)}
+            aria-describedby={
+              errors.contactEmail ? "contact-email-error" : undefined
+            }
           />
-          {!!errors.contactEmail && (
-            <p id="contact-email-error" className="text-xs text-destructive mt-1">
+          {errors.contactEmail && (
+            <p
+              id="contact-email-error"
+              className="text-xs text-destructive mt-1"
+            >
               {errors.contactEmail}
             </p>
           )}
@@ -392,15 +446,17 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
 
         {/* Address */}
         <div>
-          <FieldLabel htmlFor="address" required>Address</FieldLabel>
+          <FieldLabel htmlFor="address" required>
+            Address
+          </FieldLabel>
           <Input
             id="address"
             value={formData.address ?? ""}
             onChange={(e) => set("address", e.target.value)}
-            className={`mt-2 ${!!errors.address ? "border-red-500" : ""}`}
+            className={`mt-2 ${errors.address ? "border-red-500" : ""}`}
             placeholder="Registered business address"
           />
-          {!!errors.address && (
+          {errors.address && (
             <p className="text-xs text-destructive mt-1">{errors.address}</p>
           )}
         </div>
@@ -409,7 +465,7 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
           type="button"
           onClick={submit}
           disabled={mutation.isPending}
-          className="px-8 bg-brand-teal hover:bg-brand-teal/90"
+          className="px-8 bg-primary hover:bg-brand-teal/90"
         >
           {mutation.isPending ? "Saving..." : "Save Changes"}
         </Button>

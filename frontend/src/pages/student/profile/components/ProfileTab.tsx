@@ -26,10 +26,11 @@ import {
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProfile, updateProfile } from "@/services/profile";
+import { fetchDegreeTypes, type DegreeType } from "@/services/degree";
 
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
@@ -57,23 +58,11 @@ const profileSchema = z.object({
     z.coerce.number().min(1988).max(2100).optional()
   ),
   degreeTypeId: z.preprocess(
-    (v) => (v === "" ? undefined : v),
-    z.coerce.number().optional()
+    (v) => (typeof v === "string" ? v.trim() : v),
+    z.string().min(1, "Degree type is required")
   ),
 });
 type ProfileFormData = z.infer<typeof profileSchema>;
-
-const DEGREE_OPTIONS = [
-  { id: 1, label: "Bachelor" },
-  { id: 2, label: "Master" },
-  { id: 3, label: "PhD" },
-];
-
-function getDegreeLabel(id?: number) {
-  if (!id) return "";
-  const found = DEGREE_OPTIONS.find((o) => o.id === id);
-  return found ? found.label : "";
-}
 
 interface ProfileTabProps {
   userId?: string;
@@ -81,6 +70,9 @@ interface ProfileTabProps {
 
 const ProfileTab = ({ userId }: ProfileTabProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [degreeOptions, setDegreeOptions] = useState<DegreeType[]>([]);
+  const [isLoadingDegrees, setIsLoadingDegrees] = useState(false);
+  const [degreeError, setDegreeError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const {
@@ -120,9 +112,29 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
       address: "",
       gpa: undefined,
       expectedGraduationYear: undefined,
-      degreeTypeId: undefined,
+      degreeTypeId: "",
     },
   });
+
+  const loadDegreeOptions = useCallback(async () => {
+    setIsLoadingDegrees(true);
+    setDegreeError(null);
+    try {
+      const types = await fetchDegreeTypes();
+      setDegreeOptions(types);
+    } catch (err) {
+      console.error("Failed to fetch degree types:", err);
+      const message =
+        err instanceof Error ? err.message : "Failed to load degree types";
+      setDegreeError(message);
+    } finally {
+      setIsLoadingDegrees(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDegreeOptions();
+  }, [loadDegreeOptions]);
 
   useEffect(() => {
     if (profile) {
@@ -133,7 +145,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
         address: profile.student?.address || "",
         gpa: profile.student?.gpa,
         expectedGraduationYear: profile.student?.expectedGraduationYear,
-        degreeTypeId: profile.student?.degreeTypeId,
+        degreeTypeId: profile.student?.degreeTypeId ?? "",
       });
     }
   }, [profile, form]);
@@ -146,7 +158,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
       surname: string;
       address: string;
       gpa?: number;
-      degreeTypeId?: number;
+      degreeTypeId?: string;
       expectedGraduationYear?: number;
       // phoneNumber?: string;
     } = {
@@ -159,11 +171,8 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
     if (typeof data.gpa === "number" && !Number.isNaN(data.gpa)) {
       payload.gpa = data.gpa;
     }
-    if (
-      typeof data.degreeTypeId === "number" &&
-      !Number.isNaN(data.degreeTypeId)
-    ) {
-      payload.degreeTypeId = data.degreeTypeId;
+    if (typeof data.degreeTypeId === "string" && data.degreeTypeId.trim()) {
+      payload.degreeTypeId = data.degreeTypeId.trim();
     }
     if (
       typeof data.expectedGraduationYear === "number" &&
@@ -316,7 +325,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                       <FormMessage />
                     </FormItem>
                   )}
-                />    
+                />
                 {/* <FormField
                   control={form.control}
                   name="phoneNumber"
@@ -370,31 +379,58 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                       </FormLabel>
                       {isEditing ? (
                         <Select
-                          value={field.value?.toString() ?? ""}
-                          onValueChange={(val) => field.onChange(Number(val))}
+                          value={field.value ?? ""}
+                          onValueChange={(val) => field.onChange(val)}
                         >
                           <FormControl>
-                            <SelectTrigger className="bg-background border-border">
-                              <SelectValue placeholder="Select degree type" />
+                            <SelectTrigger
+                              className="bg-background border-border"
+                              disabled={
+                                isLoadingDegrees || degreeOptions.length === 0
+                              }
+                            >
+                              <SelectValue
+                                placeholder={
+                                  isLoadingDegrees
+                                    ? "Loading degree types..."
+                                    : "Select degree type"
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {DEGREE_OPTIONS.map((opt) => (
-                              <SelectItem
-                                key={opt.id}
-                                value={opt.id.toString()}
-                              >
-                                {opt.label}
+                            {degreeOptions.map((opt) => (
+                              <SelectItem key={opt.id} value={opt.id}>
+                                {opt.name}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       ) : (
                         <Input
-                          value={getDegreeLabel(form.getValues("degreeTypeId"))}
+                          value={
+                            degreeOptions.find(
+                              (opt) => opt.id === form.getValues("degreeTypeId")
+                            )?.name ||
+                            profile?.student?.degreeType?.name ||
+                            ""
+                          }
                           readOnly
                           className="bg-background border-border"
                         />
+                      )}
+                      {degreeError && (
+                        <div className="text-sm text-destructive flex items-center gap-2">
+                          <span>{degreeError}</span>
+                          <Button
+                            type="button"
+                            variant="link"
+                            className="h-auto p-0"
+                            onClick={loadDegreeOptions}
+                          >
+                            Retry
+                          </Button>
+                        </div>
                       )}
                       <FormMessage />
                     </FormItem>
@@ -410,7 +446,8 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-sm font-medium">
-                         Graduation Year (Actual or Expected) <span className="text-red-500">*</span>
+                        Graduation Year (Actual or Expected){" "}
+                        <span className="text-red-500">*</span>
                       </FormLabel>
                       <FormControl>
                         <Input

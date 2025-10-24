@@ -77,6 +77,9 @@ export default function EmployerSidebar() {
                   : "text-muted-foreground hover:bg-muted/60"
               }`
             }
+            style={({ isActive }) => ({
+              borderLeftColor: isActive ? "var(--color-accent)" : "transparent",
+            })}
           >
             {item.label}
           </NavLink>
