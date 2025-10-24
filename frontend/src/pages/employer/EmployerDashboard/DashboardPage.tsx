@@ -1,5 +1,5 @@
 import EmployerSidebar from "@/components/EmployerSideBar";
-import EmployerDashboardContent from "./dashboard/components/DashboardContent";
+import EmployerDashboardContent from "./components/DashboardContent";
 
 export default function EmployerDashboardPage() {
   return (
