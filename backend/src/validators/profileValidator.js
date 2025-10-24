@@ -23,21 +23,14 @@ const updateProfileSchema = Joi.object({
   // Optional role to specify which type of update
   role: Joi.string().valid('student', 'hr').optional(),
   
-  // phoneNumber is required for HR, optional for others
-  phoneNumber: Joi.when('role', {
-    is: 'hr',
-    then: Joi.string()
-      .pattern(/^[0-9+\-()\s]+$/)
-      .required()
-      .messages({
-        'any.required': 'Phone number is required for HR profiles',
-        'string.pattern.base': 'Phone number must contain only numbers, +, -, (), and spaces'
-      }),
-    otherwise: Joi.string()
-      .pattern(/^[0-9+\-()\s]+$/)
-      .optional()
-      .allow(null, '')
-  }),
+  // phoneNumber is optional for updates (database schema enforces NOT NULL)
+  phoneNumber: Joi.string()
+    .pattern(/^[0-9+\-()\s]+$/)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.pattern.base': 'Phone number must contain only numbers, +, -, (), and spaces'
+    }),
 
   // Student-specific fields
   address: Joi.string().max(255).optional(),

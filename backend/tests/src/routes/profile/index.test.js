@@ -172,13 +172,13 @@ describe('Profile routes (integration)', () => {
       expect(res.body.message).toMatch(/at least one field|required/i)
     })
 
-    it('should return 400 when HR profile update missing phoneNumber', async () => {
+    it('should return 400 when trying to update email', async () => {
       const res = await request(app)
         .patch('/api/profile')
-        .set('Authorization', hrToken)
-        .send({ role: 'hr', companyName: 'New Name' })
+        .set('Authorization', studentToken)
+        .send({ email: 'newemail@test.com', gpa: 3.9 })
         .expect(400)
-      expect(res.body.message).toMatch(/Phone number is required for HR profiles/i)
+      expect(res.body.message).toMatch(/email.*not allowed/i)
     })
   })
 })
