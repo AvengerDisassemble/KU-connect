@@ -19,13 +19,25 @@ const updateProfileSchema = Joi.object({
   email: Joi.any().forbidden().messages({
   'any.forbidden': 'Email cannot be changed. Please contact support.'
   }),
-  phoneNumber: Joi.string()
-    .pattern(/^[0-9+\-()\s]+$/)
-    .optional()
-    .allow(null, ''),
-
+  
   // Optional role to specify which type of update
   role: Joi.string().valid('student', 'hr').optional(),
+  
+  // phoneNumber is required for HR, optional for others
+  phoneNumber: Joi.when('role', {
+    is: 'hr',
+    then: Joi.string()
+      .pattern(/^[0-9+\-()\s]+$/)
+      .required()
+      .messages({
+        'any.required': 'Phone number is required for HR profiles',
+        'string.pattern.base': 'Phone number must contain only numbers, +, -, (), and spaces'
+      }),
+    otherwise: Joi.string()
+      .pattern(/^[0-9+\-()\s]+$/)
+      .optional()
+      .allow(null, '')
+  }),
 
   // Student-specific fields
   address: Joi.string().max(255).optional(),
@@ -54,6 +66,7 @@ const updateProfileSchema = Joi.object({
 
   // HR-specific fields
   companyName: Joi.string().max(255).optional(),
+  description: Joi.string().max(1000).optional().allow(null, ''),
   industry: Joi.string().optional(),
   companySize: Joi.string().optional(),
   website: Joi.string().uri().optional().allow(null, ''),
