@@ -23,7 +23,7 @@ const updateProfileSchema = Joi.object({
   // Optional role to specify which type of update
   role: Joi.string().valid('student', 'hr').optional(),
   
-  // phoneNumber is optional for updates (database schema enforces NOT NULL)
+  // phoneNumber is optional for updates (database schema allows NULL)
   phoneNumber: Joi.string()
     .pattern(/^[0-9+\-()\s]+$/)
     .optional()
