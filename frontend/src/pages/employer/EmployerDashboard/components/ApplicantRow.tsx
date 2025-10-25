@@ -15,7 +15,9 @@ interface ApplicantRowProps {
   applicant: Applicant;
 }
 
-const ApplicantRow = ({ applicant }: ApplicantRowProps) => {
+const ApplicantRow = ({
+  applicant,
+}: ApplicantRowProps) => {
   const [open, setOpen] = useState(false);
 
   const handleApprove = async (studentId: string) => {
@@ -33,7 +35,9 @@ const ApplicantRow = ({ applicant }: ApplicantRowProps) => {
       <div className="grid grid-cols-1 gap-4 border-b border-border py-6 last:border-0 md:grid-cols-12">
         {/* Student */}
         <div className="md:col-span-4">
-          <p className="font-semibold text-foreground">{applicant.name}</p>
+          <p className="font-semibold text-foreground">
+            {applicant.name}
+          </p>
           <p className="text-sm text-muted-foreground">
             {applicant.major} • Year {applicant.year}
           </p>
@@ -41,19 +45,23 @@ const ApplicantRow = ({ applicant }: ApplicantRowProps) => {
 
         {/* Applied role */}
         <div className="md:col-span-4">
-          <p className="text-sm text-foreground">{applicant.appliedRole}</p>
+          <p className="text-sm text-foreground">
+            {applicant.appliedRole}
+          </p>
         </div>
 
         {/* Submitted time */}
         <div className="md:col-span-2">
-          <p className="text-sm text-muted-foreground">{applicant.lastUpdate}</p>
+          <p className="text-sm text-muted-foreground">
+            {applicant.lastUpdate}
+          </p>
         </div>
 
         {/* View (open modal) */}
         <div className="flex items-start justify-end self-start md:col-span-2">
           <Button
             size="sm"
-            className="h-8 rounded-full border-transparent bg-brand-teal px-4 text-white hover:bg-brand-teal/90"
+            className="h-8 rounded-full border-transparent bg-primary px-4 text-white hover:bg-primary/90"
             onClick={() => setOpen(true)}
             aria-label={`View ${applicant.name}'s application`}
           >

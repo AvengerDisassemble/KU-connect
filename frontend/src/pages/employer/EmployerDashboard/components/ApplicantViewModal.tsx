@@ -165,7 +165,7 @@ export function ApplicantViewModal({
           <div className="flex items-center gap-2">
             <Button
               onClick={() => onApprove?.(student.id)}
-              className="bg-brand-lime text-white hover:bg-brand-lime/90"
+              className="bg-accent text-white hover:bg-accent/90"
             >
               Approve
             </Button>

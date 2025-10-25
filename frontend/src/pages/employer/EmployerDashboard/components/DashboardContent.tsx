@@ -14,41 +14,119 @@ import { Search } from "lucide-react";
 const EmployerDashboardContent = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const stats = { openJobs: 3, newApplicationsToday: 8, offersMade: 2 };
+  const stats = {
+    openJobs: 3,
+    newApplicationsToday: 8,
+    offersMade: 2,
+  };
 
   const jobs: Job[] = [
-    { id: "1", title: "Senior Frontend Developer", applicants: 24, shortlisted: 5, postedDate: "3 days ago", location: "Bangkok", status: "open" },
-    { id: "2", title: "Mobile App Developer", applicants: 18, shortlisted: 3, postedDate: "1 week ago", location: "Remote", status: "open" },
-    { id: "3", title: "Data Science Intern", applicants: 31, shortlisted: 8, postedDate: "5 days ago", location: "Hybrid", status: "open" },
+    {
+      id: "1",
+      title: "Senior Frontend Developer",
+      applicants: 24,
+      shortlisted: 5,
+      postedDate: "3 days ago",
+      location: "Bangkok",
+      status: "open",
+    },
+    {
+      id: "2",
+      title: "Mobile App Developer",
+      applicants: 18,
+      shortlisted: 3,
+      postedDate: "1 week ago",
+      location: "Remote",
+      status: "open",
+    },
+    {
+      id: "3",
+      title: "Data Science Intern",
+      applicants: 31,
+      shortlisted: 8,
+      postedDate: "5 days ago",
+      location: "Hybrid",
+      status: "open",
+    },
   ];
 
   const applicants: Applicant[] = [
-    { id: "1", name: "Sunthorn Kompita", major: "Computer Engineering", year: 4, appliedRole: "Senior Frontend Developer", lastUpdate: "2 hours ago" },
-    { id: "2", name: "Panthawat Lueangsiriwattana", major: "Software Engineering", year: 3, appliedRole: "Mobile App Developer", lastUpdate: "1 day ago" },
-    { id: "3", name: "Tanasatit Ngaosupathon", major: "Software Engineering", year: 4, appliedRole: "Data Science Intern", lastUpdate: "2 days ago" },
-    { id: "4", name: "Thanawat Tanijaroensin", major: "Computer Engineering", year: 4, appliedRole: "Senior Frontend Developer", lastUpdate: "3 days ago" },
-    { id: "5", name: "Phasit Ruangmak", major: "Software Engineering", year: 3, appliedRole: "Mobile App Developer", lastUpdate: "4 hours ago" },
+    {
+      id: "1",
+      name: "Sunthorn Kompita",
+      major: "Computer Engineering",
+      year: 4,
+      appliedRole: "Senior Frontend Developer",
+      lastUpdate: "2 hours ago",
+    },
+    {
+      id: "2",
+      name: "Panthawat Lueangsiriwattana",
+      major: "Software Engineering",
+      year: 3,
+      appliedRole: "Mobile App Developer",
+      lastUpdate: "1 day ago",
+    },
+    {
+      id: "3",
+      name: "Tanasatit Ngaosupathon",
+      major: "Software Engineering",
+      year: 4,
+      appliedRole: "Data Science Intern",
+      lastUpdate: "2 days ago",
+    },
+    {
+      id: "4",
+      name: "Thanawat Tanijaroensin",
+      major: "Computer Engineering",
+      year: 4,
+      appliedRole: "Senior Frontend Developer",
+      lastUpdate: "3 days ago",
+    },
+    {
+      id: "5",
+      name: "Phasit Ruangmak",
+      major: "Software Engineering",
+      year: 3,
+      appliedRole: "Mobile App Developer",
+      lastUpdate: "4 hours ago",
+    },
   ];
 
   const filteredApplicants = applicants.filter((a) =>
-    a.name.toLowerCase().includes(searchQuery.toLowerCase())
+    a.name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl px-2 sm:px-4">
-      <DashboardHeader onPostJob={() => console.log("Post new job")} />
+      <DashboardHeader
+        onPostJob={() => console.log("Post new job")}
+      />
 
-      <NotificationBanner newApplications={5}/>
+      <NotificationBanner
+        newApplications={5}
+      />
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
-        <StatCard label="Open Jobs" value={stats.openJobs} />
-        <StatCard label="New Applications Today" value={stats.newApplicationsToday} />
-        <StatCard label="Offers Made" value={stats.offersMade} />
+        <StatCard
+          label="Open Jobs"
+          value={stats.openJobs}
+        />
+        <StatCard
+          label="New Applications Today"
+          value={stats.newApplicationsToday}
+        />
+        <StatCard
+          label="Offers Made"
+          value={stats.offersMade}
+        />
       </div>
 
       <div className="mb-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             type="text"
             placeholder="Search applicants by name"
@@ -63,8 +141,10 @@ const EmployerDashboardContent = () => {
         <div className="lg:col-span-5">
           <Card className="overflow-hidden rounded-2xl border-0 shadow-md">
             <div className="flex items-center justify-between border-b border-border p-6">
-              <h2 className="text-xl font-bold">My Open Jobs</h2>
-              <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[var(--brand-teal)] px-3 text-sm font-semibold text-white">
+              <h2 className="text-xl font-bold">
+                My Open Jobs
+              </h2>
+              <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white">
                 {jobs.length}
               </span>
             </div>
@@ -85,10 +165,12 @@ const EmployerDashboardContent = () => {
         <div className="lg:col-span-7">
           <Card className="overflow-hidden rounded-2xl border-0 p-0 shadow-md">
             <div className="flex items-center justify-between p-6">
-              <h2 className="text-xl font-bold">Applicants Inbox</h2>
-              <Badge variant="default" className="rounded-full">
+              <h2 className="text-xl font-bold">
+                Applicants Inbox
+              </h2>
+              <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white">
                 {filteredApplicants.length}
-              </Badge>
+              </span>
             </div>
 
             <div className="hidden grid-cols-12 items-center gap-4 border-y border-border bg-[var(--neutral-bg-1)] px-6 py-3 md:grid">

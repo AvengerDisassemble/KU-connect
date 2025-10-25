@@ -19,25 +19,41 @@ interface JobCardProps {
   variant?: "card" | "list";
 }
 
-const JobCard = ({ job, onViewApplicants, onEditJob, variant = "card" }: JobCardProps) => {
+const JobCard = ({
+  job,
+  onViewApplicants,
+  onEditJob,
+  variant = "card",
+}: JobCardProps) => {
   const badgeVariant: NonNullable<BadgeProps["variant"]> = job.status;
 
   const Inner = (
     <>
       <div className="mb-3 flex items-start justify-between">
-        <h3 className="text-xl font-semibold text-foreground">{job.title}</h3>
-        <Badge variant={badgeVariant} className="uppercase rounded-full px-3 py-1">
+        <h3 className="text-xl font-semibold text-foreground">
+          {job.title}
+        </h3>
+        <Badge
+          variant={badgeVariant}
+          className="rounded-full px-3 py-1 uppercase"
+        >
           {job.status}
         </Badge>
       </div>
 
       <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
         <span>
-          <span className="font-semibold text-foreground">{job.applicants}</span> applicants
+          <span className="font-semibold text-foreground">
+            {job.applicants}
+          </span>{" "}
+          applicants
         </span>
         <span>•</span>
         <span>
-          <span className="font-semibold text-foreground">{job.shortlisted}</span> shortlisted
+          <span className="font-semibold text-foreground">
+            {job.shortlisted}
+          </span>{" "}
+          shortlisted
         </span>
       </div>
 
@@ -49,7 +65,7 @@ const JobCard = ({ job, onViewApplicants, onEditJob, variant = "card" }: JobCard
         <Button
           onClick={() => onViewApplicants?.(job.id)}
           size="sm"
-          className="bg-brand-teal text-white hover:bg-brand-teal/90 shadow-md"
+          className="bg-primary text-white shadow-md hover:bg-primary/90"
         >
           View Applicants
         </Button>
@@ -57,7 +73,7 @@ const JobCard = ({ job, onViewApplicants, onEditJob, variant = "card" }: JobCard
           onClick={() => onEditJob?.(job.id)}
           variant="outline"
           size="sm"
-          className="text-brand-teal hover:bg-brand-teal hover:text-white"
+          className="text-primary hover:text-primary hover:bg-gray-200"
         >
           Edit Job
         </Button>
@@ -66,10 +82,18 @@ const JobCard = ({ job, onViewApplicants, onEditJob, variant = "card" }: JobCard
   );
 
   if (variant === "list") {
-    return <div className="px-6 py-6">{Inner}</div>;
+    return (
+      <div className="px-6 py-6">
+        {Inner}
+      </div>
+    );
   }
 
-  return <Card className="p-6">{Inner}</Card>;
+  return (
+    <Card className="p-6">
+      {Inner}
+    </Card>
+  );
 };
 
 export default JobCard;

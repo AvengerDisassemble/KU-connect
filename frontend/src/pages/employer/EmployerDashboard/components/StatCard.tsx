@@ -5,7 +5,10 @@ interface StatCardProps {
   value: number;
 }
 
-const StatCard = ({ label, value }: StatCardProps) => {
+const StatCard = ({
+  label,
+  value,
+}: StatCardProps) => {
   return (
     <Card
       className="
@@ -20,7 +23,7 @@ const StatCard = ({ label, value }: StatCardProps) => {
         aria-hidden
         className="
           absolute inset-y-0 left-0 w-1
-          bg-brand-lime
+          bg-accent
           rounded-l-2xl
         "
       />
@@ -29,7 +32,9 @@ const StatCard = ({ label, value }: StatCardProps) => {
         <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-secondary]">
           {label}
         </p>
-        <p className="text-4xl font-bold text-brand-teal">{value}</p>
+        <p className="text-4xl font-bold text-primary">
+          {value}
+        </p>
       </div>
     </Card>
   );

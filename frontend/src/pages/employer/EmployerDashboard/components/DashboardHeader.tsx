@@ -4,16 +4,24 @@ interface DashboardHeaderProps {
   onPostJob?: () => void;
 }
 
-const DashboardHeader = ({ onPostJob }: DashboardHeaderProps) => {
+const DashboardHeader = ({
+  onPostJob,
+}: DashboardHeaderProps) => {
   return (
     <div className="mb-8 flex items-start justify-between">
       <div>
-        <h1 className="mb-2 text-3xl font-bold">Employer Dashboard</h1>
+        <h1 className="mb-2 text-3xl font-bold">
+          Employer Dashboard
+        </h1>
         <p className="text-muted-foreground">
           Welcome back! Manage your job postings and candidates.
         </p>
       </div>
-      <Button onClick={onPostJob} size="lg" className="bg-brand-teal hover:bg-brand-teal/90">
+      <Button
+        onClick={onPostJob}
+        size="lg"
+        className="bg-primary hover:bg-primary/90"
+      >
         Post New Job
       </Button>
     </div>
