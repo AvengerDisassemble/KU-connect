@@ -33,9 +33,9 @@ router.use(auth.authMiddleware)
 // Admins can view all profiles
 router.get('/', role.roleMiddleware(['ADMIN']), profileController.listProfiles)
 
-// Avatar upload and retrieval
+// Avatar upload and download
 router.post('/avatar', upload.single('avatar'), profileController.uploadAvatar)
-router.get('/avatar/:userId', profileController.getAvatarUrl)
+router.get('/avatar/:userId/download', profileController.downloadAvatar)
 
 // Admins or the profile owner can view a single profile
 router.get('/:userId', profileController.getProfile)

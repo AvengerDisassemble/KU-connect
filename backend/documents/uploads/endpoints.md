@@ -3,17 +3,121 @@
 ## Overview
 This document provides comprehensive API endpoint documentation for the document upload and management system. All endpoints require authentication via Bearer token.
 
+**Security Note:** All file access is through protected download endpoints only. Direct URL access has been disabled for enhanced security. All downloads require proper authentication, authorization, and are subject to rate limiting and audit logging.
+
+---
+
+## Quick Reference: Field Names for Uploads
+
+| Endpoint | Field Name | File Types | Max Size |
+|----------|-----------|------------|----------|
+| `POST /api/profile/avatar` | **`avatar`** | JPEG, PNG, GIF, WebP | 2 MB |
+| `POST /api/documents/resume` | **`resume`** | PDF | 10 MB |
+| `POST /api/documents/transcript` | **`transcript`** | PDF | 10 MB |
+| `POST /api/documents/employer-verification` | **`verification`** | PDF, JPEG, PNG | 10 MB |
+| `POST /api/documents/student-verification` | **`verification`** | PDF, JPEG, PNG | 10 MB |
+| `POST /api/jobs/:jobId/resume` | **`resume`** | PDF | 10 MB |
+
+**Important:** Field names must be exact (case-sensitive). In Postman, select **form-data** in the Body tab and set the type to **File** for the key.
+
 ---
 
 ## Table of Contents
-1. [Profile Documents](#profile-documents)
+1. [Quick Reference: Field Names](#quick-reference-field-names-for-uploads)
+2. [User Profile](#user-profile)
+   - [Avatar Upload](#avatar-upload)
+3. [Profile Documents](#profile-documents)
    - [Student Resume](#student-resume)
    - [Student Transcript](#student-transcript)
    - [Employer Verification](#employer-verification)
-2. [Student Verification](#student-verification)
-3. [Job-Specific Documents](#job-specific-documents)
-4. [Authentication](#authentication)
-5. [Rate Limiting](#rate-limiting)
+4. [Student Verification](#student-verification)
+5. [Job-Specific Documents](#job-specific-documents)
+6. [Authentication](#authentication)
+7. [Rate Limiting](#rate-limiting)
+8. [Examples](#examples)
+9. [Notes](#notes)
+
+---
+
+## User Profile
+
+### Avatar Upload
+
+#### Upload Avatar
+Upload or replace user profile picture/avatar.
+
+**Endpoint:** `POST /api/profile/avatar`
+
+**Authentication:** Required (Bearer Token)
+
+**Authorization:** Any authenticated user (all roles)
+
+**File Requirements:**
+- **Field Name:** `avatar` (must be exact)
+- **File Types:** Any image format (JPEG, PNG, GIF, WebP, etc.)
+- **Max Size:** 2 MB
+
+**Request:**
+```http
+POST /api/profile/avatar HTTP/1.1
+Host: localhost:3000
+Authorization: Bearer <your_access_token>
+Content-Type: multipart/form-data
+
+avatar: <Image file>
+```
+
+**Postman Setup:**
+1. Select **POST** method
+2. URL: `http://localhost:3000/api/profile/avatar`
+3. **Headers** tab: Add `Authorization: Bearer <your_token>`
+4. **Body** tab: Select **form-data**
+5. Add key: `avatar`, Type: **File**, then select your image file
+
+**Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Avatar uploaded successfully",
+  "data": {
+    "fileKey": "avatars/user-123-avatar-1729876543210.jpg"
+  }
+}
+```
+
+**Errors:**
+- `400` - No file uploaded or invalid file type (not an image)
+- `401` - Unauthorized (missing/invalid token)
+- `413` - File too large (exceeds 2 MB)
+
+---
+
+#### Download Avatar
+Securely download a user's avatar image.
+
+**Endpoint:** `GET /api/profile/avatar/:userId/download`
+
+**Authentication:** Required (Bearer Token)
+
+**Authorization:** Any authenticated user can view any avatar
+
+**Request:**
+```http
+GET /api/profile/avatar/user-123/download HTTP/1.1
+Host: localhost:3000
+Authorization: Bearer <your_access_token>
+```
+
+**Response (200 OK):**
+- Content-Type: image/jpeg, image/png, image/gif, etc.
+- Content-Disposition: inline; filename="avatar.jpg"
+- Cache-Control: public, max-age=3600 (cached for 1 hour)
+- X-Content-Type-Options: nosniff
+- Body: Image file stream
+
+**Errors:**
+- `401` - Unauthorized
+- `404` - Avatar not found or user doesn't exist
 
 ---
 
@@ -30,6 +134,11 @@ Upload or replace a student's profile resume.
 
 **Authorization:** STUDENT role only
 
+**File Requirements:**
+- **Field Name:** `resume` (must be exact)
+- **File Type:** PDF only
+- **Max Size:** 10 MB
+
 **Request:**
 ```http
 POST /api/documents/resume HTTP/1.1
@@ -39,6 +148,13 @@ Content-Type: multipart/form-data
 
 resume: <PDF file>
 ```
+
+**Postman Setup:**
+1. Select **POST** method
+2. URL: `http://localhost:3000/api/documents/resume`
+3. **Headers** tab: Add `Authorization: Bearer <your_token>`
+4. **Body** tab: Select **form-data**
+5. Add key: `resume`, Type: **File**, then select your PDF file
 
 **Response (200 OK):**
 ```json
@@ -52,46 +168,10 @@ resume: <PDF file>
 ```
 
 **Errors:**
-- `400` - No file uploaded
+- `400` - No file uploaded or invalid file type (not PDF)
 - `401` - Unauthorized (missing/invalid token)
 - `403` - Forbidden (not a student)
 - `404` - Student profile not found
-
----
-
-#### Get Resume URL
-Get a URL to access a student's resume.
-
-**Endpoint:** `GET /api/documents/resume/:userId`
-
-**Authentication:** Required (Bearer Token)
-
-**Authorization:** 
-- Student (own resume only)
-- Admin (any resume)
-
-**Request:**
-```http
-GET /api/documents/resume/user-123 HTTP/1.1
-Host: localhost:3000
-Authorization: Bearer <your_access_token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Resume URL retrieved successfully",
-  "data": {
-    "url": "https://storage.example.com/resumes/user-123-resume.pdf"
-  }
-}
-```
-
-**Errors:**
-- `401` - Unauthorized
-- `403` - Access denied
-- `404` - Resume not found
 
 ---
 
@@ -141,6 +221,11 @@ Upload or replace a student's transcript.
 
 **Authorization:** STUDENT role only
 
+**File Requirements:**
+- **Field Name:** `transcript` (must be exact)
+- **File Type:** PDF only
+- **Max Size:** 10 MB
+
 **Request:**
 ```http
 POST /api/documents/transcript HTTP/1.1
@@ -150,6 +235,13 @@ Content-Type: multipart/form-data
 
 transcript: <PDF file>
 ```
+
+**Postman Setup:**
+1. Select **POST** method
+2. URL: `http://localhost:3000/api/documents/transcript`
+3. **Headers** tab: Add `Authorization: Bearer <your_token>`
+4. **Body** tab: Select **form-data**
+5. Add key: `transcript`, Type: **File**, then select your PDF file
 
 **Response (200 OK):**
 ```json
@@ -163,41 +255,10 @@ transcript: <PDF file>
 ```
 
 **Errors:**
-- `400` - No file uploaded
+- `400` - No file uploaded or invalid file type (not PDF)
 - `401` - Unauthorized
 - `403` - Forbidden (not a student)
 - `404` - Student profile not found
-
----
-
-#### Get Transcript URL
-Get a URL to access a student's transcript.
-
-**Endpoint:** `GET /api/documents/transcript/:userId`
-
-**Authentication:** Required (Bearer Token)
-
-**Authorization:** 
-- Student (own transcript only)
-- Admin (any transcript)
-
-**Request:**
-```http
-GET /api/documents/transcript/user-123 HTTP/1.1
-Host: localhost:3000
-Authorization: Bearer <your_access_token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Transcript URL retrieved successfully",
-  "data": {
-    "url": "https://storage.example.com/transcripts/user-123-transcript.pdf"
-  }
-}
-```
 
 ---
 
@@ -239,7 +300,10 @@ Upload or replace employer verification document (company registration, tax ID, 
 
 **Authorization:** EMPLOYER role only
 
-**Accepted File Types:** PDF, JPEG, PNG (max 10MB)
+**File Requirements:**
+- **Field Name:** `verification` (must be exact)
+- **File Types:** PDF, JPEG, PNG
+- **Max Size:** 10 MB
 
 **Request:**
 ```http
@@ -250,6 +314,13 @@ Content-Type: multipart/form-data
 
 verification: <PDF/JPEG/PNG file>
 ```
+
+**Postman Setup:**
+1. Select **POST** method
+2. URL: `http://localhost:3000/api/documents/employer-verification`
+3. **Headers** tab: Add `Authorization: Bearer <your_token>`
+4. **Body** tab: Select **form-data**
+5. Add key: `verification`, Type: **File**, then select your PDF/JPEG/PNG file
 
 **Response (200 OK):**
 ```json
@@ -263,41 +334,10 @@ verification: <PDF/JPEG/PNG file>
 ```
 
 **Errors:**
-- `400` - No file uploaded or invalid file type
+- `400` - No file uploaded or invalid file type (must be PDF, JPEG, or PNG)
 - `401` - Unauthorized
 - `403` - Forbidden (not an employer)
 - `404` - HR profile not found
-
----
-
-#### Get Employer Verification URL
-Get a URL to access employer verification document.
-
-**Endpoint:** `GET /api/documents/employer-verification/:userId`
-
-**Authentication:** Required (Bearer Token)
-
-**Authorization:** 
-- Employer (own document only)
-- Admin (any document)
-
-**Request:**
-```http
-GET /api/documents/employer-verification/user-456 HTTP/1.1
-Host: localhost:3000
-Authorization: Bearer <your_access_token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Employer verification URL retrieved successfully",
-  "data": {
-    "url": "https://storage.example.com/employer-docs/user-456-verification.pdf"
-  }
-}
-```
 
 ---
 
@@ -339,7 +379,10 @@ Upload verification document for unverified student accounts (student ID, enroll
 
 **Authorization:** STUDENT role only (unverified accounts)
 
-**Accepted File Types:** PDF, JPEG, PNG (max 10MB)
+**File Requirements:**
+- **Field Name:** `verification` (must be exact)
+- **File Types:** PDF, JPEG, PNG
+- **Max Size:** 10 MB
 
 **Request:**
 ```http
@@ -350,6 +393,13 @@ Content-Type: multipart/form-data
 
 verification: <PDF/JPEG/PNG file>
 ```
+
+**Postman Setup:**
+1. Select **POST** method
+2. URL: `http://localhost:3000/api/documents/student-verification`
+3. **Headers** tab: Add `Authorization: Bearer <your_token>`
+4. **Body** tab: Select **form-data**
+5. Add key: `verification`, Type: **File**, then select your PDF/JPEG/PNG file
 
 **Response (200 OK):**
 ```json
@@ -366,34 +416,6 @@ verification: <PDF/JPEG/PNG file>
 - `404` - Student profile not found
 
 **Note:** This endpoint will reject already verified students with a 400 error.
-
----
-
-### Get Student Verification URL
-Get a URL to access student verification document.
-
-**Endpoint:** `GET /api/documents/student-verification/:userId`
-
-**Authentication:** Required (Bearer Token)
-
-**Authorization:** 
-- Student (own document only)
-- Admin (any document)
-
-**Request:**
-```http
-GET /api/documents/student-verification/user-789 HTTP/1.1
-Host: localhost:3000
-Authorization: Bearer <your_access_token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "url": "https://storage.example.com/student-verifications/user-789-verification.pdf"
-}
-```
 
 ---
 
@@ -435,20 +457,16 @@ Upload or update a resume for a specific job application (separate from profile 
 
 **Authorization:** STUDENT role only
 
-**Request:**
-```http
-POST /api/jobs/42/resume HTTP/1.1
-Host: localhost:3000
-Authorization: Bearer <your_access_token>
-Content-Type: application/json
+**File Requirements:**
+- **Field Name:** `resume` (must be exact, when uploading a new file)
+- **File Type:** PDF only
+- **Max Size:** 10 MB
 
-{
-  "source": "UPLOADED",
-  "file": "<base64_encoded_pdf_or_multipart_upload>"
-}
-```
+**Options:**
+1. **Upload a new resume** - Use multipart/form-data with a PDF file
+2. **Use profile resume** - Send without file (uses resume from your profile)
 
-**OR use multipart/form-data:**
+**Request (Upload New Resume):**
 ```http
 POST /api/jobs/42/resume HTTP/1.1
 Host: localhost:3000
@@ -456,7 +474,25 @@ Authorization: Bearer <your_access_token>
 Content-Type: multipart/form-data
 
 resume: <PDF file>
-source: UPLOADED
+```
+
+**Postman Setup (Upload New Resume):**
+1. Select **POST** method
+2. URL: `http://localhost:3000/api/jobs/42/resume` (replace `42` with actual job ID)
+3. **Headers** tab: Add `Authorization: Bearer <your_token>`
+4. **Body** tab: Select **form-data**
+5. Add key: `resume`, Type: **File**, then select your PDF file
+
+**Request (Use Profile Resume):**
+```http
+POST /api/jobs/42/resume HTTP/1.1
+Host: localhost:3000
+Authorization: Bearer <your_access_token>
+Content-Type: application/json
+
+{
+  "source": "PROFILE"
+}
 ```
 
 **Response (200 OK):**
@@ -476,38 +512,6 @@ source: UPLOADED
 - `source` (optional): "PROFILE" or "UPLOADED"
   - `PROFILE`: Uses the resume from student's profile
   - `UPLOADED`: Uploads a new resume specific to this job
-
----
-
-### Get Job Resume URL
-Get the resume URL for a specific job application.
-
-**Endpoint:** `GET /api/jobs/:jobId/resume/:studentUserId`
-
-**Authentication:** Required (Bearer Token)
-
-**Authorization:** 
-- Student (own resume only)
-- Job HR/Employer (for their job postings)
-- Admin (any resume)
-
-**Request:**
-```http
-GET /api/jobs/42/resume/user-123 HTTP/1.1
-Host: localhost:3000
-Authorization: Bearer <your_access_token>
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "url": "https://storage.example.com/job-resumes/student-123-job-42.pdf",
-    "source": "UPLOADED"
-  }
-}
-```
 
 ---
 
@@ -654,13 +658,15 @@ All download endpoints are rate-limited to prevent abuse:
 ## File Constraints
 
 ### File Size Limits
+- **Avatar Images:** 2 MB maximum
 - **PDF Documents:** 10 MB maximum
-- **Images (JPEG/PNG):** 10 MB maximum
+- **Verification Images (JPEG/PNG):** 10 MB maximum
 
 ### Accepted File Types
 
 | Endpoint Type | Accepted Formats |
 |--------------|------------------|
+| Avatar | Any image (JPEG, PNG, GIF, WebP, etc.) |
 | Resume | PDF only |
 | Transcript | PDF only |
 | Employer Verification | PDF, JPEG, PNG |
@@ -716,26 +722,24 @@ Create an environment in Postman with these variables:
 📁 KU-Connect Document API
 ├── 📁 Authentication
 │   └── Login
+├── 📁 User Profile
+│   ├── Upload Avatar
+│   └── Download Avatar
 ├── 📁 Profile Documents
 │   ├── 📁 Resume
 │   │   ├── Upload Resume
-│   │   ├── Get Resume URL
 │   │   └── Download Resume
 │   ├── 📁 Transcript
 │   │   ├── Upload Transcript
-│   │   ├── Get Transcript URL
 │   │   └── Download Transcript
 │   └── 📁 Employer Verification
 │       ├── Upload Verification
-│       ├── Get Verification URL
 │       └── Download Verification
 ├── 📁 Student Verification
 │   ├── Upload Student Verification
-│   ├── Get Student Verification URL
 │   └── Download Student Verification
 └── 📁 Job Documents
     ├── Upload Job Resume
-    ├── Get Job Resume URL
     ├── Download Job Resume
     └── Delete Job Resume
 ```
@@ -759,7 +763,15 @@ if (token) {
 
 ## Examples
 
-### Example 1: Student Uploads Profile Resume
+### Example 1: User Uploads Avatar
+
+```bash
+curl -X POST http://localhost:3000/api/profile/avatar \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -F "avatar=@/path/to/profile-picture.jpg"
+```
+
+### Example 2: Student Uploads Profile Resume
 
 ```bash
 curl -X POST http://localhost:3000/api/documents/resume \
@@ -767,7 +779,15 @@ curl -X POST http://localhost:3000/api/documents/resume \
   -F "resume=@/path/to/resume.pdf"
 ```
 
-### Example 2: Admin Downloads Student's Transcript
+### Example 3: User Downloads Another User's Avatar
+
+```bash
+curl -X GET http://localhost:3000/api/profile/avatar/user-123/download \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -o avatar.jpg
+```
+
+### Example 4: Admin Downloads Student's Transcript
 
 ```bash
 curl -X GET http://localhost:3000/api/documents/transcript/user-123/download \
@@ -775,7 +795,7 @@ curl -X GET http://localhost:3000/api/documents/transcript/user-123/download \
   -o transcript.pdf
 ```
 
-### Example 3: Unverified Student Uploads Verification Document
+### Example 5: Unverified Student Uploads Verification Document
 
 ```bash
 curl -X POST http://localhost:3000/api/documents/student-verification \
@@ -783,7 +803,15 @@ curl -X POST http://localhost:3000/api/documents/student-verification \
   -F "verification=@/path/to/student-id.jpg"
 ```
 
-### Example 4: Student Uploads Job-Specific Resume
+### Example 5: Unverified Student Uploads Verification Document
+
+```bash
+curl -X POST http://localhost:3000/api/documents/student-verification \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -F "verification=@/path/to/student-id.jpg"
+```
+
+### Example 6: Student Uploads Job-Specific Resume
 
 ```bash
 curl -X POST http://localhost:3000/api/jobs/42/resume \
@@ -792,7 +820,7 @@ curl -X POST http://localhost:3000/api/jobs/42/resume \
   -F "source=UPLOADED"
 ```
 
-### Example 5: Employer Downloads Applicant's Job Resume
+### Example 7: Employer Downloads Applicant's Job Resume
 
 ```bash
 curl -X GET http://localhost:3000/api/jobs/42/resume/user-123/download \
@@ -804,12 +832,14 @@ curl -X GET http://localhost:3000/api/jobs/42/resume/user-123/download \
 
 ## Notes
 
-1. **File Replacement:** Uploading a new file automatically deletes the old one
-2. **Resume Source:** Job resumes can use profile resume or upload a new one
-3. **Verification Status:** Only unverified students can upload verification documents
-4. **Storage Providers:** System supports both local filesystem and AWS S3
-5. **Download Security:** All downloads use secure streaming with proper headers
-6. **Audit Trail:** All document access is logged for security and compliance
+1. **Security Enhancement:** Direct file URL access has been removed. All file downloads must go through the protected `/download` endpoints with proper authentication and authorization.
+2. **File Replacement:** Uploading a new file automatically deletes the old one
+3. **Resume Source:** Job resumes can use profile resume or upload a new one
+4. **Verification Status:** Only unverified students can upload verification documents
+5. **Storage Providers:** System supports both local filesystem and AWS S3
+6. **Download Security:** All downloads use secure streaming with proper headers
+7. **Audit Trail:** All document access is logged for security and compliance
+8. **Rate Limiting:** Download endpoints are rate-limited to 60 requests per minute per user
 
 ---
 

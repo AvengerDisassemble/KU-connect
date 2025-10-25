@@ -205,12 +205,12 @@ async function uploadAvatar(req, res) {
 }
 
 /**
- * Get avatar URL for a user
+ * Download avatar file (protected)
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @returns {Promise<void>}
  */
-async function getAvatarUrl(req, res) {
+async function downloadAvatar(req, res) {
   try {
     const requestedUserId = req.params.userId
 
@@ -229,23 +229,39 @@ async function getAvatarUrl(req, res) {
     if (!user.avatarKey) {
       return res.status(404).json({
         success: false,
-        message: 'No avatar found for this user',
-        data: { url: null }
+        message: 'No avatar found for this user'
       })
     }
 
-    const url = await storageProvider.getFileUrl(user.avatarKey)
+    // Try signed URL first (S3), fallback to streaming (local)
+    const signedUrl = await storageProvider.getSignedDownloadUrl(user.avatarKey)
+    
+    if (signedUrl) {
+      return res.redirect(signedUrl)
+    }
 
-    res.status(200).json({
-      success: true,
-      message: 'Avatar URL retrieved successfully',
-      data: { url }
-    })
+    // Stream the file
+    const { stream, mimeType, filename } = await storageProvider.getReadStream(user.avatarKey)
+    
+    res.setHeader('Content-Type', mimeType)
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`)
+    res.setHeader('Cache-Control', 'public, max-age=3600') // Cache avatars for 1 hour
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    
+    stream.pipe(res)
   } catch (error) {
-    console.error('Get avatar URL error:', error)
+    console.error('Download avatar error:', error)
+    
+    if (error.message && error.message.includes('File not found')) {
+      return res.status(404).json({
+        success: false,
+        message: 'Avatar file not found'
+      })
+    }
+    
     res.status(500).json({
       success: false,
-      message: 'Failed to get avatar URL'
+      message: 'Failed to download avatar'
     })
   }
 }
@@ -255,6 +271,6 @@ module.exports = {
   getProfile,
   listProfiles,
   uploadAvatar,
-  getAvatarUrl
+  downloadAvatar
 }
 
