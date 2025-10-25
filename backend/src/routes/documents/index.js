@@ -47,22 +47,18 @@ router.use(auth.authMiddleware)
 
 // Resume routes (students only for upload)
 router.post('/resume', role.roleMiddleware(['STUDENT']), pdfUpload.single('resume'), documentsController.uploadResume)
-router.get('/resume/:userId', documentsController.getResumeUrl)
 router.get('/resume/:userId/download', downloadRateLimit, documentsController.downloadResume)
 
 // Transcript routes (students only for upload)
 router.post('/transcript', role.roleMiddleware(['STUDENT']), pdfUpload.single('transcript'), documentsController.uploadTranscript)
-router.get('/transcript/:userId', documentsController.getTranscriptUrl)
 router.get('/transcript/:userId/download', downloadRateLimit, documentsController.downloadTranscript)
 
 // Employer verification routes (HR/employer only for upload)
 router.post('/employer-verification', role.roleMiddleware(['EMPLOYER']), verificationUpload.single('verification'), documentsController.uploadEmployerVerification)
-router.get('/employer-verification/:userId', documentsController.getEmployerVerificationUrl)
 router.get('/employer-verification/:userId/download', downloadRateLimit, documentsController.downloadEmployerVerification)
 
 // Student verification routes (unverified students can upload, admins can view)
 router.post('/student-verification', role.roleMiddleware(['STUDENT']), verificationUpload.single('verification'), documentsController.uploadStudentVerification)
-router.get('/student-verification/:userId', role.roleMiddleware(['ADMIN', 'STUDENT']), documentsController.getStudentVerificationUrl)
 router.get('/student-verification/:userId/download', downloadRateLimit, documentsController.downloadStudentVerification)
 
 module.exports = router

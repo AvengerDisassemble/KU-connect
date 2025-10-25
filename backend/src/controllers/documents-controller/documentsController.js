@@ -77,61 +77,6 @@ async function uploadResume(req, res) {
 }
 
 /**
- * Get resume URL for a student
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
- */
-async function getResumeUrl(req, res) {
-  try {
-    const requestedUserId = req.params.userId
-    const { role: userRole, id: currentUserId } = req.user
-
-    // Access control: owner or admin
-    if (currentUserId !== requestedUserId && userRole !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      })
-    }
-
-    const student = await prisma.student.findUnique({
-      where: { userId: requestedUserId },
-      select: { resumeKey: true }
-    })
-
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student profile not found'
-      })
-    }
-
-    if (!student.resumeKey) {
-      return res.status(404).json({
-        success: false,
-        message: 'No resume found for this student',
-        data: { url: null }
-      })
-    }
-
-    const url = await storageProvider.getFileUrl(student.resumeKey)
-
-    res.status(200).json({
-      success: true,
-      message: 'Resume URL retrieved successfully',
-      data: { url }
-    })
-  } catch (error) {
-    console.error('Get resume URL error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get resume URL'
-    })
-  }
-}
-
-/**
  * Upload student transcript
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -199,61 +144,6 @@ async function uploadTranscript(req, res) {
 }
 
 /**
- * Get transcript URL for a student
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
- */
-async function getTranscriptUrl(req, res) {
-  try {
-    const requestedUserId = req.params.userId
-    const { role: userRole, id: currentUserId } = req.user
-
-    // Access control: owner or admin
-    if (currentUserId !== requestedUserId && userRole !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      })
-    }
-
-    const student = await prisma.student.findUnique({
-      where: { userId: requestedUserId },
-      select: { transcriptKey: true }
-    })
-
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student profile not found'
-      })
-    }
-
-    if (!student.transcriptKey) {
-      return res.status(404).json({
-        success: false,
-        message: 'No transcript found for this student',
-        data: { url: null }
-      })
-    }
-
-    const url = await storageProvider.getFileUrl(student.transcriptKey)
-
-    res.status(200).json({
-      success: true,
-      message: 'Transcript URL retrieved successfully',
-      data: { url }
-    })
-  } catch (error) {
-    console.error('Get transcript URL error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get transcript URL'
-    })
-  }
-}
-
-/**
  * Upload employer verification document
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -316,61 +206,6 @@ async function uploadEmployerVerification(req, res) {
     res.status(500).json({
       success: false,
       message: 'Failed to upload employer verification document'
-    })
-  }
-}
-
-/**
- * Get employer verification document URL
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
- */
-async function getEmployerVerificationUrl(req, res) {
-  try {
-    const requestedUserId = req.params.userId
-    const { role: userRole, id: currentUserId } = req.user
-
-    // Access control: owner or admin
-    if (currentUserId !== requestedUserId && userRole !== 'ADMIN') {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      })
-    }
-
-    const hr = await prisma.hR.findUnique({
-      where: { userId: requestedUserId },
-      select: { verificationDocKey: true }
-    })
-
-    if (!hr) {
-      return res.status(404).json({
-        success: false,
-        message: 'HR profile not found'
-      })
-    }
-
-    if (!hr.verificationDocKey) {
-      return res.status(404).json({
-        success: false,
-        message: 'No verification document found for this employer',
-        data: { url: null }
-      })
-    }
-
-    const url = await storageProvider.getFileUrl(hr.verificationDocKey)
-
-    res.status(200).json({
-      success: true,
-      message: 'Employer verification URL retrieved successfully',
-      data: { url }
-    })
-  } catch (error) {
-    console.error('Get employer verification URL error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get employer verification URL'
     })
   }
 }
@@ -691,52 +526,6 @@ async function uploadStudentVerification(req, res) {
 }
 
 /**
- * Get student verification document URL (admin only)
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
- */
-async function getStudentVerificationUrl(req, res) {
-  try {
-    const { userId } = req.params
-    const requester = req.user
-
-    // Only admins can access student verification documents
-    if (requester.role !== 'ADMIN' && requester.id !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      })
-    }
-
-    const student = await prisma.student.findUnique({
-      where: { userId },
-      select: { verificationDocKey: true }
-    })
-
-    if (!student || !student.verificationDocKey) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student verification document not found'
-      })
-    }
-
-    const url = await storageProvider.getFileUrl(student.verificationDocKey)
-
-    res.status(200).json({
-      success: true,
-      url
-    })
-  } catch (error) {
-    console.error('Get student verification URL error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get student verification document URL'
-    })
-  }
-}
-
-/**
  * Download student verification document (protected)
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -822,16 +611,12 @@ async function downloadStudentVerification(req, res) {
 
 module.exports = {
   uploadResume,
-  getResumeUrl,
   downloadResume,
   uploadTranscript,
-  getTranscriptUrl,
   downloadTranscript,
   uploadEmployerVerification,
-  getEmployerVerificationUrl,
   downloadEmployerVerification,
   uploadStudentVerification,
-  getStudentVerificationUrl,
   downloadStudentVerification
 }
 

@@ -38,24 +38,11 @@ router.post(
   jobDocumentController.upsertJobResume
 )
 
-// GET - Get job application resume URL (owner, job HR owner, or admin)
-router.get(
-  '/:jobId/resume/:studentUserId',
-  jobDocumentController.getJobResumeUrl
-)
-
 // GET - Download job application resume (protected, owner/HR/admin)
 router.get(
   '/:jobId/resume/:studentUserId/download',
   downloadRateLimit,
   jobDocumentController.downloadJobResume
-)
-
-// GET - Convenience endpoint to get current user's job resume
-router.get(
-  '/:jobId/resume/self',
-  role.roleMiddleware(['STUDENT']),
-  jobDocumentController.getSelfJobResumeUrl
 )
 
 // DELETE - Delete job application resume (student only)

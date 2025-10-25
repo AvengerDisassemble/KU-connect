@@ -172,94 +172,6 @@ async function upsertJobResume(req, res) {
 }
 
 /**
- * Get job application resume URL
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
- */
-async function getJobResumeUrl(req, res) {
-  try {
-    const { jobId, studentUserId } = req.params
-    const me = req.user
-
-    // Fetch job and student
-    const [job, student] = await Promise.all([
-      prisma.job.findUnique({
-        where: { id: Number(jobId) },
-        select: { id: true, hrId: true }
-      }),
-      prisma.student.findUnique({
-        where: { userId: studentUserId },
-        select: { id: true, userId: true }
-      })
-    ])
-
-    if (!job) {
-      return res.status(404).json({
-        success: false,
-        message: 'Job not found'
-      })
-    }
-
-    if (!student) {
-      return res.status(404).json({
-        success: false,
-        message: 'Student not found'
-      })
-    }
-
-    // Access control: owner, ADMIN, or HR owner of job
-    const isOwner = me.id === student.userId
-    const isAdmin = me.role === 'ADMIN'
-    const isJobOwner = await isHrOwnerOfJob(me, job)
-
-    if (!isOwner && !isAdmin && !isJobOwner) {
-      return res.status(403).json({
-        success: false,
-        message: 'Access denied'
-      })
-    }
-
-    // Get resume record
-    const resume = await prisma.resume.findUnique({
-      where: {
-        studentId_jobId: {
-          studentId: student.id,
-          jobId: job.id
-        }
-      },
-      select: { link: true, source: true }
-    })
-
-    if (!resume) {
-      return res.status(404).json({
-        success: false,
-        message: 'No resume found for this job application',
-        data: { url: null }
-      })
-    }
-
-    // Get URL from storage provider
-    const url = await storageProvider.getFileUrl(resume.link)
-
-    res.status(200).json({
-      success: true,
-      message: 'Job resume URL retrieved successfully',
-      data: {
-        url,
-        source: resume.source
-      }
-    })
-  } catch (error) {
-    console.error('Get job resume URL error:', error)
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get job resume URL'
-    })
-  }
-}
-
-/**
  * Delete job application resume
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -332,18 +244,6 @@ async function deleteJobResume(req, res) {
       message: 'Failed to delete job resume'
     })
   }
-}
-
-/**
- * Get current user's job application resume URL (convenience endpoint)
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @returns {Promise<void>}
- */
-async function getSelfJobResumeUrl(req, res) {
-  // Reuse the getJobResumeUrl logic by setting studentUserId to current user
-  req.params.studentUserId = req.user.id
-  return getJobResumeUrl(req, res)
 }
 
 /**
@@ -453,8 +353,6 @@ async function downloadJobResume(req, res) {
 
 module.exports = {
   upsertJobResume,
-  getJobResumeUrl,
   deleteJobResume,
-  getSelfJobResumeUrl,
   downloadJobResume
 }
