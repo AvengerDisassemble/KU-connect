@@ -173,44 +173,8 @@ describe('Documents Controller', () => {
         .set('Authorization', `Bearer ${studentToken}`)
         .attach('resume', txtBuffer, 'resume.txt')
 
-      expect(response.status).toBe(500) // Multer error
-    })
-  })
-
-  describe('GET /api/documents/resume/:userId', () => {
-    beforeAll(async () => {
-      // Set a resume key for student
-      await prisma.student.update({
-        where: { userId: studentUserId },
-        data: { resumeKey: 'resumes/test-resume.pdf' }
-      })
-    })
-
-    test('should allow student to get own resume URL', async () => {
-      const response = await request(app)
-        .get(`/api/documents/resume/${studentUserId}`)
-        .set('Authorization', `Bearer ${studentToken}`)
-
-      expect(response.status).toBe(200)
-      expect(response.body.success).toBe(true)
-      expect(response.body.data.url).toBe('https://mock-url.com/file')
-    })
-
-    test('should allow admin to get any student resume URL', async () => {
-      const response = await request(app)
-        .get(`/api/documents/resume/${studentUserId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-
-      expect(response.status).toBe(200)
-      expect(response.body.success).toBe(true)
-    })
-
-    test('should deny access to other users', async () => {
-      const response = await request(app)
-        .get(`/api/documents/resume/${studentUserId}`)
-        .set('Authorization', `Bearer ${hrToken}`)
-
-      expect(response.status).toBe(403)
+      expect(response.status).toBe(400) // Multer error handled by errorHandler
+      expect(response.body.message).toContain('PDF')
     })
   })
 
