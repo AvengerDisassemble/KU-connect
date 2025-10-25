@@ -37,6 +37,12 @@ Mirror the /src folder structure inside /tests
 - This approach keeps tests well-organized, clearly grouped by feature.
 - Look at the tests folder, the structure is already partially implemeted.
 
+Middleware structure for the autentication and authorization
+- authMiddleware.js – verify JWT and attach `req.user`
+- roleMiddleware.js – check if user has required role
+- validateMiddleware.js – validate request body with schemas
+- errorHandler.js – central error formatting
+
 Also Provided
 The domain digram and database diagram is in the context folder.
 
