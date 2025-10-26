@@ -190,13 +190,18 @@ describe('Job Document Controller', () => {
         data: {
           hrId: hr.hr.id,
           title: 'Software Engineer',
+          companyName: 'Test Company Inc.',
           description: 'Test job description',
           location: 'Remote',
+          jobType: 'full-time',
+          workArrangement: 'remote',
+          duration: '6-month',
+          minSalary: 40000,
+          maxSalary: 60000,
           application_deadline: new Date('2025-12-31'),
           email: 'jobs@test.com',
           phone_number: '123-456-7890',
-          other_contact_information: 'LinkedIn',
-          requirements: 'Bachelor degree'
+          other_contact_information: 'LinkedIn'
         }
       })
 

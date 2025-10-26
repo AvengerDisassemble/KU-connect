@@ -66,7 +66,7 @@ async function canViewJobResume(requester, jobId, studentUserId) {
   // HR who owns the job can view resumes for that job
   if (requester.role === 'EMPLOYER') {
     const job = await prisma.job.findUnique({
-      where: { id: Number(jobId) },
+      where: { id: jobId },
       select: { 
         hr: {
           select: { userId: true }

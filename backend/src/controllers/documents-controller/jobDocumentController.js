@@ -46,7 +46,7 @@ async function upsertJobResume(req, res) {
     // Validate job and student
     const [job, student] = await Promise.all([
       prisma.job.findUnique({
-        where: { id: Number(jobId) },
+        where: { id: jobId },
         select: { id: true, hrId: true }
       }),
       prisma.student.findUnique({
@@ -200,7 +200,7 @@ async function deleteJobResume(req, res) {
       where: {
         studentId_jobId: {
           studentId: student.id,
-          jobId: Number(jobId)
+          jobId: jobId
         }
       },
       select: { link: true, source: true }
@@ -218,7 +218,7 @@ async function deleteJobResume(req, res) {
       where: {
         studentId_jobId: {
           studentId: student.id,
-          jobId: Number(jobId)
+          jobId: jobId
         }
       }
     })
@@ -295,7 +295,7 @@ async function downloadJobResume(req, res) {
       where: {
         studentId_jobId: {
           studentId: student.id,
-          jobId: Number(jobId)
+          jobId: jobId
         }
       },
       select: { link: true }
