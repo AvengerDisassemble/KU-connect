@@ -19,11 +19,16 @@ module.exports = {
   // Suppress verbose output during tests
   verbose: false,
 
-  // Use custom reporter to show failures at the end
+  // Disable stack traces to reduce noise
+  noStackTrace: true,
+
+  // Use only custom reporter for clean output
   reporters: [
-    'default',
     '<rootDir>/tests/customReporter.js'
   ],
+
+  // Silent mode - suppress console output during test run
+  silent: false,
 
   // Run tests sequentially to avoid database conflicts
   maxWorkers: 1,

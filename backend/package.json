@@ -11,9 +11,10 @@
   },
   "scripts": {
     "test": "jest --runInBand",
-    "test:quiet": "jest --silent",
-    "test:summary": "jest --verbose=false",
-    "test:failures": "jest --onlyFailures --verbose=false",
+    "test:quiet": "jest --silent --runInBand",
+    "test:verbose": "SHOW_LOGS=true jest --runInBand",
+    "test:summary": "jest --verbose=false --runInBand",
+    "test:failures": "jest --onlyFailures --verbose=false --runInBand",
     "start": "node server.js"
   },
   "dependencies": {
