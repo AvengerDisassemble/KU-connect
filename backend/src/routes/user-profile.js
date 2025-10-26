@@ -10,6 +10,7 @@ const express = require('express')
 const { authMiddleware } = require('../middlewares/authMiddleware')
 const { roleMiddleware } = require('../middlewares/roleMiddleware')
 const { asyncErrorHandler } = require('../middlewares/errorHandler')
+const { strictLimiter } = require('../middlewares/rateLimitMiddleware')
 const { PrismaClient } = require('../generated/prisma')
 
 const router = express.Router()
@@ -102,7 +103,7 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
               }
             }
           },
-          resumes: {
+          applications: {
             include: {
               job: {
                 select: {
@@ -122,7 +123,7 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
         expectedGraduationYear: studentData?.expectedGraduationYear,
         degreeType: studentData?.degreeType?.name,
         totalInterests: studentData?.interests?.length || 0,
-        totalApplications: studentData?.resumes?.length || 0
+        totalApplications: studentData?.applications?.length || 0
       }
 
       userCapabilities = [
@@ -287,7 +288,7 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
         }
       })
 
-      const myApplications = await prisma.resume.findMany({
+      const myApplications = await prisma.application.findMany({
         where: {
           student: {
             userId
@@ -340,7 +341,7 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
           application_deadline: true,
           _count: {
             select: {
-              resumes: true
+              applications: true
             }
           }
         }

@@ -6,7 +6,19 @@
  * @param {Function} next - Express next function
  */
 function errorHandler (err, req, res, next) {
-  console.error('Error:', err)
+  // Log error safely without exposing sensitive information
+  // Only log error type, message, and code in production
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Error occurred:', {
+      name: err.name,
+      message: err.message,
+      code: err.code,
+      status: err.status
+    })
+  } else {
+    // Full error details in development for debugging
+    console.error('Error:', err.message, '\nStack:', err.stack)
+  }
 
   // Default error
   let error = {
@@ -31,6 +43,9 @@ function errorHandler (err, req, res, next) {
   if (err.message) {
     if (err.message.includes('Invalid credentials')) {
       error.message = 'Invalid credentials'
+      error.statusCode = 401
+    } else if (err.message.includes('refresh token') || err.message.includes('Refresh token')) {
+      error.message = err.message
       error.statusCode = 401
     } else if (err.message.includes('already registered') || err.message.includes('already exists')) {
       error.message = err.message

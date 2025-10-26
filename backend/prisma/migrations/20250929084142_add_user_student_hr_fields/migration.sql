@@ -78,11 +78,3 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE UNIQUE INDEX "User_phoneNumber_key" ON "User"("phoneNumber");
 PRAGMA foreign_keys=ON;
 PRAGMA defer_foreign_keys=OFF;
-
--- Seed initial degree types
-INSERT INTO "DegreeType" (name) VALUES
-  ('Unknown'),
-  ('Bachelor'),
-  ('Master'),
-  ('PhD')
-ON CONFLICT DO NOTHING;
