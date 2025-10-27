@@ -54,6 +54,27 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum AnnouncementAudience {
+  ALL
+  STUDENTS
+  EMPLOYERS
+  PROFESSORS
+  ADMINS
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 // ------------------------------
 //  MODELS
 // ------------------------------
@@ -66,6 +87,7 @@ model User {
   email         String         @unique
   username      String?        @unique
   role          Role
+  status        UserStatus     @default(PENDING)
   verified      Boolean        @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -74,8 +96,10 @@ model User {
   student       Student?
   hr            HR?
   refreshTokens RefreshToken[]
-  accounts     Account[]
+  accounts      Account[]
   reports       JobReport[]
+  announcements Announcement[]
+  notifications Notification[]
 }
 
 model RefreshToken {
@@ -269,4 +293,32 @@ model Resume {
   link         String
   student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   applications Application[]
+}
+
+// ------------------------------
+//  ANNOUNCEMENT & NOTIFICATION MODELS
+// ------------------------------
+
+model Announcement {
+  id            String               @id @default(cuid())
+  title         String
+  content       String
+  audience      AnnouncementAudience
+  priority      NotificationPriority @default(MEDIUM)
+  isActive      Boolean              @default(true)
+  createdBy     String
+  creator       User                 @relation(fields: [createdBy], references: [id])
+  createdAt     DateTime             @default(now())
+  expiresAt     DateTime?
+  notifications Notification[]
+}
+
+model Notification {
+  id             String       @id @default(cuid())
+  announcementId String
+  userId         String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
