@@ -36,6 +36,7 @@ async function main() {
       password: password,
       email: 'admin@kuconnect.local',
       role: 'ADMIN',
+      status: 'APPROVED',
       verified: true,
       admin: { create: {} }
     }
@@ -55,6 +56,7 @@ async function main() {
       password: password,
       email: 'hr1@company.com',
       role: 'EMPLOYER',
+      status: 'APPROVED',
       verified: true,
       hr: {
         create: {
@@ -89,6 +91,7 @@ async function main() {
       password: password,
       email: 'student1@ku.ac.th',
       role: 'STUDENT',
+      status: 'APPROVED',
       verified: true,
       student: {
         create: {
