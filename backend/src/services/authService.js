@@ -37,6 +37,7 @@ async function registerUser (userData, roleSpecificData = {}) {
         email: userData.email,
         password: hashedPassword,
         role: userData.role,
+        status: userData.role === 'ADMIN' ? 'APPROVED' : 'PENDING', // Admins auto-approved, others pending
         verified: userData.role === 'ADMIN' // Admins are pre-verified
       },
       select: {
@@ -45,6 +46,7 @@ async function registerUser (userData, roleSpecificData = {}) {
         surname: true,
         email: true,
         role: true,
+        status: true,
         verified: true,
         createdAt: true
       }
