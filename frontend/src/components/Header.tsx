@@ -5,21 +5,12 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
-import { useQuery } from "@tanstack/react-query";
-import { getProfile } from "@/services/profile";
 import Logo from "@/assets/logo.png";
 
 const Header = () => {
   const { user, isAuthenticated } = useAuth();
   const isStudent = user?.role === "student";
   const navigate = useNavigate();
-
-  // Fetch user profile for display
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: () => getProfile(user!.id),
-    enabled: isStudent && !!user?.id,
-  });
 
   const handleLogout = async () => {
     try {
@@ -32,8 +23,15 @@ const Header = () => {
 
   // Generate initials from user name
   const getInitials = (name?: string, surname?: string) => {
-    if (!name || !surname) return "U";
-    return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
+    if (name && surname) {
+      return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
+    }
+
+    if (name) {
+      return name.charAt(0).toUpperCase();
+    }
+
+    return "U";
   };
 
   if (isAuthenticated && !isStudent) {
@@ -96,11 +94,7 @@ const Header = () => {
           <div className="flex items-center gap-2">
             <Avatar className="bg-primary w-9 h-9 rounded-full">
               <AvatarFallback className="text-primary text-sm font-medium">
-                {profile
-                  ? getInitials(profile.name, profile.surname)
-                  : user.name
-                  ? user.name.charAt(0).toUpperCase()
-                  : "U"}
+                {getInitials(user.name, user.surname)}
               </AvatarFallback>
             </Avatar>
             <Button
