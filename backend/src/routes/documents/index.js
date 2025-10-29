@@ -5,12 +5,18 @@
 
 const express = require('express')
 const multer = require('multer')
+const RateLimit = require('express-rate-limit')
 const router = express.Router()
 const documentsController = require('../../controllers/documents-controller/documentsController')
 const auth = require('../../middlewares/authMiddleware')
 const role = require('../../middlewares/roleMiddleware')
 const downloadRateLimit = require('../../middlewares/downloadRateLimit')
 
+// Set up rate limiter: maximum of 100 requests per 15 minutes per IP
+const limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+})
 // Configure multer for PDF documents (10 MB limit)
 const pdfUpload = multer({
   storage: multer.memoryStorage(),
@@ -36,6 +42,8 @@ const verificationUpload = multer({
     const allowedMimes = ['image/jpeg', 'image/png', 'application/pdf']
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true)
+// Apply rate limiter to all requests in this router
+router.use(limiter)
     } else {
       cb(new Error('Only JPEG, PNG, or PDF files are allowed'))
     }
