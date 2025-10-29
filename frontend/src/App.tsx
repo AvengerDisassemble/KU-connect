@@ -8,13 +8,12 @@ import RegisterPage from "@/pages/public/register/RegisterPage";
 import NotFoundPage from "@/pages/public/NotFoundPage";
 import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
 import StudentProfilePage from "@/pages/student/profile/ProfilePage";
-// import BrowserJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
+import BrowserJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
 import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
-
 
 const App: React.FC = () => {
   return (
@@ -41,14 +40,14 @@ const App: React.FC = () => {
               </Guard>
             }
           />
-          {/* <Route
+          <Route
             path="/student/browsejobs"
             element={
               <Guard role="student">
                 <BrowserJobsPage />
               </Guard>
             }
-          /> */}
+          />
           <Route
             path="/employer"
             element={
