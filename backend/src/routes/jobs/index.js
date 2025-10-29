@@ -10,7 +10,14 @@ const jobDocumentController = require('../../controllers/documents-controller/jo
 const auth = require('../../middlewares/authMiddleware')
 const role = require('../../middlewares/roleMiddleware')
 const downloadRateLimit = require('../../middlewares/downloadRateLimit')
+const rateLimit = require('express-rate-limit')
 
+// Set up rate limiter for job resume upload/delete (max 10 requests per 15 minutes per IP)
+const jobResumeRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: 'Too many requests, please try again later.',
+})
 // Configure multer for PDF documents (10 MB limit) - same as profile resumes
 const pdfUpload = multer({
   storage: multer.memoryStorage(),
@@ -33,6 +40,7 @@ router.use(auth.authMiddleware)
 // POST - Upsert job application resume (use profile or upload new)
 router.post(
   '/:jobId/resume',
+  jobResumeRateLimit,
   role.roleMiddleware(['STUDENT']),
   pdfUpload.single('resume'),
   jobDocumentController.upsertJobResume
@@ -48,6 +56,7 @@ router.get(
 // DELETE - Delete job application resume (student only)
 router.delete(
   '/:jobId/resume',
+  jobResumeRateLimit,
   role.roleMiddleware(['STUDENT']),
   jobDocumentController.deleteJobResume
 )
