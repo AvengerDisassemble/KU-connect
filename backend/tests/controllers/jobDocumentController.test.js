@@ -10,6 +10,11 @@ const jwt = require('jsonwebtoken')
 const path = require('path')
 const fs = require('fs-extra')
 
+// Mock express-rate-limit to bypass rate limiting in tests
+jest.mock('express-rate-limit', () => {
+  return jest.fn(() => (req, res, next) => next())
+})
+
 // Mock storage provider to avoid actual file operations
 jest.mock('../../src/services/storageFactory', () => ({
   uploadFile: jest.fn().mockResolvedValue('mock-job-resume-key-12345'),
