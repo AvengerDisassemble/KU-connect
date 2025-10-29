@@ -95,7 +95,8 @@ function errorHandler (err, req, res, next) {
   // Multer file filter errors
   if (err.message && (
     err.message.includes('Only PDF files are allowed') ||
-    err.message.includes('Only JPEG, PNG, or PDF files are allowed')
+    err.message.includes('Only JPEG, PNG, or PDF files are allowed') ||
+    err.message.includes('Only JPEG, PNG, GIF, or WebP image files are allowed')
   )) {
     error.statusCode = 400
     error.message = err.message
