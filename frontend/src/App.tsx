@@ -13,6 +13,7 @@ import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardP
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
+import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 
 
 const App: React.FC = () => {
@@ -61,6 +62,14 @@ const App: React.FC = () => {
             element={
               <Guard role="employer">
                 <EmployerProfilePage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer/job-postings/create"
+            element={
+              <Guard role="employer">
+                <JobPostingPage />
               </Guard>
             }
           />

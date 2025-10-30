@@ -78,7 +78,9 @@ async function registerUser (userData, roleSpecificData = {}) {
           address: roleSpecificData.address,
           industry: roleSpecificData.industry || 'OTHER',
           companySize: roleSpecificData.companySize || 'ONE_TO_TEN',
-          website: roleSpecificData.website || null
+          website: roleSpecificData.website || null,
+          phoneNumber: roleSpecificData.phoneNumber,
+          description: roleSpecificData.description || null
         }
       })
     } else if (userData.role === 'ADMIN') {

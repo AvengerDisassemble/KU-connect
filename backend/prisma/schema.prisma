@@ -48,6 +48,11 @@ enum CompanySize {
   TWO_HUNDRED_PLUS
 }
 
+enum ResumeSource {
+  PROFILE
+  UPLOADED
+}
+
 enum ApplicationStatus {
   PENDING
   QUALIFIED
@@ -89,6 +94,8 @@ model User {
   role          Role
   status        UserStatus     @default(PENDING)
   verified      Boolean        @default(false)
+  avatarKey     String?        // Storage key for user avatar image
+  phoneNumber   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   professor     Professor?
@@ -153,6 +160,9 @@ model Student {
   address                String
   gpa                    Float?
   expectedGraduationYear Int?
+  resumeKey              String?
+  transcriptKey          String?
+  verificationDocKey     String?
   interests              StudentInterest[]
   resumes                Resume[]
   applications           Application[]
@@ -169,6 +179,8 @@ model HR {
   industry    Industry    @default(OTHER)
   companySize CompanySize @default(ONE_TO_TEN)
   website     String?
+  verificationDocKey String?
+  phoneNumber String
   user        User        @relation(fields: [userId], references: [id])
   jobs        Job[]
   createdAt   DateTime    @default(now())
@@ -209,6 +221,7 @@ model Job {
   benefits                  Benefit[]
   tags                      Tag[]             @relation("JobTags")
   applications              Application[]
+  resumes                   Resume[]
   reports                   JobReport[]
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
@@ -286,13 +299,16 @@ model StudentInterest {
   student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   job       Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
 }
-
 model Resume {
+  @@unique([studentId, jobId])
   id           String        @id @default(cuid())
   studentId    String
   link         String
   student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   applications Application[]
+  jobId        String
+  job          Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  source       ResumeSource  @default(UPLOADED)
 }
 
 // ------------------------------

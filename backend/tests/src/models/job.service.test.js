@@ -19,7 +19,8 @@ jest.mock('../../../src/models/prisma', () => ({
     findMany: jest.fn()
   },
   resume: {
-    create: jest.fn()
+    create: jest.fn(),
+    upsert: jest.fn()
   },
   hR: {
     findUnique: jest.fn()
@@ -186,13 +187,26 @@ describe('jobService (unit)', () => {
 
   describe('applyToJob()', () => {
     it('creates new application when not existing', async () => {
-      prisma.resume.create.mockResolvedValue({ id: 'resume1', link: 'resume.pdf' })
+      prisma.resume.upsert.mockResolvedValue({ id: 'resume1', link: 'resume.pdf' })
       prisma.application.create.mockResolvedValue({ id: 'app10', jobId: 'job5', studentId: 'student7' })
       
       const result = await jobService.applyToJob('job5', 'student7', 'resume.pdf')
       
-      expect(prisma.resume.create).toHaveBeenCalledWith({
-        data: { studentId: 'student7', link: 'resume.pdf' }
+      expect(prisma.resume.upsert).toHaveBeenCalledWith({
+        where: {
+          studentId_jobId: {
+            studentId: 'student7',
+            jobId: 'job5'
+          }
+        },
+        create: {
+          studentId: 'student7',
+          jobId: 'job5',
+          link: 'resume.pdf'
+        },
+        update: {
+          link: 'resume.pdf'
+        }
       })
       expect(prisma.application.create).toHaveBeenCalledWith({
         data: { jobId: 'job5', studentId: 'student7', resumeId: 'resume1' }
@@ -201,7 +215,7 @@ describe('jobService (unit)', () => {
     })
 
     it('throws 409 if already applied', async () => {
-      prisma.resume.create.mockResolvedValue({ id: 'resume2', link: 'resume.pdf' })
+      prisma.resume.upsert.mockResolvedValue({ id: 'resume2', link: 'resume.pdf' })
       prisma.application.create.mockRejectedValue({ code: 'P2002' })
       await expect(jobService.applyToJob('job5', 'student7', 'resume.pdf')).rejects.toMatchObject({ status: 409 })
     })

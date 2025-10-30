@@ -65,6 +65,7 @@ async function main() {
           address: 'Bangkok, Thailand',
           industry: 'IT_SOFTWARE',
           companySize: 'ELEVEN_TO_FIFTY',
+          phoneNumber: '123-456-7890',
           website: 'https://acme.co'
         }
       }

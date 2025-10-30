@@ -72,7 +72,8 @@ beforeAll(async () => {
           companyName: 'TestCorp',
           industry: 'IT_SOFTWARE',
           companySize: 'ONE_TO_TEN',
-          address: 'Office'
+          address: 'Office',
+          phoneNumber: '02-123-4567'
         }
       }
     },
@@ -143,6 +144,26 @@ describe('Profile routes (integration)', () => {
         .expect(200)
 
       expect(res.body.data.hr.companyName).toBe('TestCorp Updated')
+    })
+
+    it('should update HR phone number successfully', async () => {
+      const res = await request(app)
+        .patch('/api/profile')
+        .set('Authorization', hrToken)
+        .send({ role: 'hr', phoneNumber: '02-999-8888' })
+        .expect(200)
+
+      expect(res.body.data.hr.phoneNumber).toBe('02-999-8888')
+    })
+
+    it('should update HR description successfully', async () => {
+      const res = await request(app)
+        .patch('/api/profile')
+        .set('Authorization', hrToken)
+        .send({ role: 'hr', description: 'Updated company description' })
+        .expect(200)
+
+      expect(res.body.data.hr.description).toBe('Updated company description')
     })
 
     it('should return 400 for invalid payload', async () => {

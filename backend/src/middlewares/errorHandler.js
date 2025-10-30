@@ -107,6 +107,28 @@ function errorHandler (err, req, res, next) {
     error.statusCode = 401
   }
 
+  // Multer errors
+  if (err.name === 'MulterError') {
+    error.statusCode = 400
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      error.message = 'File size exceeds the 10 MB limit'
+    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      error.message = 'Unexpected field name. Please check the field name in your request.'
+    } else {
+      error.message = err.message || 'File upload error'
+    }
+  }
+
+  // Multer file filter errors
+  if (err.message && (
+    err.message.includes('Only PDF files are allowed') ||
+    err.message.includes('Only JPEG, PNG, or PDF files are allowed') ||
+    err.message.includes('Only JPEG, PNG, GIF, or WebP image files are allowed')
+  )) {
+    error.statusCode = 400
+    error.message = err.message
+  }
+
   res.status(error.statusCode).json({
     success: false,
     message: error.message,
