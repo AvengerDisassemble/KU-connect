@@ -2,6 +2,15 @@
  * Jest setup file to suppress console logs during tests
  */
 
+// Ensure tests always use test database
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'file:./test.db'
+process.env.NODE_ENV = 'test'
+
+// Safety check - prevent accidental production usage
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('dev.db')) {
+  throw new Error('⚠️  Tests should not use dev.db! Check your DATABASE_URL environment variable.')
+}
+
 const prisma = require('../src/models/prisma')
 const { cleanup: cleanupRateLimit } = require('../src/middlewares/downloadRateLimit')
 

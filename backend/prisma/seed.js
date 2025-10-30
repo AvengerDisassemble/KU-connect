@@ -224,11 +224,34 @@ async function main() {
   // ----------------------------------------------------------
   // 6️⃣ Seed 15 Unique Jobs
   // ----------------------------------------------------------
-  const hrData = await prisma.hR.findUnique({ where: { userId: hrUser.id } })
-  const hr2Data = await prisma.hR.findUnique({ where: { userId: hr2.id } })
-  const hr3Data = await prisma.hR.findUnique({ where: { userId: hr3.id } })
-  const hr4Data = await prisma.hR.findUnique({ where: { userId: hr4.id } })
-  const hr5Data = await prisma.hR.findUnique({ where: { userId: hr5.id } })
+  // Fetch HR data with relations to get the HR ids
+  const hrData = await prisma.hR.findUnique({ 
+    where: { userId: hrUser.id },
+    include: { user: true }
+  })
+  const hr2Data = await prisma.hR.findUnique({ 
+    where: { userId: hr2.id },
+    include: { user: true }
+  })
+  const hr3Data = await prisma.hR.findUnique({ 
+    where: { userId: hr3.id },
+    include: { user: true }
+  })
+  const hr4Data = await prisma.hR.findUnique({ 
+    where: { userId: hr4.id },
+    include: { user: true }
+  })
+  const hr5Data = await prisma.hR.findUnique({ 
+    where: { userId: hr5.id },
+    include: { user: true }
+  })
+  
+  // Verify all HR data was found
+  if (!hrData || !hr2Data || !hr3Data || !hr4Data || !hr5Data) {
+    throw new Error('Failed to find HR data. Missing: ' + 
+      [!hrData && 'hr1', !hr2Data && 'hr2', !hr3Data && 'hr3', !hr4Data && 'hr4', !hr5Data && 'hr5']
+      .filter(Boolean).join(', '))
+  }
 
   // Calculate dates
   const now = new Date()
