@@ -204,10 +204,171 @@ function validateUserId (req, res, next) {
   next()
 }
 
+/**
+ * Validate announcement search/filter data (POST body)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+function validateAnnouncementSearch (req, res, next) {
+  const { audience, isActive, search, startDate, endDate, page, limit } = req.body
+  const errors = []
+
+  const validAudiences = ['ALL', 'STUDENTS', 'EMPLOYERS', 'PROFESSORS', 'ADMINS']
+
+  // Validate audience if provided
+  if (audience && !validAudiences.includes(audience)) {
+    errors.push(`Audience must be one of: ${validAudiences.join(', ')}`)
+  }
+
+  // Validate isActive if provided
+  if (isActive !== undefined && typeof isActive !== 'boolean') {
+    errors.push('isActive must be a boolean')
+  }
+
+  // Validate search if provided
+  if (search && typeof search !== 'string') {
+    errors.push('Search must be a string')
+  }
+
+  // Validate startDate if provided
+  if (startDate) {
+    const start = new Date(startDate)
+    if (isNaN(start.getTime())) {
+      errors.push('startDate must be a valid date')
+    }
+  }
+
+  // Validate endDate if provided
+  if (endDate) {
+    const end = new Date(endDate)
+    if (isNaN(end.getTime())) {
+      errors.push('endDate must be a valid date')
+    }
+  }
+
+  // Validate date range
+  if (startDate && endDate) {
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    if (start > end) {
+      errors.push('startDate must be before endDate')
+    }
+  }
+
+  // Validate page if provided
+  if (page !== undefined) {
+    const pageNum = parseInt(page)
+    if (isNaN(pageNum) || pageNum < 1) {
+      errors.push('Page must be a positive integer')
+    }
+  }
+
+  // Validate limit if provided
+  if (limit !== undefined) {
+    const limitNum = parseInt(limit)
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      errors.push('Limit must be a positive integer between 1 and 100')
+    }
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    })
+  }
+
+  next()
+}
+
+/**
+ * Validate user search/filter data (POST body)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+function validateUserSearch (req, res, next) {
+  const { role, status, search, startDate, endDate, page, limit } = req.body
+  const errors = []
+
+  const validStatuses = ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED']
+  const validRoles = ['STUDENT', 'PROFESSOR', 'EMPLOYER', 'ADMIN']
+
+  // Validate role if provided
+  if (role && !validRoles.includes(role)) {
+    errors.push(`Role must be one of: ${validRoles.join(', ')}`)
+  }
+
+  // Validate status if provided
+  if (status && !validStatuses.includes(status)) {
+    errors.push(`Status must be one of: ${validStatuses.join(', ')}`)
+  }
+
+  // Validate search if provided
+  if (search && typeof search !== 'string') {
+    errors.push('Search must be a string')
+  }
+
+  // Validate startDate if provided
+  if (startDate) {
+    const start = new Date(startDate)
+    if (isNaN(start.getTime())) {
+      errors.push('startDate must be a valid date')
+    }
+  }
+
+  // Validate endDate if provided
+  if (endDate) {
+    const end = new Date(endDate)
+    if (isNaN(end.getTime())) {
+      errors.push('endDate must be a valid date')
+    }
+  }
+
+  // Validate date range
+  if (startDate && endDate) {
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    if (start > end) {
+      errors.push('startDate must be before endDate')
+    }
+  }
+
+  // Validate page if provided
+  if (page !== undefined) {
+    const pageNum = parseInt(page)
+    if (isNaN(pageNum) || pageNum < 1) {
+      errors.push('Page must be a positive integer')
+    }
+  }
+
+  // Validate limit if provided
+  if (limit !== undefined) {
+    const limitNum = parseInt(limit)
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+      errors.push('Limit must be a positive integer between 1 and 100')
+    }
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    })
+  }
+
+  next()
+}
+
 module.exports = {
   validateAnnouncementCreate,
   validateAnnouncementUpdate,
   validateUserListQuery,
-  validateUserId
+  validateUserId,
+  validateAnnouncementSearch,
+  validateUserSearch
 }
 
