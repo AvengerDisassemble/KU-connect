@@ -63,7 +63,8 @@ const rejectUserHandler = asyncErrorHandler(async (req, res) => {
 const suspendUserHandler = asyncErrorHandler(async (req, res) => {
   const { userId } = req.params
 
-  const user = await userService.suspendUser(userId)
+  // Pass admin ID to prevent self-suspension
+  const user = await userService.suspendUser(userId, req.user.id)
 
   res.json({
     success: true,
@@ -125,6 +126,21 @@ const getDashboardHandler = asyncErrorHandler(async (req, res) => {
   })
 })
 
+/**
+ * Search users with comprehensive filters
+ * POST /api/admin/users/search
+ * @access Admin only
+ */
+const searchUsersHandler = asyncErrorHandler(async (req, res) => {
+  const result = await userService.searchUsers(req.body)
+
+  res.json({
+    success: true,
+    message: 'Users retrieved successfully',
+    data: result
+  })
+})
+
 module.exports = {
   getPendingUsersHandler,
   approveUserHandler,
@@ -132,6 +148,7 @@ module.exports = {
   suspendUserHandler,
   activateUserHandler,
   listUsersHandler,
-  getDashboardHandler
+  getDashboardHandler,
+  searchUsersHandler
 }
 
