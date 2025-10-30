@@ -153,6 +153,38 @@ const markNotificationReadHandler = asyncErrorHandler(async (req, res) => {
   })
 })
 
+/**
+ * Search announcements with comprehensive filters (Admin use)
+ * POST /api/admin/announcements/search
+ * @access Admin only
+ */
+const searchAnnouncementsHandler = asyncErrorHandler(async (req, res) => {
+  const result = await announcementService.searchAnnouncements(req.body)
+
+  res.json({
+    success: true,
+    message: 'Announcements retrieved successfully',
+    data: result
+  })
+})
+
+/**
+ * Get announcements for current user (Public use)
+ * GET /api/announcements
+ * @access Public (works with/without auth)
+ */
+const getAnnouncementsForUserHandler = asyncErrorHandler(async (req, res) => {
+  const userRole = req.user?.role || null
+
+  const announcements = await announcementService.getAnnouncementsForRole(userRole)
+
+  res.json({
+    success: true,
+    message: 'Announcements retrieved successfully',
+    data: announcements
+  })
+})
+
 module.exports = {
   createAnnouncementHandler,
   getAnnouncementsHandler,
@@ -160,6 +192,8 @@ module.exports = {
   updateAnnouncementHandler,
   deleteAnnouncementHandler,
   getUserNotificationsHandler,
-  markNotificationReadHandler
+  markNotificationReadHandler,
+  searchAnnouncementsHandler,
+  getAnnouncementsForUserHandler
 }
 
