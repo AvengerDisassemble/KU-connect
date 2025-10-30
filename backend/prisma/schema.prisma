@@ -73,6 +73,7 @@ model User {
   role          Role
   verified      Boolean        @default(false)
   avatarKey     String?        // Storage key for user avatar image
+  phoneNumber   String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   professor     Professor?
@@ -155,6 +156,7 @@ model HR {
   companySize CompanySize @default(ONE_TO_TEN)
   website     String?
   verificationDocKey String?
+  phoneNumber String
   user        User        @relation(fields: [userId], references: [id])
   jobs        Job[]
   createdAt   DateTime    @default(now())

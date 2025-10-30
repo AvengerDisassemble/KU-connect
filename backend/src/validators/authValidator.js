@@ -144,7 +144,7 @@ function validateAlumniRegistration (req, res, next) {
  * @param {Function} next - Express next function
  */
 function validateEnterpriseRegistration (req, res, next) {
-  const { name, surname, email, password, companyName, address } = req.body
+  const { name, surname, email, password, companyName, address, phoneNumber } = req.body
   const errors = []
 
   if (!name || name.trim().length < 2) {
@@ -176,6 +176,12 @@ function validateEnterpriseRegistration (req, res, next) {
 
   if (!address || address.trim().length < 5) {
     errors.push('Address must be at least 5 characters long')
+  }
+
+  if (!phoneNumber) {
+    errors.push('Phone number is required')
+  } else if (!/^[0-9+\-()\s]{8,15}$/.test(phoneNumber)) {
+    errors.push('Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces')
   }
 
   if (errors.length > 0) {

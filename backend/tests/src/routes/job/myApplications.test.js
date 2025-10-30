@@ -95,7 +95,8 @@ describe('Student Applications (UC-S09: Check Application Status)', () => {
             companyName: TEST_COMPANY_INFO.NAME + ' MyApp',
             address: TEST_COMPANY_INFO.ADDRESS,
             industry: TEST_COMPANY_INFO.INDUSTRY,
-            companySize: TEST_COMPANY_INFO.SIZE
+            companySize: TEST_COMPANY_INFO.SIZE,
+            phoneNumber: '02-777-8888'
           }
         }
       },
