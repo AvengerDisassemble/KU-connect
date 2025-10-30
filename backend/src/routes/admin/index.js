@@ -21,20 +21,24 @@ const {
   suspendUserHandler,
   activateUserHandler,
   listUsersHandler,
-  getDashboardHandler
+  getDashboardHandler,
+  searchUsersHandler
 } = require('../../controllers/adminController')
 const {
   createAnnouncementHandler,
   getAnnouncementsHandler,
   getAnnouncementByIdHandler,
   updateAnnouncementHandler,
-  deleteAnnouncementHandler
+  deleteAnnouncementHandler,
+  searchAnnouncementsHandler
 } = require('../../controllers/announcementController')
 const {
   validateAnnouncementCreate,
   validateAnnouncementUpdate,
   validateUserListQuery,
-  validateUserId
+  validateUserId,
+  validateAnnouncementSearch,
+  validateUserSearch
 } = require('../../validators/adminValidator')
 
 // All routes require authentication and admin role
@@ -54,6 +58,12 @@ router.get('/users/pending', adminReadLimiter, getPendingUsersHandler)
  * Get all users with optional filtering
  */
 router.get('/users', adminReadLimiter, validateUserListQuery, listUsersHandler)
+
+/**
+ * POST /api/admin/users/search
+ * Search users with comprehensive filters and pagination
+ */
+router.post('/users/search', adminReadLimiter, validateUserSearch, searchUsersHandler)
 
 /**
  * POST /api/admin/users/:userId/approve
@@ -92,6 +102,12 @@ router.post('/announcements', adminAnnouncementLimiter, validateAnnouncementCrea
  * Get all announcements
  */
 router.get('/announcements', adminReadLimiter, getAnnouncementsHandler)
+
+/**
+ * POST /api/admin/announcements/search
+ * Search announcements with comprehensive filters and pagination
+ */
+router.post('/announcements/search', adminReadLimiter, validateAnnouncementSearch, searchAnnouncementsHandler)
 
 /**
  * GET /api/admin/announcements/:id
