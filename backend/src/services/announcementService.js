@@ -275,6 +275,121 @@ async function markNotificationAsRead (notificationId) {
   return notification
 }
 
+/**
+ * Search announcements with comprehensive filters and pagination (Admin use)
+ * @param {Object} filters - Search filters
+ * @returns {Promise<Object>} Announcements with pagination metadata
+ */
+async function searchAnnouncements (filters = {}) {
+  const {
+    audience,
+    isActive,
+    search,
+    startDate,
+    endDate,
+    page = 1,
+    limit = 20
+  } = filters
+
+  const where = {}
+
+  // Filter by audience
+  if (audience) {
+    where.audience = audience
+  }
+
+  // Filter by active status
+  if (typeof isActive === 'boolean') {
+    where.isActive = isActive
+  }
+
+  // Search in title or content
+  if (search) {
+    where.OR = [
+      { title: { contains: search, mode: 'insensitive' } },
+      { content: { contains: search, mode: 'insensitive' } }
+    ]
+  }
+
+  // Filter by date range
+  if (startDate || endDate) {
+    where.createdAt = {}
+    if (startDate) where.createdAt.gte = new Date(startDate)
+    if (endDate) where.createdAt.lte = new Date(endDate)
+  }
+
+  const skip = (page - 1) * limit
+
+  const [announcements, total] = await Promise.all([
+    prisma.announcement.findMany({
+      where,
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            surname: true
+          }
+        }
+      },
+      orderBy: [
+        { priority: 'desc' },
+        { createdAt: 'desc' }
+      ],
+      skip,
+      take: limit
+    }),
+    prisma.announcement.count({ where })
+  ])
+
+  return {
+    announcements,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit)
+    }
+  }
+}
+
+/**
+ * Get announcements visible to user based on their role (Public use)
+ * @param {string|null} userRole - User's role (null if not logged in)
+ * @returns {Promise<Array>} Filtered announcements
+ */
+async function getAnnouncementsForRole (userRole) {
+  const where = { isActive: true }
+
+  if (userRole) {
+    // Logged in user: show ALL + role-specific
+    where.OR = [
+      { audience: 'ALL' },
+      { audience: userRole + 'S' } // STUDENT -> STUDENTS, etc.
+    ]
+  } else {
+    // Not logged in: show only ALL audience
+    where.audience = 'ALL'
+  }
+
+  return prisma.announcement.findMany({
+    where,
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      audience: true,
+      priority: true,
+      createdAt: true,
+      expiresAt: true
+    },
+    orderBy: [
+      { priority: 'desc' },
+      { createdAt: 'desc' }
+    ]
+  })
+}
+
 module.exports = {
   createAnnouncement,
   getAllAnnouncements,
@@ -282,6 +397,8 @@ module.exports = {
   updateAnnouncement,
   deleteAnnouncement,
   getUserNotifications,
-  markNotificationAsRead
+  markNotificationAsRead,
+  searchAnnouncements,
+  getAnnouncementsForRole
 }
 

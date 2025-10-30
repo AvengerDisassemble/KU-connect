@@ -112,12 +112,18 @@ async function loginUser (email, password) {
       email: true,
       password: true,
       role: true,
+      status: true,
       verified: true
     }
   })
 
   if (!user) {
     throw new Error('Invalid credentials')
+  }
+
+  // Block SUSPENDED users from logging in
+  if (user.status === 'SUSPENDED') {
+    throw new Error('Account suspended. Please contact administrator.')
   }
 
   // Check if user has a password (local auth)
@@ -226,6 +232,7 @@ async function getUserById (userId) {
       surname: true,
       email: true,
       role: true,
+      status: true,
       verified: true,
       createdAt: true,
       updatedAt: true,
