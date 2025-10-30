@@ -317,10 +317,20 @@ async function updateJob (jobId, hrId, data) {
  * @returns {Promise<object>}
  */
 async function applyToJob (jobId, studentId, resumeLink) {
-  // create a Resume record for traceability (optional in your schema)
-  const resume = await prisma.resume.create({
-    data: {
+  // Use upsert to handle resume - it might already exist if they reapply
+  const resume = await prisma.resume.upsert({
+    where: {
+      studentId_jobId: {
+        studentId,
+        jobId
+      }
+    },
+    create: {
       studentId,
+      jobId,
+      link: resumeLink
+    },
+    update: {
       link: resumeLink
     }
   })
