@@ -52,7 +52,6 @@ async function uploadResume(req, res) {
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
-      userId,
       { prefix: 'resumes' }
     )
 
@@ -119,7 +118,6 @@ async function uploadTranscript(req, res) {
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
-      userId,
       { prefix: 'transcripts' }
     )
 
@@ -186,7 +184,6 @@ async function uploadEmployerVerification(req, res) {
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
-      userId,
       { prefix: 'employer-docs' }
     )
 
@@ -503,7 +500,7 @@ async function uploadStudentVerification(req, res) {
       req.file.buffer,
       fileName,
       req.file.mimetype,
-      'student-verifications'
+      { prefix: 'student-verifications' }
     )
 
     // Update student record

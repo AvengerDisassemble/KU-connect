@@ -50,7 +50,7 @@ describeIfS3('S3StorageProvider (integration tests)', () => {
 
     test('should upload file to S3 and return key', async () => {
       const buffer = Buffer.from('test S3 content')
-      const fileKey = await provider.uploadFile(buffer, 'test.txt', 'text/plain', 'test-user', { prefix: 'test-uploads' })
+      const fileKey = await provider.uploadFile(buffer, 'test.txt', 'text/plain', { prefix: 'test-uploads' })
 
       expect(fileKey).toMatch(/^test-uploads\/[a-f0-9-]+\.txt$/)
       uploadedKey = fileKey
@@ -74,7 +74,7 @@ describeIfS3('S3StorageProvider (integration tests)', () => {
     beforeAll(async () => {
       // Upload a test file
       const buffer = Buffer.from('test content for URL')
-      testFileKey = await provider.uploadFile(buffer, 'url-test.txt', 'text/plain', 'test-user', { prefix: 'test-urls' })
+      testFileKey = await provider.uploadFile(buffer, 'url-test.txt', 'text/plain', { prefix: 'test-urls' })
     }, 15000)
 
     afterAll(async () => {
@@ -102,7 +102,7 @@ describeIfS3('S3StorageProvider (integration tests)', () => {
     test('should delete file from S3', async () => {
       // Upload a file to delete
       const buffer = Buffer.from('to be deleted')
-      const fileKey = await provider.uploadFile(buffer, 'delete-test.txt', 'text/plain', 'test-user', { prefix: 'test-deletes' })
+      const fileKey = await provider.uploadFile(buffer, 'delete-test.txt', 'text/plain', { prefix: 'test-deletes' })
 
       // Delete it
       await expect(provider.deleteFile(fileKey)).resolves.not.toThrow()

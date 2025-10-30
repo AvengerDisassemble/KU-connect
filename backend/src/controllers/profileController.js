@@ -181,7 +181,6 @@ async function uploadAvatar(req, res) {
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
-      userId,
       { prefix: 'avatars' }
     )
 

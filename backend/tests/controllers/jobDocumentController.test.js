@@ -267,7 +267,6 @@ describe('Job Document Controller', () => {
         expect.any(Buffer),
         'resume.pdf',
         'application/pdf',
-        studentUserId,
         { prefix: `resumes/job-applications/${jobId}` }
       )
     })

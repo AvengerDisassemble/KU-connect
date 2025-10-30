@@ -13,12 +13,11 @@ class StorageProvider {
    * @param {Buffer} buffer - File data buffer
    * @param {string} filename - Original filename
    * @param {string} mimeType - MIME type of the file
-   * @param {string} userId - User ID for context/logging
    * @param {Object} options - Upload options
    * @param {string} [options.prefix='avatars'] - Prefix for file storage (avatars|resumes|transcripts|employer-docs)
    * @returns {Promise<string>} File key (provider-specific identifier)
    */
-  async uploadFile(buffer, filename, mimeType, userId, options = {}) {
+  async uploadFile(buffer, filename, mimeType, options = {}) {
     throw new Error('uploadFile must be implemented by subclass')
   }
 

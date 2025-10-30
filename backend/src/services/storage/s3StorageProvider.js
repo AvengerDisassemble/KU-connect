@@ -41,12 +41,11 @@ class S3StorageProvider extends StorageProvider {
    * @param {Buffer} buffer - File data buffer
    * @param {string} filename - Original filename
    * @param {string} mimeType - MIME type
-   * @param {string} userId - User ID
    * @param {Object} options - Upload options
    * @param {string} [options.prefix='avatars'] - Storage prefix
    * @returns {Promise<string>} S3 object key
    */
-  async uploadFile(buffer, filename, mimeType, userId, options = {}) {
+  async uploadFile(buffer, filename, mimeType, options = {}) {
     const prefix = options.prefix || 'avatars'
     
     // Derive extension from mime type

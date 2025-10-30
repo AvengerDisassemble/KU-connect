@@ -41,7 +41,7 @@ describeIfDepsAvailable('LocalStorageProvider', () => {
   describe('uploadFile', () => {
     test('should upload file and return fileKey with prefix', async () => {
       const buffer = Buffer.from('test content')
-      const fileKey = await provider.uploadFile(buffer, 'test.txt', 'text/plain', 'user123', { prefix: 'avatars' })
+      const fileKey = await provider.uploadFile(buffer, 'test.txt', 'text/plain', { prefix: 'avatars' })
 
       expect(fileKey).toMatch(/^avatars\/[a-f0-9-]+\.txt$/)
       
@@ -57,21 +57,21 @@ describeIfDepsAvailable('LocalStorageProvider', () => {
 
     test('should use default avatars prefix if not specified', async () => {
       const buffer = Buffer.from('avatar data')
-      const fileKey = await provider.uploadFile(buffer, 'avatar.png', 'image/png', 'user456')
+      const fileKey = await provider.uploadFile(buffer, 'avatar.png', 'image/png')
 
       expect(fileKey).toMatch(/^avatars\/[a-f0-9-]+\.png$/)
     })
 
     test('should handle different prefixes', async () => {
       const buffer = Buffer.from('resume content')
-      const fileKey = await provider.uploadFile(buffer, 'resume.pdf', 'application/pdf', 'user789', { prefix: 'resumes' })
+      const fileKey = await provider.uploadFile(buffer, 'resume.pdf', 'application/pdf', { prefix: 'resumes' })
 
       expect(fileKey).toMatch(/^resumes\/[a-f0-9-]+\.pdf$/)
     })
 
     test('should derive extension from mime type', async () => {
       const buffer = Buffer.from('image data')
-      const fileKey = await provider.uploadFile(buffer, 'unknown', 'image/jpeg', 'user101', { prefix: 'avatars' })
+      const fileKey = await provider.uploadFile(buffer, 'unknown', 'image/jpeg', { prefix: 'avatars' })
 
       // mime-types library returns .jpg for image/jpeg
       expect(fileKey).toMatch(/^avatars\/[a-f0-9-]+\.(jpg|jpeg)$/)

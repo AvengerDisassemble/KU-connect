@@ -106,7 +106,6 @@ async function upsertJobResume(req, res) {
         req.file.buffer,
         req.file.originalname,
         req.file.mimetype,
-        userId,
         { prefix: `resumes/job-applications/${job.id}` }
       )
       source = 'UPLOADED'
