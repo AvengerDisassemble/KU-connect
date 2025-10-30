@@ -8,7 +8,7 @@ const path = require('path')
 // Test 1: Check if controller exports exist
 console.log('✓ Test 1: Checking controller exports...')
 try {
-  const jobDocController = require('./src/controllers/documents-controller/jobDocumentController')
+  const jobDocController = require('../src/controllers/documents-controller/jobDocumentController')
   const expectedExports = ['upsertJobResume', 'getJobResumeUrl', 'deleteJobResume', 'getSelfJobResumeUrl']
   
   expectedExports.forEach(exportName => {
@@ -25,7 +25,7 @@ try {
 // Test 2: Check if routes file exists and exports router
 console.log('✓ Test 2: Checking routes file...')
 try {
-  const jobRoutes = require('./src/routes/jobs/index')
+  const jobRoutes = require('../src/routes/jobs/index')
   if (!jobRoutes || typeof jobRoutes !== 'function') {
     throw new Error('Routes do not export an Express router')
   }
@@ -38,7 +38,7 @@ try {
 // Test 3: Check if Prisma schema has Resume model with correct fields
 console.log('✓ Test 3: Checking Prisma client generation...')
 try {
-  const prisma = require('./src/models/prisma')
+  const prisma = require('../src/models/prisma')
   if (!prisma.resume) {
     throw new Error('Resume model not found in Prisma client')
   }
@@ -66,7 +66,7 @@ try {
 // Test 5: Verify documentsController import path is fixed
 console.log('✓ Test 5: Checking documentsController import paths...')
 try {
-  const docsController = require('./src/controllers/documents-controller/documentsController')
+  const docsController = require('../src/controllers/documents-controller/documentsController')
   if (typeof docsController.uploadResume !== 'function') {
     throw new Error('documentsController not properly loaded')
   }
