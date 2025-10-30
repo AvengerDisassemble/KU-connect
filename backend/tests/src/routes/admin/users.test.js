@@ -206,6 +206,29 @@ describe('Admin User Management Routes', () => {
 
       expect(response.body.success).toBe(false)
     })
+
+    it('should return 400 when approving an already-approved user', async () => {
+      // Create an already approved user
+      const approvedUser = await prisma.user.create({
+        data: {
+          name: 'Already',
+          surname: 'Approved',
+          email: 'alreadyapproved@test.com',
+          password: 'Pass',
+          role: 'STUDENT',
+          status: 'APPROVED',
+          student: { create: { degreeTypeId: degreeType.id, address: 'Dorm' } }
+        }
+      })
+
+      const response = await request(app)
+        .post(`/api/admin/users/${approvedUser.id}/approve`)
+        .set('Authorization', adminToken)
+        .expect(400)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toBe('User is already approved')
+    })
   })
 
   describe('POST /api/admin/users/:userId/reject', () => {
@@ -230,6 +253,52 @@ describe('Admin User Management Routes', () => {
 
       expect(response.body.success).toBe(true)
       expect(response.body.data.status).toBe('REJECTED')
+    })
+
+    it('should return 400 when rejecting an already-rejected user', async () => {
+      // Create a rejected user
+      const rejectedUser = await prisma.user.create({
+        data: {
+          name: 'Already',
+          surname: 'Rejected',
+          email: 'alreadyrejected@test.com',
+          password: 'Pass',
+          role: 'STUDENT',
+          status: 'REJECTED',
+          student: { create: { degreeTypeId: degreeType.id, address: 'Dorm' } }
+        }
+      })
+
+      const response = await request(app)
+        .post(`/api/admin/users/${rejectedUser.id}/reject`)
+        .set('Authorization', adminToken)
+        .expect(400)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toBe('User is already rejected')
+    })
+
+    it('should return 400 when trying to reject an approved user', async () => {
+      // Create an approved user
+      const approvedUser = await prisma.user.create({
+        data: {
+          name: 'Approved',
+          surname: 'User',
+          email: 'approveduser@test.com',
+          password: 'Pass',
+          role: 'STUDENT',
+          status: 'APPROVED',
+          student: { create: { degreeTypeId: degreeType.id, address: 'Dorm' } }
+        }
+      })
+
+      const response = await request(app)
+        .post(`/api/admin/users/${approvedUser.id}/reject`)
+        .set('Authorization', adminToken)
+        .expect(400)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toBe('Cannot reject an already-approved user. Use suspend instead.')
     })
   })
 
@@ -256,6 +325,28 @@ describe('Admin User Management Routes', () => {
       expect(response.body.success).toBe(true)
       expect(response.body.data.status).toBe('SUSPENDED')
     })
+
+    it('should prevent admin from suspending themselves', async () => {
+      // Try to suspend the admin's own account
+      const response = await request(app)
+        .post(`/api/admin/users/${adminUser.id}/suspend`)
+        .set('Authorization', adminToken)
+        .expect(400)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toContain('Cannot suspend your own account')
+    })
+
+    it('should return 400 when suspending an already-suspended user', async () => {
+      // Try to suspend an already suspended user
+      const response = await request(app)
+        .post(`/api/admin/users/${suspendedUser.id}/suspend`)
+        .set('Authorization', adminToken)
+        .expect(400)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toBe('User is already suspended')
+    })
   })
 
   describe('POST /api/admin/users/:userId/activate', () => {
@@ -272,6 +363,29 @@ describe('Admin User Management Routes', () => {
       const updatedUser = await prisma.user.findUnique({ where: { id: suspendedUser.id } })
       expect(updatedUser.status).toBe('APPROVED')
     })
+
+    it('should return 400 when activating an already-approved user', async () => {
+      // Create an approved user
+      const approvedUser = await prisma.user.create({
+        data: {
+          name: 'Active',
+          surname: 'User',
+          email: 'activeuser@test.com',
+          password: 'Pass',
+          role: 'STUDENT',
+          status: 'APPROVED',
+          student: { create: { degreeTypeId: degreeType.id, address: 'Dorm' } }
+        }
+      })
+
+      const response = await request(app)
+        .post(`/api/admin/users/${approvedUser.id}/activate`)
+        .set('Authorization', adminToken)
+        .expect(400)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toBe('User is already approved')
+    })
   })
 
   describe('GET /api/admin/dashboard', () => {
@@ -282,13 +396,49 @@ describe('Admin User Management Routes', () => {
         .expect(200)
 
       expect(response.body.success).toBe(true)
-      expect(response.body.data).toHaveProperty('totalUsers')
-      expect(response.body.data).toHaveProperty('pendingUsers')
-      expect(response.body.data).toHaveProperty('approvedUsers')
-      expect(response.body.data).toHaveProperty('suspendedUsers')
-      expect(response.body.data).toHaveProperty('activeJobs')
+      
+      // User statistics
+      expect(response.body.data).toHaveProperty('users')
+      expect(response.body.data.users).toHaveProperty('total')
+      expect(response.body.data.users).toHaveProperty('byStatus')
+      expect(response.body.data.users).toHaveProperty('byRole')
+      expect(response.body.data.users).toHaveProperty('metrics')
+      expect(response.body.data.users.total).toBeGreaterThan(0)
+      
+      // Job statistics
+      expect(response.body.data).toHaveProperty('jobs')
+      expect(response.body.data.jobs).toHaveProperty('total')
+      expect(response.body.data.jobs).toHaveProperty('active')
+      expect(response.body.data.jobs).toHaveProperty('metrics')
+      
+      // Application statistics
+      expect(response.body.data).toHaveProperty('applications')
+      expect(response.body.data.applications).toHaveProperty('total')
+      expect(response.body.data.applications).toHaveProperty('byStatus')
+      expect(response.body.data.applications).toHaveProperty('metrics')
+      
+      // Announcement statistics
+      expect(response.body.data).toHaveProperty('announcements')
+      expect(response.body.data.announcements).toHaveProperty('total')
+      
+      // Report statistics
       expect(response.body.data).toHaveProperty('reports')
-      expect(response.body.data.totalUsers).toBeGreaterThan(0)
+      expect(response.body.data.reports).toHaveProperty('total')
+      expect(response.body.data.reports).toHaveProperty('unresolved')
+      
+      // Trending jobs
+      expect(response.body.data).toHaveProperty('trending')
+      expect(response.body.data.trending).toHaveProperty('jobs')
+      expect(Array.isArray(response.body.data.trending.jobs)).toBe(true)
+      
+      // Alerts
+      expect(response.body.data).toHaveProperty('alerts')
+      expect(response.body.data.alerts).toHaveProperty('pendingApprovals')
+      expect(response.body.data.alerts).toHaveProperty('unresolvedReports')
+      
+      // Verify percentage metrics exist
+      expect(typeof response.body.data.users.metrics.approvalRate).toBe('number')
+      expect(typeof response.body.data.applications.metrics.qualificationRate).toBe('number')
     })
 
     it('should deny access to non-admin', async () => {
