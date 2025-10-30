@@ -10,12 +10,14 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest --runInBand",
-    "test:quiet": "jest --silent --runInBand",
-    "test:verbose": "SHOW_LOGS=true jest --runInBand",
-    "test:summary": "jest --verbose=false --runInBand",
-    "test:failures": "jest --onlyFailures --verbose=false --runInBand",
-    "start": "node server.js"
+    "start": "cross-env NODE_ENV=development node server.js",
+    "dev": "cross-env NODE_ENV=development nodemon server.js",
+    "test": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --runInBand",
+    "test:quiet": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --silent --runInBand",
+    "test:verbose": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db SHOW_LOGS=true jest --runInBand",
+    "test:summary": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --verbose=false --runInBand",
+    "test:failures": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --onlyFailures --verbose=false --runInBand",
+    "test:setup": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db npx prisma migrate deploy && node prisma/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.913.0",
@@ -40,6 +42,7 @@
     "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "jest": "^30.2.0",
     "prisma": "^6.16.3",
     "supertest": "^7.1.4",
