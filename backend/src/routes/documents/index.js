@@ -1,0 +1,73 @@
+/**
+ * Documents routes
+ * @module routes/documents/index
+ */
+
+const express = require('express')
+const multer = require('multer')
+const RateLimit = require('express-rate-limit')
+const router = express.Router()
+const documentsController = require('../../controllers/documents-controller/documentsController')
+const auth = require('../../middlewares/authMiddleware')
+const role = require('../../middlewares/roleMiddleware')
+const downloadRateLimit = require('../../middlewares/downloadRateLimit')
+
+// Set up rate limiter: maximum of 100 requests per 15 minutes per IP
+const limiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+})
+// Configure multer for PDF documents (10 MB limit)
+const pdfUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10 MB
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true)
+    } else {
+      cb(new Error('Only PDF files are allowed'))
+    }
+  }
+})
+
+// Configure multer for employer verification (supports JPEG/PNG/PDF, 10 MB)
+const verificationUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10 MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedMimes = ['image/jpeg', 'image/png', 'application/pdf']
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true)
+// Apply rate limiter to all requests in this router
+router.use(limiter)
+    } else {
+      cb(new Error('Only JPEG, PNG, or PDF files are allowed'))
+    }
+  }
+})
+
+// All routes require authentication
+router.use(auth.authMiddleware)
+
+// Resume routes (students only for upload)
+router.post('/resume', role.roleMiddleware(['STUDENT']), pdfUpload.single('resume'), documentsController.uploadResume)
+router.get('/resume/:userId/download', downloadRateLimit, documentsController.downloadResume)
+
+// Transcript routes (students only for upload)
+router.post('/transcript', role.roleMiddleware(['STUDENT']), pdfUpload.single('transcript'), documentsController.uploadTranscript)
+router.get('/transcript/:userId/download', downloadRateLimit, documentsController.downloadTranscript)
+
+// Employer verification routes (HR/employer only for upload)
+router.post('/employer-verification', role.roleMiddleware(['EMPLOYER']), verificationUpload.single('verification'), documentsController.uploadEmployerVerification)
+router.get('/employer-verification/:userId/download', downloadRateLimit, documentsController.downloadEmployerVerification)
+
+// Student verification routes (unverified students can upload, admins can view)
+router.post('/student-verification', role.roleMiddleware(['STUDENT']), verificationUpload.single('verification'), documentsController.uploadStudentVerification)
+router.get('/student-verification/:userId/download', downloadRateLimit, documentsController.downloadStudentVerification)
+
+module.exports = router
+
