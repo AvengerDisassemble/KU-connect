@@ -80,7 +80,8 @@ describe('Profile Controller - Avatar Routes', () => {
         data: {
           userId: hrUserId,
           companyName: 'Avatar Company',
-          address: '456 Avatar Ave'
+          address: '456 Avatar Ave',
+          phoneNumber: '02-987-6543'
         }
       })
 

@@ -168,7 +168,8 @@ describe('Job Document Controller', () => {
               companyName: 'Test Company',
               address: '789 Business Blvd',
               industry: 'IT_SOFTWARE',
-              companySize: 'ELEVEN_TO_FIFTY'
+              companySize: 'ELEVEN_TO_FIFTY',
+              phoneNumber: '02-555-1234'
             }
           }
         },

@@ -80,7 +80,8 @@ describe('Documents Controller', () => {
         data: {
           userId: hrUserId,
           companyName: 'Test Company',
-          address: '456 Business Ave'
+          address: '456 Business Ave',
+          phoneNumber: '02-123-4567'
         }
       })
 
