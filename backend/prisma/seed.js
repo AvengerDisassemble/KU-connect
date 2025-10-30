@@ -130,7 +130,8 @@ async function main() {
           address: 'Chatuchak, Bangkok',
           industry: 'IT_SOFTWARE',
           companySize: 'TWO_HUNDRED_PLUS',
-          website: 'https://techcorp.com'
+          website: 'https://techcorp.com',
+          phoneNumber: '02-234-5678'
         }
       }
     }
@@ -156,7 +157,8 @@ async function main() {
           address: 'Sukhumvit, Bangkok',
           industry: 'E_COMMERCE',
           companySize: 'FIFTY_ONE_TO_TWO_HUNDRED',
-          website: 'https://digitalwave.com'
+          website: 'https://digitalwave.com',
+          phoneNumber: '02-345-6789'
         }
       }
     }
@@ -182,7 +184,8 @@ async function main() {
           address: 'Silom, Bangkok',
           industry: 'NETWORK_SERVICES',
           companySize: 'ELEVEN_TO_FIFTY',
-          website: 'https://cloudnet.com'
+          website: 'https://cloudnet.com',
+          phoneNumber: '02-456-7890'
         }
       }
     }
@@ -208,7 +211,8 @@ async function main() {
           address: 'Rama IV, Bangkok',
           industry: 'EMERGING_TECH',
           companySize: 'ELEVEN_TO_FIFTY',
-          website: 'https://innovateai.com'
+          website: 'https://innovateai.com',
+          phoneNumber: '02-567-8901'
         }
       }
     }
