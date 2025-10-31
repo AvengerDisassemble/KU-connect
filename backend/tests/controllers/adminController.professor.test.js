@@ -110,13 +110,14 @@ describe('Admin Controller - Create Professor', () => {
 
   describe('POST /api/admin/users/professor - Success Cases', () => {
     it('should create professor with all required fields', async () => {
+      const email = `prof-integration-test-1-${Date.now()}@ku.ac.th`
       const response = await request(app)
         .post('/api/admin/users/professor')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           name: 'John',
           surname: 'Smith',
-          email: `prof-integration-test-1-${Date.now()}@ku.ac.th`,
+          email,
           department: 'Computer Science'
         })
         .expect(201)
