@@ -34,9 +34,14 @@ jobs:
     - name: Run Jest Tests
       run: |
         cd backend
+        echo "Running tests with Jest..."
         npm test 2>&1 | tee test-output.log
+        echo "Test execution completed. Checking results..."
+        cat test-output.log | tail -20
         if grep -q "All tests passed" test-output.log; then
+          echo "✅ Tests passed successfully!"
           exit 0
         else
+          echo "❌ Tests failed or incomplete"
           exit $?
         fi
