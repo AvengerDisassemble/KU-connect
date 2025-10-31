@@ -22,7 +22,8 @@ const {
   activateUserHandler,
   listUsersHandler,
   getDashboardHandler,
-  searchUsersHandler
+  searchUsersHandler,
+  createProfessorHandler
 } = require('../../controllers/adminController')
 const {
   createAnnouncementHandler,
@@ -38,7 +39,8 @@ const {
   validateUserListQuery,
   validateUserId,
   validateAnnouncementSearch,
-  validateUserSearch
+  validateUserSearch,
+  validateProfessorCreate
 } = require('../../validators/adminValidator')
 
 // All routes require authentication and admin role
@@ -64,6 +66,12 @@ router.get('/users', adminReadLimiter, validateUserListQuery, listUsersHandler)
  * Search users with comprehensive filters and pagination
  */
 router.post('/users/search', adminReadLimiter, validateUserSearch, searchUsersHandler)
+
+/**
+ * POST /api/admin/users/professor
+ * Create a professor account (auto-approved)
+ */
+router.post('/users/professor', adminCriticalLimiter, validateProfessorCreate, createProfessorHandler)
 
 /**
  * POST /api/admin/users/:userId/approve

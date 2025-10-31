@@ -4,6 +4,7 @@
  */
 
 const userService = require('../services/userService')
+const adminService = require('../services/adminService')
 const { asyncErrorHandler } = require('../middlewares/errorHandler')
 
 /**
@@ -141,6 +142,47 @@ const searchUsersHandler = asyncErrorHandler(async (req, res) => {
   })
 })
 
+/**
+ * Create a professor account (admin only)
+ * POST /api/admin/users/professor
+ * @access Admin only
+ */
+const createProfessorHandler = asyncErrorHandler(async (req, res) => {
+  const {
+    name,
+    surname,
+    email,
+    department,
+    password,
+    phoneNumber,
+    officeLocation,
+    title,
+    sendWelcomeEmail
+  } = req.body
+
+  // Add admin ID who created this professor
+  const professorData = {
+    name,
+    surname,
+    email,
+    department,
+    password,
+    phoneNumber,
+    officeLocation,
+    title,
+    sendWelcomeEmail,
+    createdBy: req.user.id
+  }
+
+  const result = await adminService.createProfessorUser(professorData)
+
+  res.status(201).json({
+    success: true,
+    message: 'Professor account created successfully',
+    data: result
+  })
+})
+
 module.exports = {
   getPendingUsersHandler,
   approveUserHandler,
@@ -149,6 +191,7 @@ module.exports = {
   activateUserHandler,
   listUsersHandler,
   getDashboardHandler,
-  searchUsersHandler
+  searchUsersHandler,
+  createProfessorHandler
 }
 

@@ -143,6 +143,14 @@ async function getDashboardStats () {
   const startOfMonth = new Date(now)
   startOfMonth.setDate(now.getDate() - 30)
 
+  // Calculate start of last 7 days for trend data
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(now)
+    date.setDate(now.getDate() - (6 - i))
+    date.setHours(0, 0, 0, 0)
+    return date
+  })
+
   // Run all queries in parallel for better performance
   const [
     // User counts
@@ -160,6 +168,7 @@ async function getDashboardStats () {
     // Application counts
     totalApplications,
     applicationsByStatus,
+    applicationsThisMonth,
     applicationsThisWeek,
     
     // Announcement counts
@@ -170,7 +179,15 @@ async function getDashboardStats () {
     totalReports,
     
     // Trending jobs with application counts
-    trendingJobs
+    trendingJobs,
+
+    // Pending verifications count
+    pendingVerifications,
+
+    // Recent activities (last 20 for the activity feed)
+    recentUsers,
+    recentJobs,
+    recentApplications
   ] = await Promise.all([
     // User queries
     prisma.user.count(),
@@ -205,6 +222,9 @@ async function getDashboardStats () {
       _count: { id: true }
     }),
     prisma.application.count({
+      where: { createdAt: { gte: startOfMonth } }
+    }),
+    prisma.application.count({
       where: { createdAt: { gte: startOfWeek } }
     }),
     
@@ -228,6 +248,67 @@ async function getDashboardStats () {
         }
       },
       take: 5
+    }),
+
+    // Pending verifications (users with PENDING status)
+    prisma.user.count({
+      where: { status: 'PENDING' }
+    }),
+
+    // Recent activities - users (exclude admin-created professors)
+    // Admin-created professors have status APPROVED immediately, while regular registrations start as PENDING
+    // So we filter out professors with APPROVED status to avoid showing admin-created ones as "registrations"
+    prisma.user.findMany({
+      take: 10,
+      where: {
+        NOT: {
+          AND: [
+            { role: 'PROFESSOR' },
+            { status: 'APPROVED' }
+          ]
+        }
+      },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        surname: true,
+        email: true,
+        role: true,
+        createdAt: true
+      }
+    }),
+
+    // Recent activities - jobs
+    prisma.job.findMany({
+      take: 10,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        createdAt: true,
+        hr: {
+          select: {
+            companyName: true
+          }
+        }
+      }
+    }),
+
+    // Recent activities - applications (to track approved students)
+    prisma.user.findMany({
+      take: 10,
+      where: { 
+        status: 'APPROVED',
+        verified: true
+      },
+      orderBy: { updatedAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        surname: true,
+        updatedAt: true
+      }
     })
   ])
 
@@ -268,8 +349,8 @@ async function getDashboardStats () {
   const userRoleCounts = {
     STUDENT: 0,
     EMPLOYER: 0,
-    ADMIN: 0,
-    STAFF: 0
+    PROFESSOR: 0,
+    ADMIN: 0
   }
   usersByRole.forEach(({ role, _count }) => {
     userRoleCounts[role] = _count.id
@@ -303,6 +384,7 @@ async function getDashboardStats () {
       byRole: {
         student: userRoleCounts.STUDENT,
         employer: userRoleCounts.EMPLOYER,
+        professor: userRoleCounts.PROFESSOR,
         admin: userRoleCounts.ADMIN,
         staff: userRoleCounts.STAFF
       },
@@ -343,6 +425,7 @@ async function getDashboardStats () {
     // Application Statistics
     applications: {
       total: totalApplications,
+      thisMonth: applicationsThisMonth,
       byStatus: {
         pending: applicationStatusCounts.PENDING,
         qualified: applicationStatusCounts.QUALIFIED,
@@ -391,7 +474,71 @@ async function getDashboardStats () {
       pendingApprovals: userStatusCounts.PENDING,
       unresolvedReports: totalReports, // All reports need attention
       inactiveJobs: totalJobs - activeJobs
-    }
+    },
+
+    // Recent Activity Feed (for the UI dashboard)
+    recentActivity: [
+      // Map recent users
+      ...recentUsers.map(user => ({
+        type: 'USER_REGISTRATION',
+        title: `New user registration: ${user.name} ${user.surname}`,
+        description: `${user.role} registered`,
+        timestamp: user.createdAt,
+        metadata: {
+          userId: user.id,
+          email: user.email,
+          role: user.role
+        }
+      })),
+      // Map recent jobs
+      ...recentJobs.map(job => ({
+        type: 'JOB_POSTED',
+        title: `Job posted: ${job.title}`,
+        description: `Posted by ${job.hr?.companyName || 'Unknown Company'}`,
+        timestamp: job.createdAt,
+        metadata: {
+          jobId: job.id,
+          company: job.hr?.companyName
+        }
+      })),
+      // Map recent approvals
+      ...recentApplications.map(user => ({
+        type: 'USER_VERIFIED',
+        title: `User verification approved: ${user.name} ${user.surname}`,
+        description: 'Account verified and approved',
+        timestamp: user.updatedAt,
+        metadata: {
+          userId: user.id
+        }
+      }))
+    ]
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      .slice(0, 20), // Take only the 20 most recent activities
+
+    // Pending Verifications Count (for the top card in UI)
+    pendingVerifications: pendingVerifications,
+
+    // User Registration Trend (for the chart in UI)
+    userRegistrationTrend: await Promise.all(
+      last7Days.map(async (date) => {
+        const nextDay = new Date(date)
+        nextDay.setDate(date.getDate() + 1)
+        
+        const count = await prisma.user.count({
+          where: {
+            createdAt: {
+              gte: date,
+              lt: nextDay
+            }
+          }
+        })
+
+        return {
+          date: date.toISOString().split('T')[0], // Format: YYYY-MM-DD
+          count: count
+        }
+      })
+    )
   }
 }
 

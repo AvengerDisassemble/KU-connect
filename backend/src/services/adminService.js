@@ -1,4 +1,6 @@
 const { PrismaClient } = require('../generated/prisma')
+const { hashPassword, generateSecurePassword } = require('../utils/passwordUtils')
+const { sendProfessorWelcomeEmail } = require('../utils/emailUtils')
 
 const prisma = new PrismaClient()
 
@@ -285,11 +287,154 @@ async function getDashboardStats () {
   }
 }
 
+/**
+ * Create a professor user by admin
+ * Professor is auto-approved and can login immediately
+ * 
+ * @param {Object} data - Professor creation data
+ * @param {string} data.name - First name (required)
+ * @param {string} data.surname - Last name (required)
+ * @param {string} data.email - Email address (required, unique)
+ * @param {string} data.department - Department (required)
+ * @param {string} [data.password] - Custom password (optional, will auto-generate if not provided)
+ * @param {string} [data.phoneNumber] - Phone number (optional)
+ * @param {string} [data.officeLocation] - Office location (optional)
+ * @param {string} [data.title] - Academic title (optional)
+ * @param {boolean} [data.sendWelcomeEmail=true] - Send welcome email (optional, default: true)
+ * @param {string} data.createdBy - Admin user ID who created this account
+ * @returns {Promise<Object>} Created user with credentials
+ * @throws {Error} If email already exists
+ * 
+ * @example
+ * const result = await createProfessorUser({
+ *   name: 'John',
+ *   surname: 'Smith',
+ *   email: 'john.smith@ku.ac.th',
+ *   department: 'Computer Science',
+ *   title: 'Assistant Professor',
+ *   createdBy: 'admin-id'
+ * })
+ */
+async function createProfessorUser (data) {
+  const {
+    name,
+    surname,
+    email,
+    department,
+    password: customPassword,
+    phoneNumber,
+    officeLocation,
+    title,
+    sendWelcomeEmail = true,
+    createdBy
+  } = data
+
+  // Check if email already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email }
+  })
+
+  if (existingUser) {
+    const error = new Error('Email already registered')
+    error.statusCode = 409
+    throw error
+  }
+
+  // Generate password if not provided
+  const isPasswordGenerated = !customPassword
+  const plainPassword = customPassword || generateSecurePassword()
+  
+  // Hash password
+  const hashedPassword = await hashPassword(plainPassword)
+
+  // Create user and professor in a transaction
+  const result = await prisma.$transaction(async (tx) => {
+    // Create user with APPROVED status and verified=true
+    const user = await tx.user.create({
+      data: {
+        name,
+        surname,
+        email,
+        password: hashedPassword,
+        role: 'PROFESSOR',
+        status: 'APPROVED',
+        verified: true
+      }
+    })
+
+    // Create professor profile
+    const professor = await tx.professor.create({
+      data: {
+        userId: user.id,
+        department,
+        phoneNumber: phoneNumber || null,
+        officeLocation: officeLocation || null,
+        title: title || null
+      }
+    })
+
+    return { user, professor }
+  })
+
+  // Prepare response data
+  const responseData = {
+    user: {
+      id: result.user.id,
+      name: result.user.name,
+      surname: result.user.surname,
+      email: result.user.email,
+      role: result.user.role,
+      status: result.user.status,
+      verified: result.user.verified,
+      createdAt: result.user.createdAt
+    },
+    professor: {
+      id: result.professor.id,
+      userId: result.professor.userId,
+      department: result.professor.department,
+      phoneNumber: result.professor.phoneNumber,
+      officeLocation: result.professor.officeLocation,
+      title: result.professor.title,
+      createdAt: result.professor.createdAt,
+      updatedAt: result.professor.updatedAt
+    }
+  }
+
+  // Add temporary password to response only if it was auto-generated
+  if (isPasswordGenerated) {
+    responseData.credentials = {
+      temporaryPassword: plainPassword
+    }
+  }
+
+  // Send welcome email (non-blocking)
+  let emailSent = false
+  if (sendWelcomeEmail) {
+    try {
+      emailSent = await sendProfessorWelcomeEmail({
+        name,
+        surname,
+        email,
+        department,
+        temporaryPassword: isPasswordGenerated ? plainPassword : undefined
+      })
+    } catch (error) {
+      // Log error but don't fail the request
+      console.error('Failed to send welcome email:', error.message)
+    }
+  }
+
+  responseData.emailSent = emailSent
+
+  return responseData
+}
+
 module.exports = {
   approveUser,
   rejectUser,
   suspendUser,
   activateUser,
   listUsers,
-  getDashboardStats
+  getDashboardStats,
+  createProfessorUser
 }
