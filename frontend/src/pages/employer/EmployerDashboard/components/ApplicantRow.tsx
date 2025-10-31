@@ -1,102 +1,128 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ApplicantViewModal } from "./ApplicantViewModal";
+import type { JobApplication } from "@/services/jobs";
 
-export interface Applicant {
-  id: string;
-  name: string;
-  major: string;
-  year: number;
-  appliedRole: string;
-  lastUpdate: string; // submittedAt
-}
+const formatDate = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return date.toLocaleString();
+};
 
-interface ApplicantRowProps {
-  applicant: Applicant;
+export interface ApplicantRowProps {
+  application: JobApplication;
+  jobTitle: string;
+  onDecision?: (applicationId: string, status: "QUALIFIED" | "REJECTED") => Promise<void> | void;
+  decisionPending?: boolean;
 }
 
 const ApplicantRow = ({
-  applicant,
+  application,
+  jobTitle,
+  onDecision,
+  decisionPending = false,
 }: ApplicantRowProps) => {
   const [open, setOpen] = useState(false);
 
-  const handleApprove = async (studentId: string) => {
-    console.log("approve", studentId);
-    setOpen(false);
-  };
+  const student = application.student;
+  const user = student?.user;
 
-  const handleDelete = async (studentId: string) => {
-    console.log("delete", studentId);
-    setOpen(false);
+  const fullName = [user?.name, user?.surname].filter(Boolean).join(" ") || "Unknown applicant";
+  const degreeName = student?.degreeType?.name ?? "—";
+  const statusMeta =
+    application.status === "QUALIFIED"
+      ? { label: "Qualified", className: "bg-emerald-100 text-emerald-700" }
+      : application.status === "REJECTED"
+        ? { label: "Rejected", className: "bg-rose-100 text-rose-700" }
+        : { label: "Pending", className: "bg-slate-100 text-slate-600" };
+
+  const handleDecision = async (status: "QUALIFIED" | "REJECTED") => {
+    if (!onDecision) return;
+    try {
+      await onDecision(application.id, status);
+      setOpen(false);
+    } catch {
+      // parent handles error feedback
+    }
   };
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 border-b border-border py-6 last:border-0 md:grid-cols-12">
-        {/* Student */}
-        <div className="md:col-span-4">
-          <p className="font-semibold text-foreground">
-            {applicant.name}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {applicant.major} • Year {applicant.year}
-          </p>
-        </div>
-
-        {/* Applied role */}
-        <div className="md:col-span-4">
-          <p className="text-sm text-foreground">
-            {applicant.appliedRole}
-          </p>
-        </div>
-
-        {/* Submitted time */}
-        <div className="md:col-span-2">
-          <p className="text-sm text-muted-foreground">
-            {applicant.lastUpdate}
-          </p>
-        </div>
-
-        {/* View (open modal) */}
-        <div className="flex items-start justify-end self-start md:col-span-2">
+      <tr className="border-b border-border align-top">
+        <td className="px-4 py-4">
+          <div className="whitespace-normal font-semibold text-foreground">{fullName}</div>
+          <div className="mt-1 whitespace-normal text-xs text-muted-foreground">{degreeName}</div>
+          <div className={`mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase leading-snug ${statusMeta.className}`}>
+            {statusMeta.label}
+          </div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="whitespace-normal text-sm text-foreground">{jobTitle}</div>
+        </td>
+        <td className="px-4 py-4 text-right text-sm text-muted-foreground">
+          {formatDate(application.createdAt)}
+        </td>
+        <td className="px-4 py-4 text-right">
           <Button
             size="sm"
-            className="h-8 rounded-full border-transparent bg-primary px-4 text-white hover:bg-primary/90"
+            className="inline-flex h-8 rounded-full border-transparent bg-primary px-4 text-white hover:bg-primary/90"
             onClick={() => setOpen(true)}
-            aria-label={`View ${applicant.name}'s application`}
+            aria-label={`View application of ${fullName}`}
           >
             View
           </Button>
-        </div>
-      </div>
+        </td>
+      </tr>
 
-      {/* Popup Modal */}
       <ApplicantViewModal
         open={open}
         onOpenChange={setOpen}
-        // mock data
         student={{
-          id: applicant.id,
-          user: { id: "user-" + applicant.id, name: applicant.name, image: null },
-          degreeType: { id: "deg-1", name: "Bachelor" },
-          address: "Bangkok, Thailand",
-          gpa: 3.42,
-          expectedGraduationYear: 2026,
-          interests: [
-            { id: "i1", name: "Frontend" },
-            { id: "i2", name: "AI" },
-          ],
+          id: student?.id ?? "",
+          user: {
+            id: user?.id ?? "",
+            name: fullName,
+            email: user?.email ?? undefined,
+            image: null,
+          },
+          degreeType: student?.degreeType ?? null,
+          address: student?.address ?? undefined,
+          gpa: student?.gpa ?? undefined,
+          expectedGraduationYear: student?.expectedGraduationYear ?? undefined,
+          interests: student?.interests ?? [],
         }}
-        roleLabel={applicant.appliedRole}
-        submittedAt={applicant.lastUpdate}
-        resumes={[
-          { id: "r1", name: "Resume.pdf", url: "#", mimeType: "application/pdf" },
-        ]}
-        onApprove={handleApprove}
-        onDelete={handleDelete}
+        roleLabel={jobTitle}
+        submittedAt={application.createdAt}
+        resumes={
+          application.resume
+            ? [{
+                id: application.resume.id,
+                name: application.resume.link.split("/").pop() ?? "Resume",
+                url: application.resume.link,
+                mimeType: "application/pdf",
+              }]
+            : []
+        }
+        onApprove={() => handleDecision("QUALIFIED")}
+        onReject={() => handleDecision("REJECTED")}
+        actionsDisabled={decisionPending}
       />
     </>
   );
 };
 
 export default ApplicantRow;
+
+const renderStatus = (status: JobApplication["status"]) => {
+  const label = status === "QUALIFIED"
+    ? { text: "Qualified", className: "text-green-600" }
+    : status === "REJECTED"
+      ? { text: "Rejected", className: "text-red-600" }
+      : { text: "Pending", className: "text-muted-foreground" };
+
+  return (
+    <span className={`inline-flex items-center justify-end text-xs font-semibold uppercase ${label.className}`}>
+      {label.text}
+    </span>
+  );
+};

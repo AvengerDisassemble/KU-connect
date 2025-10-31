@@ -31,7 +31,8 @@ export function ApplicantViewModal({
   submittedAt,
   resumes = [],
   onApprove,
-  onDelete,
+  onReject,
+  actionsDisabled = false,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
@@ -39,8 +40,9 @@ export function ApplicantViewModal({
   roleLabel?: string;
   submittedAt?: string;
   resumes?: ResumeFile[];
-  onApprove?: (studentId: string) => void;
-  onDelete?: (studentId: string) => void;
+  onApprove?: () => void;
+  onReject?: () => void;
+  actionsDisabled?: boolean;
 }) {
   const title = `${student?.user?.name ?? "Applicant"}${roleLabel ? ` — ${roleLabel}` : ""}`;
   const shortAddress = student?.address ? student.address.split(",")[0]?.trim() : undefined;
@@ -59,7 +61,6 @@ export function ApplicantViewModal({
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
-            {/* Avatar/Logo */}
             {student?.user?.image ? (
               <img
                 src={student.user.image}
@@ -80,7 +81,6 @@ export function ApplicantViewModal({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Profile */}
         <section className="rounded-xl border p-3">
           <div className="mb-1 text-sm font-medium">Profile</div>
           <dl className="grid grid-cols-2 gap-2 text-sm">
@@ -124,7 +124,6 @@ export function ApplicantViewModal({
           </dl>
         </section>
 
-        {/* Documents (Download only) */}
         <section>
           <div className="mb-2 mt-3 text-sm font-medium">Documents</div>
           {resumes.length ? (
@@ -157,20 +156,24 @@ export function ApplicantViewModal({
           )}
         </section>
 
-        {/* Footer: Close / Approve / Delete */}
         <div className="mt-3 flex items-center justify-between">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>
           <div className="flex items-center gap-2">
             <Button
-              onClick={() => onApprove?.(student.id)}
+              onClick={() => onApprove?.()}
               className="bg-accent text-white hover:bg-accent/90"
+              disabled={actionsDisabled}
             >
               Approve
             </Button>
-            <Button variant="destructive" onClick={() => onDelete?.(student.id)}>
-              Delete
+            <Button
+              variant="destructive"
+              onClick={() => onReject?.()}
+              disabled={actionsDisabled}
+            >
+              Reject
             </Button>
           </div>
         </div>
