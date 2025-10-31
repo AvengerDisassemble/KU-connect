@@ -894,7 +894,7 @@ const JobPostingForm = ({
                 </FieldLabel>
                 <Input
                   id="phone_number"
-                  placeholder="+66 1234 5678"
+                  placeholder="+66 81 234 5678"
                   inputMode="tel"
                   autoComplete="tel"
                   maxLength={20}
