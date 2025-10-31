@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
   AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { toSubmitPayload } from "../utils";
 
 /* UI helpers */
 function FieldLabel({
@@ -61,7 +62,7 @@ function Chip({ text, onRemove }: { text: string; onRemove?: () => void }) {
 }
 
 /* Types */
-type JobFormState = {
+export type JobFormState = {
   title: string;
   companyName: string;         // view-only (prefilled)
   description: string;
@@ -82,7 +83,35 @@ type JobFormState = {
   benefits: string[];
 };
 
-type Props = { userId: string };
+export type JobSubmitPayload = {
+  title: string;
+  description: string;
+  location: string;
+  jobType: string;
+  workArrangement: string;
+  duration: string;
+  minSalary: number;
+  maxSalary: number;
+  application_deadline: string;
+  email?: string;
+  phone_number: string;
+  other_contact_information?: string;
+  requirements: string[];
+  qualifications: string[];
+  responsibilities: string[];
+  benefits: string[];
+  tags: string[];
+};
+
+type Props = {
+  userId: string;
+  initialData?: JobFormState;
+  mode?: "create" | "edit";
+  submitLabel?: string;
+  onSubmit?: (payload: JobSubmitPayload, form: JobFormState) => Promise<void>;
+  prefetchedProfile?: EmployerProfileResponse | null;
+  profileLoading?: boolean;
+};
 
 const REQUIRED_TOAST_ID = "job-form-required";
 
@@ -118,40 +147,64 @@ const sanitizePhoneInput = (input: string) => {
   return cleaned;
 };
 
+const createEmptyFormState = (companyName: string): JobFormState => ({
+  title: "",
+  companyName,
+  description: "",
+  location: "",
+  jobType: "",
+  workArrangement: "",
+  duration: "",
+  tags: [],
+  minSalary: "",
+  maxSalary: "",
+  application_deadline: "",
+  email: "",
+  phone_number: "",
+  other_contact_information: "",
+  requirements: [],
+  qualifications: [],
+  responsibilities: [],
+  benefits: [],
+});
+
+const cloneFormState = (state: JobFormState): JobFormState => ({
+  ...state,
+  tags: [...state.tags],
+  requirements: [...state.requirements],
+  qualifications: [...state.qualifications],
+  responsibilities: [...state.responsibilities],
+  benefits: [...state.benefits],
+});
+
 /* Component */
-const JobPostingForm = ({ userId }: Props) => {
+const JobPostingForm = ({
+  userId,
+  initialData,
+  mode = "create",
+  submitLabel,
+  onSubmit,
+  prefetchedProfile,
+  profileLoading,
+}: Props) => {
+  const isEditMode = mode === "edit" || !!initialData || !!onSubmit;
   const [submitting, setSubmitting] = useState(false);
   const [profile, setProfile] = useState<EmployerProfileResponse | null>(null);
-  const [lockCompanyName, setLockCompanyName] = useState(false);
+  const [lockCompanyName, setLockCompanyName] = useState(!!initialData?.companyName);
 
   // field-level errors
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   // skeleton state for initial mount
-  const [initializing, setInitializing] = useState(true);
+  const [initializing, setInitializing] = useState(!initialData);
 
-  const initialForm = (companyFromProfile: string): JobFormState => ({
-    title: "",
-    companyName: companyFromProfile,
-    description: "",
-    location: "",
-    jobType: "",
-    workArrangement: "",
-    duration: "",
-    tags: [],
-    minSalary: "",
-    maxSalary: "",
-    application_deadline: "",
-    email: "",
-    phone_number: "",
-    other_contact_information: "",
-    requirements: [],
-    qualifications: [],
-    responsibilities: [],
-    benefits: [],
-  });
-
-  const [formData, setFormData] = useState<JobFormState>(initialForm(""));
+  const [formData, setFormData] = useState<JobFormState>(
+    initialData ? cloneFormState(initialData) : createEmptyFormState("")
+  );
+  const initialSnapshotRef = useRef<JobFormState>(
+    initialData ? cloneFormState(initialData) : createEmptyFormState("")
+  );
+  const initializedFromProfileRef = useRef<boolean>(!!initialData);
 
   // inputs for "press Enter to add"
   const [tagInput, setTagInput] = useState("");
@@ -160,8 +213,42 @@ const JobPostingForm = ({ userId }: Props) => {
   const [respInput, setRespInput] = useState("");
   const [benefitInput, setBenefitInput] = useState("");
 
+  useEffect(() => {
+    if (!initialData) return;
+    const cloned = cloneFormState(initialData);
+    setFormData(cloned);
+    initialSnapshotRef.current = cloneFormState(initialData);
+    setLockCompanyName(true);
+    setInitializing(false);
+    initializedFromProfileRef.current = true;
+  }, [initialData]);
+
+  useEffect(() => {
+    if (initialData) return;
+    if (!prefetchedProfile) return;
+    if (initializedFromProfileRef.current) return;
+    if (!initializing) return;
+
+    const company = prefetchedProfile.hr?.companyName?.trim() ?? "";
+    const fresh = createEmptyFormState(company);
+    setProfile(prefetchedProfile);
+    setFormData(fresh);
+    initialSnapshotRef.current = cloneFormState(fresh);
+    setLockCompanyName(!!company);
+    initializedFromProfileRef.current = true;
+    setInitializing(false);
+  }, [prefetchedProfile, initialData, initializing]);
+
   /* Prefill companyName from employer profile (read-only for display) */
   useEffect(() => {
+    if (initialData) {
+      return;
+    }
+
+    if (prefetchedProfile || profileLoading) {
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
@@ -169,18 +256,26 @@ const JobPostingForm = ({ userId }: Props) => {
         if (cancelled) return;
         setProfile(p);
         const company = p.hr?.companyName?.trim() ?? "";
-        setFormData(initialForm(company));
+        const fresh = createEmptyFormState(company);
+        setFormData(fresh);
+        initialSnapshotRef.current = cloneFormState(fresh);
         setLockCompanyName(!!company);
-      } catch (e: any) {
-        console.warn("getEmployerProfile failed:", e?.message || e);
-        setFormData(initialForm(""));
+        initializedFromProfileRef.current = true;
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        console.warn("getEmployerProfile failed:", message);
+        const fresh = createEmptyFormState("");
+        setFormData(fresh);
+        initialSnapshotRef.current = cloneFormState(fresh);
         setLockCompanyName(false);
+        initializedFromProfileRef.current = true;
       } finally {
         setTimeout(() => !cancelled && setInitializing(false), 250);
       }
     })();
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [userId, initialData, prefetchedProfile, profileLoading]);
 
   /* list helpers */
   const addToList = (
@@ -280,47 +375,43 @@ const JobPostingForm = ({ userId }: Props) => {
       toast.error("Invalid Application Deadline", { id: REQUIRED_TOAST_ID });
       return;
     }
-    const isoDeadline = `${formData.application_deadline}T23:59:59Z`;
-
-    // Build payload
-    const payload = {
-      title: formData.title.trim(),
-      description: formData.description.trim(),
-      location: formData.location.trim(),
-      jobType: formData.jobType,
-      workArrangement: formData.workArrangement,
-      duration: formData.duration.trim(),
-      minSalary: min,
-      maxSalary: max,
-      application_deadline: isoDeadline,
-      email: formData.email.trim() || undefined,
-      phone_number: formData.phone_number.trim(),
-      other_contact_information: formData.other_contact_information.trim() || undefined,
-      requirements: formData.requirements.map(s => s.trim()).filter(Boolean),
-      qualifications: formData.qualifications.map(s => s.trim()).filter(Boolean),
-      responsibilities: formData.responsibilities.map(s => s.trim()).filter(Boolean),
-      benefits: formData.benefits.map(s => s.trim()).filter(Boolean),
-      tags: formData.tags.map(s => s.trim()).filter(Boolean),
-    };
+    const payload = toSubmitPayload(formData);
 
     try {
       setSubmitting(true);
-      const res = await createJob(payload as any);
-      toast.success("Job posted successfully", {
-        description: res?.title ? `Created: ${res.title}` : undefined,
-      });
+      if (onSubmit) {
+        await onSubmit(payload, formData);
+        initialSnapshotRef.current = cloneFormState(formData);
+        setFieldErrors({});
+      } else {
+        const res = await createJob(payload);
+        toast.success("Job posted successfully", {
+          description: res?.title ? `Created: ${res.title}` : undefined,
+        });
 
-      // reset
-      setFormData(initialForm(lockCompanyName ? (profile?.hr?.companyName ?? "") : ""));
-      setFieldErrors({});
-      setTagInput(""); setReqInput(""); setQualInput(""); setRespInput(""); setBenefitInput("");
-    } catch (err: any) {
-      let message = err?.message || "Unknown error";
+        const resetCompany = lockCompanyName
+          ? profile?.hr?.companyName?.trim() ?? formData.companyName
+          : "";
+        const fresh = createEmptyFormState(resetCompany);
+        setFormData(fresh);
+        initialSnapshotRef.current = cloneFormState(fresh);
+        setFieldErrors({});
+        setTagInput("");
+        setReqInput("");
+        setQualInput("");
+        setRespInput("");
+        setBenefitInput("");
+      }
+    } catch (error: unknown) {
+      let message =
+        error instanceof Error ? error.message : String(error);
       message = message.replace(/^HTTP\s\d+\s*[-–]\s*/i, "");
 
-      toast.error("Failed to post job", {
-        description: message,
-      });
+      if (!onSubmit) {
+        toast.error("Failed to post job", {
+          description: message,
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -892,12 +983,18 @@ const JobPostingForm = ({ userId }: Props) => {
             type="button"
             variant="outline"
             onClick={() => {
-              setFormData(initialForm(lockCompanyName ? (profile?.hr?.companyName ?? "") : ""));
+              const reset = cloneFormState(initialSnapshotRef.current);
+              setFormData(reset);
               setFieldErrors({});
+              setTagInput("");
+              setReqInput("");
+              setQualInput("");
+              setRespInput("");
+              setBenefitInput("");
             }}
             className="justify-center border-primary text-primary hover:text-primary hover:bg-gray-200 sm:w-auto"
           >
-            Clear Form
+            {isEditMode ? "Reset Changes" : "Clear Form"}
           </Button>
 
           <AlertDialog>
@@ -907,20 +1004,31 @@ const JobPostingForm = ({ userId }: Props) => {
                 className="w-full sm:w-auto px-8 bg-primary hover:bg-primary/90"
                 disabled={submitting}
               >
-                {submitting ? "Posting..." : "Post Job"}
+                {submitting
+                  ? isEditMode ? "Saving..." : "Posting..."
+                  : submitLabel ?? (isEditMode ? "Save Changes" : "Post Job")}
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Post this job?</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {isEditMode ? "Save changes?" : "Post this job?"}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
-                  Please confirm. You can edit or remove later.
+                  {isEditMode
+                    ? "Confirm to update this job posting."
+                    : "Please confirm. You can edit or remove later."}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="border-primary text-primary hover:text-primary hover:bg-gray-200">Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => doSubmit()} className="bg-primary hover:bg-primary/90">
-                  Confirm
+                <AlertDialogCancel className="border-primary text-primary hover:bg-primary/10">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => doSubmit()}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {isEditMode ? "Save" : "Confirm"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
