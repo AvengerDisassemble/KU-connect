@@ -325,8 +325,7 @@ async function createProfessorUser (data) {
     phoneNumber,
     officeLocation,
     title,
-    sendWelcomeEmail = true,
-    createdBy
+    sendWelcomeEmail = true
   } = data
 
   // Check if email already exists

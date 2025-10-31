@@ -385,8 +385,7 @@ async function getDashboardStats () {
         student: userRoleCounts.STUDENT,
         employer: userRoleCounts.EMPLOYER,
         professor: userRoleCounts.PROFESSOR,
-        admin: userRoleCounts.ADMIN,
-        staff: userRoleCounts.STAFF
+        admin: userRoleCounts.ADMIN
       },
       growth: {
         thisWeek: usersThisWeek,
