@@ -20,31 +20,11 @@ jobs:
     - name: Copy env files
       run: cd backend; cp .env.example .env
 
-    - name: Setup Test Database
-      run: cd backend; DATABASE_URL="file:./test.db" npx prisma migrate deploy
-      env:
-        NODE_ENV: test
+    - name: Run Prisma Migrate
+      run: cd backend; npx prisma migrate deploy
 
     - name: Generate Prisma Client
       run: cd backend; npx prisma generate
 
-    - name: Seed Test Database
-      run: cd backend; NODE_ENV=test DATABASE_URL="file:./test.db" node prisma/seed.js
-
     - name: Run Jest Tests
-      run: |
-        cd backend
-        echo "🧪 Running all tests..."
-        npm test 2>&1 | tee test-output.log
-        echo ""
-        echo "📊 Test Summary:"
-        grep -E "(Test Suites:|Tests:)" test-output.log || true
-        echo ""
-        if grep -q "All tests passed" test-output.log; then
-          echo "✅ All tests passed successfully!"
-          exit 0
-        else
-          echo "❌ Tests failed or incomplete"
-          cat test-output.log | tail -30
-          exit 1
-        fi
+      run: cd backend; npm test
