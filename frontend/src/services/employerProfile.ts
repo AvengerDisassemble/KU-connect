@@ -1,5 +1,6 @@
 import { BASE_URL } from "@/lib/config";
 import { refreshAccessToken } from "@/services/auth";
+import { requestWithPolicies } from "./httpClient";
 
 // Generic API
 interface ApiResponse<T> {
@@ -64,13 +65,30 @@ const authorizedFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   return response;
 };
 
+const readJson = async (res: Response) => {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
 // APIs
 
 // GET /profile/:userId
 export const getEmployerProfile = async (userId: string): Promise<EmployerProfileResponse> => {
-  const res = await authorizedFetch(`${BASE_URL}/profile/${userId}`);
-  if (!res.ok) throw new Error("Failed to fetch profile");
-  const body: ApiResponse<EmployerProfileResponse> = await res.json();
+  const res = await requestWithPolicies({
+    key: `GET /profile/${userId}`,
+    execute: () => authorizedFetch(`${BASE_URL}/profile/${userId}`),
+  });
+  const body = await readJson(res) as ApiResponse<EmployerProfileResponse> | null;
+
+  if (!res.ok || !body) {
+    const message = body?.message || `${res.status} ${res.statusText}`;
+    throw new Error(message || "Failed to fetch profile");
+  }
   if (!body.success) throw new Error(body.message || "Failed to fetch profile");
   return body.data;
 };
@@ -79,12 +97,19 @@ export const getEmployerProfile = async (userId: string): Promise<EmployerProfil
 export const updateEmployerProfile = async (
   data: UpdateEmployerProfileRequest
 ): Promise<EmployerProfileResponse> => {
-  const res = await authorizedFetch(`${BASE_URL}/profile`, {
-    method: "PATCH",
-    body: JSON.stringify(data),
+  const res = await requestWithPolicies({
+    key: `PATCH /profile`,
+    execute: () => authorizedFetch(`${BASE_URL}/profile`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
   });
-  if (!res.ok) throw new Error("Failed to update profile");
-  const body: ApiResponse<EmployerProfileResponse> = await res.json();
+  const body = await readJson(res) as ApiResponse<EmployerProfileResponse> | null;
+
+  if (!res.ok || !body) {
+    const message = body?.message || `${res.status} ${res.statusText}`;
+    throw new Error(message || "Failed to update profile");
+  }
   if (!body.success) throw new Error(body.message || "Failed to update profile");
   return body.data;
 };
