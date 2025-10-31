@@ -363,12 +363,126 @@ function validateUserSearch (req, res, next) {
   next()
 }
 
+/**
+ * Validate professor creation data
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+function validateProfessorCreate (req, res, next) {
+  const {
+    name,
+    surname,
+    email,
+    department,
+    password,
+    phoneNumber,
+    officeLocation,
+    title,
+    sendWelcomeEmail
+  } = req.body
+
+  const errors = []
+
+  // Validate name (required)
+  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+    errors.push('Name is required and must be a non-empty string')
+  } else if (name.length < 2 || name.length > 100) {
+    errors.push('Name must be between 2 and 100 characters')
+  }
+
+  // Validate surname (required)
+  if (!surname || typeof surname !== 'string' || surname.trim().length === 0) {
+    errors.push('Surname is required and must be a non-empty string')
+  } else if (surname.length < 2 || surname.length > 100) {
+    errors.push('Surname must be between 2 and 100 characters')
+  }
+
+  // Validate email (required)
+  if (!email || typeof email !== 'string' || email.trim().length === 0) {
+    errors.push('Email is required')
+  } else {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      errors.push('Email must be a valid email address')
+    }
+  }
+
+  // Validate department (required)
+  if (!department || typeof department !== 'string' || department.trim().length === 0) {
+    errors.push('Department is required and must be a non-empty string')
+  } else if (department.length < 2 || department.length > 200) {
+    errors.push('Department must be between 2 and 200 characters')
+  }
+
+  // Validate password (optional, but must meet requirements if provided)
+  if (password !== undefined && password !== null && password !== '') {
+    if (typeof password !== 'string') {
+      errors.push('Password must be a string')
+    } else if (password.length < 8 || password.length > 100) {
+      errors.push('Password must be between 8 and 100 characters')
+    } else {
+      // Check password complexity
+      const hasUppercase = /[A-Z]/.test(password)
+      const hasLowercase = /[a-z]/.test(password)
+      const hasNumber = /\d/.test(password)
+
+      if (!hasUppercase || !hasLowercase || !hasNumber) {
+        errors.push('Password must contain at least one uppercase letter, one lowercase letter, and one number')
+      }
+    }
+  }
+
+  // Validate phoneNumber (optional)
+  if (phoneNumber !== undefined && phoneNumber !== null && phoneNumber !== '') {
+    if (typeof phoneNumber !== 'string') {
+      errors.push('Phone number must be a string')
+    } else if (phoneNumber.length > 20) {
+      errors.push('Phone number must not exceed 20 characters')
+    }
+  }
+
+  // Validate officeLocation (optional)
+  if (officeLocation !== undefined && officeLocation !== null && officeLocation !== '') {
+    if (typeof officeLocation !== 'string') {
+      errors.push('Office location must be a string')
+    } else if (officeLocation.length > 200) {
+      errors.push('Office location must not exceed 200 characters')
+    }
+  }
+
+  // Validate title (optional)
+  if (title !== undefined && title !== null && title !== '') {
+    if (typeof title !== 'string') {
+      errors.push('Title must be a string')
+    } else if (title.length > 100) {
+      errors.push('Title must not exceed 100 characters')
+    }
+  }
+
+  // Validate sendWelcomeEmail (optional)
+  if (sendWelcomeEmail !== undefined && typeof sendWelcomeEmail !== 'boolean') {
+    errors.push('sendWelcomeEmail must be a boolean')
+  }
+
+  if (errors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Validation failed',
+      errors
+    })
+  }
+
+  next()
+}
+
 module.exports = {
   validateAnnouncementCreate,
   validateAnnouncementUpdate,
   validateUserListQuery,
   validateUserId,
   validateAnnouncementSearch,
-  validateUserSearch
+  validateUserSearch,
+  validateProfessorCreate
 }
 
