@@ -10,13 +10,12 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "cross-env NODE_ENV=development node server.js",
-    "dev": "cross-env NODE_ENV=development nodemon server.js",
-    "test": "jest --runInBand --forceExit",
-    "test:quiet": "jest --silent --runInBand --forceExit",
-    "test:verbose": "SHOW_LOGS=true jest --runInBand --forceExit",
-    "test:summary": "jest --verbose=false --runInBand --forceExit",
-    "test:failures": "jest --onlyFailures --verbose=false --runInBand --forceExit"
+    "test": "jest --runInBand",
+    "test:quiet": "jest --silent --runInBand",
+    "test:verbose": "SHOW_LOGS=true jest --runInBand",
+    "test:summary": "jest --verbose=false --runInBand",
+    "test:failures": "jest --onlyFailures --verbose=false --runInBand",
+    "start": "node server.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.913.0",
