@@ -17,7 +17,9 @@ function errorHandler (err, req, res, next) {
     })
   } else {
     // Full error details in development for debugging
-    console.error('Error:', err.message, '\nStack:', err.stack)
+    // Limit stack trace depth to avoid exposing too much information
+    const stack = err.stack ? err.stack.split('\n').slice(0, 5).join('\n') : ''
+    console.error('Error:', err.message, '\nStack:', stack)
   }
 
   // Default error
