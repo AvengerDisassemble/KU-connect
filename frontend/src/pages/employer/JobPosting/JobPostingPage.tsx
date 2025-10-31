@@ -5,6 +5,11 @@ import EmployerSidebar from "@/components/EmployerSideBar";
 import CompanyProfileCard from "@/pages/employer/JobPosting/components/CompanyProfileCard";
 import JobPostingForm from "@/pages/employer/JobPosting/components/JobPostingForm";
 import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getEmployerProfile,
+  type EmployerProfileResponse,
+} from "@/services/employerProfile";
 
 const SIDEBAR_W = 280;
 
@@ -51,6 +56,19 @@ export default function JobPostingPage() {
     );
   }
 
+  const {
+    data: employerProfile,
+    isLoading: employerProfileLoading,
+    isError: employerProfileError,
+  } = useQuery<EmployerProfileResponse>({
+    queryKey: ["employer-profile", user.id],
+    queryFn: () => getEmployerProfile(user.id),
+    enabled: !!user.id,
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+
   return (
     <>
       <div className="fixed inset-0 -z-50 pointer-events-none bg-bg-1" />
@@ -79,8 +97,21 @@ export default function JobPostingPage() {
 
           <Card className="rounded-2xl border-none shadow-sm">
             <CardContent className="p-8">
-              <CompanyProfileCard userId={user.id} />
-              <JobPostingForm userId={user.id} />
+              <CompanyProfileCard
+                userId={user.id}
+                prefetchedProfile={employerProfile}
+                loadingOverride={employerProfileLoading}
+              />
+              {employerProfileError && (
+                <p className="mt-4 text-sm text-destructive">
+                  Failed to load company profile. Please try again later.
+                </p>
+              )}
+              <JobPostingForm
+                userId={user.id}
+                prefetchedProfile={employerProfile}
+                profileLoading={employerProfileLoading}
+              />
             </CardContent>
           </Card>
         </div>
