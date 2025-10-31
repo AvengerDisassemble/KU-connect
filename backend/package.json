@@ -12,8 +12,8 @@
   "scripts": {
     "start": "cross-env NODE_ENV=development node server.js",
     "dev": "cross-env NODE_ENV=development nodemon server.js",
-    "test": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --runInBand",
-    "test:quiet": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --silent --runInBand",
+    "test": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --runInBand --forceExit",
+    "test:quiet": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --silent --runInBand --forceExit",
     "test:verbose": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db SHOW_LOGS=true jest --runInBand",
     "test:summary": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --verbose=false --runInBand",
     "test:failures": "cross-env NODE_ENV=test DATABASE_URL=file:./test.db jest --onlyFailures --verbose=false --runInBand",
