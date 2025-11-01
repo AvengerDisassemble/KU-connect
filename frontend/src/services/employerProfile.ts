@@ -16,6 +16,7 @@ export interface EmployerProfileResponse {
   username?: string | null;
   email: string;
   verified: boolean;
+  phoneNumber?: string | null;
   hr?: {
     id: string;
     userId: string;
@@ -24,24 +25,30 @@ export interface EmployerProfileResponse {
     website?: string | null;
     industry?: string | null;
     companySize?: string | null;
-    // description?: string | null; // will be added later
-    // phoneNumber?: string | null; // will be added later
+    description?: string | null;
+    phoneNumber?: string | null;
+    verificationDocKey?: string | null;
   };
 }
 
 export interface UpdateEmployerProfileRequest {
-  userId: string;
   companyName?: string;
   address?: string;
   website?: string;
   industry?: string;
   companySize?: string;
+  description?: string | null;
+  phoneNumber?: string | null;
 }
 
 // internal helpers
 const buildRequestInit = (init?: RequestInit): RequestInit => {
   const headers = new Headers(init?.headers ?? {});
-  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
+
+  if (!headers.has("Content-Type") && !isFormData) {
+    headers.set("Content-Type", "application/json");
+  }
 
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("accessToken");
@@ -101,7 +108,10 @@ export const updateEmployerProfile = async (
     key: `PATCH /profile`,
     execute: () => authorizedFetch(`${BASE_URL}/profile`, {
       method: "PATCH",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        ...data,
+        role: "hr",
+      }),
     }),
   });
   const body = await readJson(res) as ApiResponse<EmployerProfileResponse> | null;
@@ -111,5 +121,33 @@ export const updateEmployerProfile = async (
     throw new Error(message || "Failed to update profile");
   }
   if (!body.success) throw new Error(body.message || "Failed to update profile");
+  return body.data;
+};
+
+interface EmployerVerificationResponse {
+  fileKey: string;
+}
+
+export const uploadEmployerVerificationDocument = async (
+  file: File
+): Promise<EmployerVerificationResponse> => {
+  const formData = new FormData();
+  formData.append("verification", file);
+
+  const res = await requestWithPolicies({
+    key: `POST /documents/employer-verification`,
+    execute: () => authorizedFetch(`${BASE_URL}/documents/employer-verification`, {
+      method: "POST",
+      body: formData,
+    }),
+  });
+
+  const body = await readJson(res) as ApiResponse<EmployerVerificationResponse> | null;
+
+  if (!res.ok || !body) {
+    const message = body?.message || `${res.status} ${res.statusText}`;
+    throw new Error(message || "Failed to upload verification document");
+  }
+  if (!body.success) throw new Error(body.message || "Failed to upload verification document");
   return body.data;
 };
