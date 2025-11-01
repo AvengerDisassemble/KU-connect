@@ -45,6 +45,17 @@ async function authMiddleware (req, res, next) {
       })
     }
 
+    // Block SUSPENDED users from all access
+    if (user.status === 'SUSPENDED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account suspended. Please contact admin.',
+        data: { status: 'SUSPENDED' }
+      })
+    }
+
+    // PENDING, APPROVED, and REJECTED users can proceed
+    // (REJECTED users have same access as PENDING - can browse but not interact)
     req.user = user
     next()
   } catch (error) {
@@ -93,7 +104,40 @@ async function optionalAuthMiddleware (req, res, next) {
   }
 }
 
+/**
+ * Middleware to ensure user account is verified (APPROVED status)
+ * Must be used AFTER authMiddleware
+ * Blocks PENDING, REJECTED, and SUSPENDED users from write operations
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+function verifiedUserMiddleware (req, res, next) {
+  if (!req.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Authentication required'
+    })
+  }
+
+  if (req.user.status !== 'APPROVED') {
+    return res.status(403).json({
+      success: false,
+      message: 'This action requires account verification.',
+      data: {
+        currentStatus: req.user.status,
+        action: req.user.status === 'REJECTED'
+          ? 'Please contact admin or resubmit verification'
+          : 'Please wait for admin approval'
+      }
+    })
+  }
+
+  next()
+}
+
 module.exports = {
   authMiddleware,
-  optionalAuthMiddleware
+  optionalAuthMiddleware,
+  verifiedUserMiddleware
 }

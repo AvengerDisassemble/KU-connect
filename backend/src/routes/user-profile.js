@@ -103,16 +103,31 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
               }
             }
           },
-          applications: {
-            include: {
-              job: {
-                select: {
-                  id: true,
-                  title: true
+          // Use 'applications' if it exists, otherwise fallback to 'resumes' for backward compatibility
+          applications: prisma.student.fields.applications
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
                 }
               }
-            }
-          }
+            : undefined,
+          resumes: !prisma.student.fields.applications && prisma.student.fields.resumes
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
+                }
+              }
+            : undefined
         }
       })
 
@@ -123,7 +138,7 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
         expectedGraduationYear: studentData?.expectedGraduationYear,
         degreeType: studentData?.degreeType?.name,
         totalInterests: studentData?.interests?.length || 0,
-        totalApplications: studentData?.applications?.length || 0
+        totalApplications: (studentData?.applications?.length ?? studentData?.resumes?.length) || 0
       }
 
       userCapabilities = [

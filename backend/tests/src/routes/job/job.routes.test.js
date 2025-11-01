@@ -44,13 +44,14 @@ describe('Job Routes (Integration)', () => {
     // Use upsert for atomic user creation to avoid race conditions
     admin = await prisma.user.upsert({
       where: { email: 'admin@test.com' },
-      update: {},
+      update: { status: 'APPROVED' },
       create: {
         name: "Admin",
         surname: "User",
         email: "admin@test.com",
         password: "Pass",
         role: "ADMIN",
+        status: "APPROVED",
         admin: {
           create: {}
         }
@@ -59,13 +60,14 @@ describe('Job Routes (Integration)', () => {
 
     hr = await prisma.user.upsert({
       where: { email: 'hr@test.com' },
-      update: {},
+      update: { status: 'APPROVED' },
       create: {
         name: 'HR',
         surname: 'User',
         email: 'hr@test.com',
         password: 'Pass',
         role: 'EMPLOYER',
+        status: 'APPROVED',
         hr: {
           create: {
             companyName: 'TestCorp',
@@ -81,13 +83,14 @@ describe('Job Routes (Integration)', () => {
 
     hr2 = await prisma.user.upsert({
       where: { email: 'hr2@test.com' },
-      update: {},
+      update: { status: 'APPROVED' },
       create: {
         name: 'HR2',
         surname: 'User',
         email: 'hr2@test.com',
         password: 'Pass',
         role: 'EMPLOYER',
+        status: 'APPROVED',
         hr: {
           create: {
             companyName: 'OtherCorp',
@@ -103,13 +106,14 @@ describe('Job Routes (Integration)', () => {
 
     student = await prisma.user.upsert({
       where: { email: 'student@test.com' },
-      update: {},
+      update: { status: 'APPROVED' },
       create: {
         name: 'Student',
         surname: 'User',
         email: 'student@test.com',
         password: 'Pass',
         role: 'STUDENT',
+        status: 'APPROVED',
         student: {
           create: {
             degreeTypeId: degreeType.id,

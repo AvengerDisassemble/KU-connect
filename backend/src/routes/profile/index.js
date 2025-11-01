@@ -7,7 +7,7 @@ const express = require('express')
 const multer = require('multer')
 const router = express.Router()
 const profileController = require('../../controllers/profileController')
-const { authMiddleware } = require('../../middlewares/authMiddleware')
+const { authMiddleware, verifiedUserMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
 const { validateUpdateProfile } = require('../../validators/profileValidator')
 const { strictLimiter, writeLimiter } = require('../../middlewares/rateLimitMiddleware')
@@ -56,7 +56,8 @@ router.get('/:userId', strictLimiter, profileController.getProfile)
 
 // Authenticated users can update their own profile
 // Rate limited: Write operation
-router.patch('/', writeLimiter, validateUpdateProfile, profileController.updateProfile)
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
+router.patch('/', writeLimiter, verifiedUserMiddleware, validateUpdateProfile, profileController.updateProfile)
 
 module.exports = router
 

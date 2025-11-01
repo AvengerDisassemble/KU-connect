@@ -33,6 +33,7 @@ beforeAll(async () => {
       email: 'admin@test.com',
       password: 'Pass',
       role: 'ADMIN',
+      status: 'APPROVED',
       admin: { create: {} }
     }
   })
@@ -45,6 +46,7 @@ beforeAll(async () => {
       email: 'student@test.com',
       password: 'Pass',
       role: 'STUDENT',
+      status: 'APPROVED',
       student: {
         create: {
           degreeTypeId: degreeType.id,
@@ -64,6 +66,7 @@ beforeAll(async () => {
       email: 'hr@test.com',
       password: 'Pass',
       role: 'EMPLOYER',
+      status: 'APPROVED',
       hr: {
         create: {
           companyName: 'TestCorp',

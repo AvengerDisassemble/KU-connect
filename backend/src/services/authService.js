@@ -37,6 +37,7 @@ async function registerUser (userData, roleSpecificData = {}) {
         email: userData.email,
         password: hashedPassword,
         role: userData.role,
+        status: userData.role === 'ADMIN' ? 'APPROVED' : 'PENDING', // Admins auto-approved, others pending
         verified: userData.role === 'ADMIN' // Admins are pre-verified
       },
       select: {
@@ -45,6 +46,7 @@ async function registerUser (userData, roleSpecificData = {}) {
         surname: true,
         email: true,
         role: true,
+        status: true,
         verified: true,
         createdAt: true
       }
@@ -112,12 +114,18 @@ async function loginUser (email, password) {
       email: true,
       password: true,
       role: true,
+      status: true,
       verified: true
     }
   })
 
   if (!user) {
     throw new Error('Invalid credentials')
+  }
+
+  // Block SUSPENDED users from logging in
+  if (user.status === 'SUSPENDED') {
+    throw new Error('Account suspended. Please contact administrator.')
   }
 
   // Check if user has a password (local auth)
@@ -226,6 +234,7 @@ async function getUserById (userId) {
       surname: true,
       email: true,
       role: true,
+      status: true,
       verified: true,
       createdAt: true,
       updatedAt: true,
