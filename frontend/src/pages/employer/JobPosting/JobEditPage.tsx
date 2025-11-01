@@ -301,9 +301,9 @@ const JobEditPage = () => {
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="destructive"
-                      disabled={deleteMutation.isLoading}
+                      disabled={deleteMutation.isPending}
                     >
-                      {deleteMutation.isLoading ? "Deleting..." : "Delete Job"}
+                      {deleteMutation.isPending ? "Deleting..." : "Delete Job"}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -318,16 +318,16 @@ const JobEditPage = () => {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel
-                        disabled={deleteMutation.isLoading}
+                        disabled={deleteMutation.isPending}
                       >
                         Cancel
                       </AlertDialogCancel>
                       <AlertDialogAction
                         className="bg-destructive hover:bg-destructive/90"
-                        disabled={deleteMutation.isLoading}
+                        disabled={deleteMutation.isPending}
                         onClick={() => deleteMutation.mutate()}
                       >
-                        {deleteMutation.isLoading ? "Deleting..." : "Delete"}
+                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>

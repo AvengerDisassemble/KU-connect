@@ -470,14 +470,14 @@ const EmployerDashboardContent = () => {
                             key={record.id}
                             application={record.application}
                             jobTitle={record.jobTitle}
-                            decisionPending={manageMutation.isLoading}
-                            onDecision={(applicationId, status) =>
-                              manageMutation.mutateAsync({
+                            decisionPending={manageMutation.isPending}
+                            onDecision={async (applicationId, status) => {
+                              await manageMutation.mutateAsync({
                                 jobId: record.jobId,
                                 applicationId,
                                 status,
-                              })
-                            }
+                              });
+                            }}
                           />
                         ))}
                       </tbody>

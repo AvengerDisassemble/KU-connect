@@ -112,17 +112,3 @@ const ApplicantRow = ({
 };
 
 export default ApplicantRow;
-
-const renderStatus = (status: JobApplication["status"]) => {
-  const label = status === "QUALIFIED"
-    ? { text: "Qualified", className: "text-green-600" }
-    : status === "REJECTED"
-      ? { text: "Rejected", className: "text-red-600" }
-      : { text: "Pending", className: "text-muted-foreground" };
-
-  return (
-    <span className={`inline-flex items-center justify-end text-xs font-semibold uppercase ${label.className}`}>
-      {label.text}
-    </span>
-  );
-};
