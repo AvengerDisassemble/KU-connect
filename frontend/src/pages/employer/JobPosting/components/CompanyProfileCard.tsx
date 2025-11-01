@@ -39,23 +39,48 @@ const COMPANY_SIZE_LABEL: Record<string, string> = {
 
 type Props = {
   userId: string;
+  prefetchedProfile?: EmployerProfileResponse | null;
+  loadingOverride?: boolean;
 };
 
-const CompanyProfileCard = ({ userId }: Props) => {
-  const [profile, setProfile] = useState<EmployerProfileResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+const CompanyProfileCard = ({ userId, prefetchedProfile, loadingOverride }: Props) => {
+  const [profile, setProfile] = useState<EmployerProfileResponse | null>(prefetchedProfile ?? null);
+  const [loading, setLoading] = useState<boolean>(
+    typeof loadingOverride === "boolean" ? loadingOverride : !prefetchedProfile
+  );
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof loadingOverride === "boolean") {
+      setLoading(loadingOverride);
+    }
+  }, [loadingOverride]);
+
+  useEffect(() => {
+    if (prefetchedProfile) {
+      setProfile(prefetchedProfile);
+      setErr(null);
+      setLoading(false);
+    }
+  }, [prefetchedProfile]);
+
+  useEffect(() => {
+    if (prefetchedProfile) return;
+    if (loadingOverride) return;
+
     let cancelled = false;
     const run = async () => {
       setLoading(true);
       setErr(null);
       try {
         const data = await getEmployerProfile(userId);
-        if (!cancelled) setProfile(data);
-      } catch (e: any) {
-        if (!cancelled) setErr(e?.message || "Failed to load company profile");
+        if (!cancelled) {
+          setProfile(data);
+        }
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        if (!cancelled) setErr(message || "Failed to load company profile");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -64,7 +89,7 @@ const CompanyProfileCard = ({ userId }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, prefetchedProfile, loadingOverride]);
 
   if (loading) {
     return (

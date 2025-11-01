@@ -19,9 +19,12 @@ import { z, ZodError } from "zod";
 import {
   getEmployerProfile,
   updateEmployerProfile,
+  type EmployerProfileResponse,
   type UpdateEmployerProfileRequest,
 } from "@/services/employerProfile";
 import { Edit } from "lucide-react";
+
+const PHONE_REGEX = /^[0-9+\-()\s]{8,15}$/;
 
 // Options + mapping (MATCH backend enum)
 type Option = { value: string; label: string };
@@ -102,7 +105,7 @@ export interface CompanyForm {
   website?: string;
   description?: string;
   contactEmail?: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   address?: string;
 }
 
@@ -124,8 +127,21 @@ const formSchema = z.object({
   address: z.string().min(1, "Address is required"),
   contactEmail: z.string().email("Please enter a valid email address"),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  // description: z.string().optional(), // will be enabled when backend is ready
-  // phoneNumber: z.string().optional(), // will be enabled when backend is ready
+  description: z
+    .string()
+    .trim()
+    .max(1000, "Description must be 1000 characters or less")
+    .optional()
+    .or(z.literal("")),
+  phoneNumber: z
+    .string()
+    .trim()
+    .min(8, "Phone number must be between 8 and 15 characters")
+    .max(15, "Phone number must be between 8 and 15 characters")
+    .refine((val) => PHONE_REGEX.test(val), {
+      message:
+        "Phone number must be 8-15 characters and may include digits, spaces, +, -, ()",
+    }),
 });
 
 // inline email validator (realtime)
@@ -162,7 +178,10 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // GET profile
-  const { data: profile, isLoading } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+  } = useQuery<EmployerProfileResponse>({
     queryKey: ["employerProfile", userId],
     queryFn: () => getEmployerProfile(userId!),
     enabled: !!userId,
@@ -177,15 +196,18 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
       companySize: API_TO_COMPANY_SIZE_UI[profile.hr?.companySize ?? ""] ?? "",
       website: profile.hr?.website ?? "",
       address: profile.hr?.address ?? "",
-      // UI-only
-      description: "",
+      description: profile.hr?.description ?? "",
       contactEmail: profile.email ?? "",
-      phoneNumber: "",
+      phoneNumber: profile.hr?.phoneNumber ?? profile.phoneNumber ?? "",
     });
   }, [profile]);
 
   // PATCH profile
-  const mutation = useMutation({
+  const mutation = useMutation<
+    EmployerProfileResponse,
+    unknown,
+    UpdateEmployerProfileRequest
+  >({
     mutationFn: (payload: UpdateEmployerProfileRequest) =>
       updateEmployerProfile(payload),
     onSuccess: () => {
@@ -203,10 +225,11 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
     },
   });
 
-  const set = (k: keyof CompanyForm, v: string) =>
-    setFormData((p) => ({ ...p, [k]: v }));
+  const set = (k: keyof CompanyForm, v: string): void => {
+    setFormData((prev) => ({ ...prev, [k]: v }));
+  };
 
-  const validate = () => {
+  const validate = (): boolean => {
     try {
       formSchema.parse({
         companyName: (formData.companyName ?? "").trim(),
@@ -215,8 +238,8 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
         address: (formData.address ?? "").trim(),
         contactEmail: (formData.contactEmail ?? "").trim(),
         website: (formData.website ?? "").trim(),
-        // description: formData.description ?? "",  // not validated yet
-        // phoneNumber: formData.phoneNumber ?? "",  // not validated yet
+        description: formData.description ?? "",
+        phoneNumber: (formData.phoneNumber ?? "").trim(),
       });
       setErrors({});
       return true;
@@ -235,7 +258,7 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
     }
   };
 
-  const submit = () => {
+  const submit = (): void => {
     if (!validate()) return;
     if (!userId) {
       toast.error("Missing userId in URL.");
@@ -243,12 +266,15 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
     }
     // map UI → API
     const payload: UpdateEmployerProfileRequest = {
-      userId,
       companyName: formData.companyName.trim(),
       address: (formData.address ?? "").trim(),
       website: (formData.website ?? "").trim() || undefined,
       industry: INDUSTRY_UI_TO_API[formData.industry],
       companySize: COMPANY_SIZE_UI_TO_API[formData.companySize],
+      description: (formData.description ?? "").trim()
+        ? (formData.description ?? "").trim()
+        : null,
+      phoneNumber: (formData.phoneNumber ?? "").trim(),
     };
     mutation.mutate(payload);
   };
@@ -380,7 +406,7 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
           )}
         </div>
 
-        {/* Company Description (coming soon) */}
+        {/* Company Description */}
         <div>
           <FieldLabel htmlFor="description">Company Description</FieldLabel>
           <Textarea
@@ -388,10 +414,13 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
             value={formData.description ?? ""}
             onChange={(e) => set("description", e.target.value)}
             className="mt-2 min-h-[100px]"
-            placeholder="(Coming soon) This won't be saved yet."
-            disabled
+            placeholder="Tell students about your company culture, mission, and values."
           />
-          <p className="text-xs text-muted-foreground mt-1">Not saved yet</p>
+          {errors.description && (
+            <p className="text-xs text-destructive mt-1">
+              {errors.description}
+            </p>
+          )}
         </div>
 
         {/* Contact Email */}
@@ -428,20 +457,25 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
           )}
         </div>
 
-        {/* Phone Number (coming soon) */}
+        {/* Phone Number */}
         <div>
-          <FieldLabel htmlFor="phoneNumber">Phone Number</FieldLabel>
+          <FieldLabel htmlFor="phoneNumber" required>
+            Phone Number
+          </FieldLabel>
           <Input
             id="phoneNumber"
             value={formData.phoneNumber ?? ""}
             onChange={(e) => set("phoneNumber", e.target.value)}
-            className="mt-2"
+            className={`mt-2 ${errors.phoneNumber ? "border-red-500" : ""}`}
             inputMode="tel"
             autoComplete="tel"
-            placeholder="(Coming soon) e.g. 081-234-5678"
-            disabled
+            placeholder="e.g. 081-234-5678"
           />
-          <p className="text-xs text-muted-foreground mt-1">Not saved yet</p>
+          {errors.phoneNumber && (
+            <p className="text-xs text-destructive mt-1">
+              {errors.phoneNumber}
+            </p>
+          )}
         </div>
 
         {/* Address */}

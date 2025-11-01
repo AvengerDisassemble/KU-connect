@@ -1,3 +1,5 @@
+import type { ReactElement } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type VerificationStatus = "completed" | "waiting";
@@ -9,8 +11,13 @@ export interface VerificationItem {
   status: VerificationStatus;
 }
 
-function StatusDot({ status }: { status: VerificationStatus }) {
+interface StatusDotProps {
+  status: VerificationStatus;
+}
+
+function StatusDot({ status }: StatusDotProps): ReactElement {
   const color = status === "completed" ? "bg-accent" : "bg-muted-foreground/40";
+
   return (
     <span
       className={`inline-block h-3 w-3 rounded-full ${color}`}
@@ -19,11 +26,13 @@ function StatusDot({ status }: { status: VerificationStatus }) {
   );
 }
 
-export default function VerificationChecklist({
-  items,
-}: {
+interface VerificationChecklistProps {
   items: VerificationItem[];
-}) {
+}
+
+const VerificationChecklist: React.FC<VerificationChecklistProps> = ({
+  items,
+}) => {
   return (
     <Card className="border-none">
       <CardHeader>
@@ -46,4 +55,6 @@ export default function VerificationChecklist({
       </CardContent>
     </Card>
   );
-}
+};
+
+export default VerificationChecklist;

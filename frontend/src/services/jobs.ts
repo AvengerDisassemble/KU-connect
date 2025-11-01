@@ -1,54 +1,113 @@
 import { BASE_URL } from "@/lib/config";
 import { refreshAccessToken } from "@/services/auth";
+import { requestWithPolicies } from "./httpClient";
 
-/** Generic API */
 interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
 }
 
-export interface CreateJobRequest {
+export interface JobTag {
+  id: string;
+  name: string;
+}
+
+export interface JobListItem {
+  id: string;
+  hrId: string;
+  title: string;
+  companyName: string;
+  description: string;
+  location: string;
+  jobType: string;
+  workArrangement: string;
+  duration: string;
+  minSalary: number;
+  maxSalary: number;
+  application_deadline: string;
+  email?: string | null;
+  phone_number: string;
+  other_contact_information?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tags: JobTag[];
+  hr?: {
+    id: string;
+    companyName?: string | null;
+  } | null;
+}
+
+export interface JobListResponse {
+  items: JobListItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+interface RequirementLike {
+  id: string;
+  text: string;
+}
+
+export interface JobDetail extends JobListItem {
+  requirements: RequirementLike[];
+  qualifications: RequirementLike[];
+  responsibilities: RequirementLike[];
+  benefits: RequirementLike[];
+}
+
+export interface JobCreateUpdatePayload {
   title: string;
   description: string;
   location: string;
-  jobType: string;            // e.g. "internship"
-  workArrangement: string;    // e.g. "hybrid"
+  jobType: string;
+  workArrangement: string;
   duration?: string;
   minSalary?: number;
   maxSalary?: number;
-  application_deadline?: string; // ISO string "2025-12-31T23:59:59Z"
-  email?: string;
+  application_deadline?: string;
+  email?: string | null;
   phone_number?: string;
   other_contact_information?: string | null;
   requirements?: string[];
   qualifications?: string[];
   responsibilities?: string[];
   benefits?: string[];
-  tags?: string[]; // ["backend", "nodejs", "internship"]
+  tags?: string[];
 }
 
-export interface CreatedJobResponse {
+export interface JobApplication {
   id: string;
-  hrId: string;
-  title: string;
-  companyName?: string;
-  description: string;
-  location: string;
-  jobType: string;
-  workArrangement: string;
-  duration?: string | null;
-  minSalary?: number | null;
-  maxSalary?: number | null;
-  application_deadline?: string | null;
-  email?: string | null;
-  phone_number?: string | null;
-  other_contact_information?: string | null;
+  jobId: string;
+  studentId: string;
+  resumeId?: string | null;
+  status: "PENDING" | "QUALIFIED" | "REJECTED";
   createdAt: string;
   updatedAt: string;
+  student: {
+    id: string;
+    degreeType?: {
+      id: string;
+      name: string;
+    } | null;
+    user?: {
+      id: string;
+      name: string;
+      surname?: string | null;
+      email?: string | null;
+    } | null;
+    address?: string | null;
+    gpa?: number | null;
+    expectedGraduationYear?: number | null;
+    interests?: { id: string; name: string }[];
+  };
+  resume?: {
+    id: string;
+    link: string;
+  } | null;
 }
 
-/** Internal helpers */
 const buildRequestInit = (init?: RequestInit): RequestInit => {
   const headers = new Headers(init?.headers ?? {});
   if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
@@ -75,50 +134,94 @@ const authorizedFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
   return response;
 };
 
-/** APIs */
+const readJson = async (res: Response) => {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
 
-// POST /api/job
-export const createJob = async (payload: CreateJobRequest): Promise<CreatedJobResponse> => {
-  console.log("[jobs.createJob] payload:", payload);
+const requestApi = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const method = (init?.method ?? "GET").toUpperCase();
+  const res = await requestWithPolicies({
+    key: `${method} ${path}`,
+    execute: () => authorizedFetch(`${BASE_URL}${path}`, init),
+  });
+  const body = await readJson(res);
 
-  const res = await authorizedFetch(`${BASE_URL}/job`, {
+  if (!res.ok) {
+    const message =
+      (body as ApiResponse<T> | null)?.message || `${res.status} ${res.statusText}`;
+    throw new Error(message);
+  }
+
+  const parsed = body as ApiResponse<T> | null;
+  if (!parsed) {
+    throw new Error("Invalid server response");
+  }
+  if (!parsed.success) {
+    throw new Error(parsed.message || "Request failed");
+  }
+
+  return parsed.data;
+};
+
+export const createJob = async (
+  payload: JobCreateUpdatePayload
+) => {
+  return requestApi<JobDetail>("/job", {
     method: "POST",
     body: JSON.stringify(payload),
   });
+};
 
-  if (!res.ok) {
-    let serverMsg = `HTTP ${res.status}`;
-    let serverBody: unknown = null;
+export const listJobs = async (
+  filters: Record<string, unknown> = {}
+) => {
+  return requestApi<JobListResponse>("/job/list", {
+    method: "POST",
+    body: JSON.stringify(filters),
+  });
+};
 
-    try {
-      serverBody = await res.json();
-      const msg =
-        (serverBody as any)?.message ||
-        (serverBody as any)?.error ||
-        (serverBody as any)?.errors ||
-        (serverBody as any)?.detail ||
-        (serverBody as any)?.details;
+export const getJobById = async (jobId: string) => {
+  return requestApi<JobDetail>(`/job/${jobId}`);
+};
 
-      if (typeof msg === "string") serverMsg = `${serverMsg} – ${msg}`;
-      else if (msg) serverMsg = `${serverMsg} – ${JSON.stringify(msg)}`;
-    } catch {
-      try {
-        const text = await res.text();
-        if (text) serverMsg = `${serverMsg} – ${text}`;
-      } catch {
-        /* ignore */
-      }
-    }
+export const updateJob = async (
+  jobId: string,
+  payload: Partial<JobCreateUpdatePayload>
+) => {
+  return requestApi<JobDetail>(`/job/${jobId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+};
 
-    console.error("[jobs.createJob] server error:", serverBody || serverMsg);
-    throw new Error(serverMsg);
-  }
+export const deleteJob = async (jobId: string) => {
+  return requestApi<JobDetail>(`/job/${jobId}`, {
+    method: "DELETE",
+  });
+};
 
-  const body: ApiResponse<CreatedJobResponse> = await res.json();
-  if (!body.success) {
-    console.error("[jobs.createJob] api error body:", body);
-    throw new Error(body.message || "Failed to create job");
-  }
+export const getJobApplicants = async (jobId: string) => {
+  return requestApi<JobApplication[]>(`/job/${jobId}/applyer`);
+};
 
-  return body.data;
+export interface ManageApplicationPayload {
+  applicationId: string;
+  status: "QUALIFIED" | "REJECTED";
+}
+
+export const manageApplication = async (
+  jobId: string,
+  payload: ManageApplicationPayload
+) => {
+  return requestApi<JobApplication>(`/job/${jobId}/applyer`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 };
