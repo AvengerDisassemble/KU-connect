@@ -40,5 +40,5 @@ module.exports = {
   forceExit: true,
 
   // Detect open handles to help debug
-  detectOpenHandles: true
+  detectOpenHandles: false
 }
