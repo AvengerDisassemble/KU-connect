@@ -1,3 +1,5 @@
+import { type MouseEventHandler } from "react";
+
 import { Button } from "@/components/ui/button";
 import { Badge, type BadgeProps } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -19,13 +21,21 @@ interface JobCardProps {
   variant?: "card" | "list";
 }
 
-const JobCard = ({
+const JobCard: React.FC<JobCardProps> = ({
   job,
   onViewApplicants,
   onEditJob,
   variant = "card",
 }: JobCardProps) => {
   const badgeVariant: NonNullable<BadgeProps["variant"]> = job.status;
+
+  const handleViewApplicants: MouseEventHandler<HTMLButtonElement> = () => {
+    onViewApplicants?.(job.id);
+  };
+
+  const handleEditJob: MouseEventHandler<HTMLButtonElement> = () => {
+    onEditJob?.(job.id);
+  };
 
   const Inner = (
     <>
@@ -63,14 +73,14 @@ const JobCard = ({
 
       <div className="flex gap-3">
         <Button
-          onClick={() => onViewApplicants?.(job.id)}
+          onClick={handleViewApplicants}
           size="sm"
           className="bg-primary text-white shadow-md hover:bg-primary/90"
         >
           View Applicants
         </Button>
         <Button
-          onClick={() => onEditJob?.(job.id)}
+          onClick={handleEditJob}
           variant="outline"
           size="sm"
           className="text-primary hover:text-primary hover:bg-gray-200"

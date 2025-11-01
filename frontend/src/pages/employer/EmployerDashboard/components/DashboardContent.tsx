@@ -109,7 +109,7 @@ const EmployerDashboardContent = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const {
@@ -125,7 +125,7 @@ const EmployerDashboardContent = () => {
     retry: false,
   });
 
-  const hrId = profile?.hr?.id;
+  const hrId: string | undefined = profile?.hr?.id;
 
   const {
     data: jobList,
@@ -142,13 +142,16 @@ const EmployerDashboardContent = () => {
     retry: false,
   });
 
-  const filteredJobs = useMemo(() => {
+  const filteredJobs = useMemo<JobListResponse["items"][number][]>(() => {
     if (!jobList?.items) return [];
     if (!hrId) return [];
     return jobList.items.filter((job) => job.hrId === hrId);
   }, [jobList, hrId]);
 
-  const jobIds = useMemo(() => filteredJobs.map((job) => job.id).sort(), [filteredJobs]);
+  const jobIds = useMemo<string[]>(
+    () => filteredJobs.map((job) => job.id).sort(),
+    [filteredJobs]
+  );
 
   const {
     data: applicantsByJob,
@@ -221,8 +224,11 @@ const EmployerDashboardContent = () => {
 
   const selectedJob = filteredJobs.find((job) => job.id === selectedJobId);
 
-  const allApplicantRecords: ApplicantRecord[] = useMemo(() => {
-    if (!filteredJobs.length) return [];
+  const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
+    if (!filteredJobs.length) {
+      return [];
+    }
+
     return filteredJobs.flatMap((job) => {
       const apps = applicantsByJob?.[job.id] ?? [];
       return apps.map((app) => {
@@ -245,15 +251,21 @@ const EmployerDashboardContent = () => {
     });
   }, [filteredJobs, applicantsByJob]);
 
-  const applicantsForSelection = useMemo(() => {
-    if (!selectedJobId) return allApplicantRecords;
+  const applicantsForSelection = useMemo<ApplicantRecord[]>(() => {
+    if (!selectedJobId) {
+      return allApplicantRecords;
+    }
+
     return allApplicantRecords.filter((record) => record.jobId === selectedJobId);
   }, [allApplicantRecords, selectedJobId]);
 
   const hasSearch = searchQuery.trim().length > 0;
 
-  const visibleApplicants = useMemo(() => {
-    if (!hasSearch) return applicantsForSelection;
+  const visibleApplicants = useMemo<ApplicantRecord[]>(() => {
+    if (!hasSearch) {
+      return applicantsForSelection;
+    }
+
     const q = searchQuery.trim().toLowerCase();
     return applicantsForSelection.filter((record) => {
       return [
@@ -293,11 +305,11 @@ const EmployerDashboardContent = () => {
     offersMade: aggregateStats.qualified,
   };
 
-  const handleViewApplicants = (jobId: string) => {
+  const handleViewApplicants = (jobId: string): void => {
     setSelectedJobId((prev) => (prev === jobId ? null : jobId));
   };
 
-  const handleEditJob = (jobId: string) => {
+  const handleEditJob = (jobId: string): void => {
     navigate(`/employer/job-postings/${jobId}/edit`);
   };
 

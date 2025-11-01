@@ -13,6 +13,7 @@ import CompanyDocumentUpload from "@/pages/employer/profile/components/CompanyDo
 import {
   uploadEmployerVerificationDocument,
   getEmployerProfile,
+  type EmployerProfileResponse,
 } from "@/services/employerProfile";
 
 export default function EmployerProfilePage() {
@@ -20,7 +21,10 @@ export default function EmployerProfilePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const qc = useQueryClient();
 
-  const { data: profile, isLoading: isProfileLoading } = useQuery({
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+  } = useQuery<EmployerProfileResponse>({
     queryKey: ["employerProfile", userId],
     queryFn: () => getEmployerProfile(userId!),
     enabled: !!userId,
@@ -113,7 +117,7 @@ export default function EmployerProfilePage() {
       return toast.error("File size must be less than 10MB.");
     setUploadedFile(file);
   };
-  const handleRemoveFile = () => {
+  const handleRemoveFile = (): void => {
     setUploadedFile(null);
     toast.info("File removed");
   };
@@ -128,12 +132,17 @@ export default function EmployerProfilePage() {
     return "Upload a business registration certificate to begin verification.";
   })();
 
-  const handleSubmitVerification = async () => {
-    if (!uploadedFile)
-      return toast.error("Please upload a document before submitting.");
-    if (isUploadLocked) {
-      return toast.info("Verification already approved.");
+  const handleSubmitVerification = async (): Promise<void> => {
+    if (!uploadedFile) {
+      toast.error("Please upload a document before submitting.");
+      return;
     }
+
+    if (isUploadLocked) {
+      toast.info("Verification already approved.");
+      return;
+    }
+
     uploadMutation.mutate(uploadedFile);
   };
 

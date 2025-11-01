@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileUp, X } from "lucide-react";
 
-interface Props {
+interface CompanyDocumentUploadProps {
   uploadedFile: File | null;
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: () => void;
@@ -16,7 +16,7 @@ interface Props {
   isLoading?: boolean;
 }
 
-export default function CompanyDocumentUpload({
+const CompanyDocumentUpload: React.FC<CompanyDocumentUploadProps> = ({
   uploadedFile,
   onFileChange,
   onRemoveFile,
@@ -26,7 +26,7 @@ export default function CompanyDocumentUpload({
   isUploadLocked = false,
   statusMessage,
   isLoading = false,
-}: Props) {
+}: CompanyDocumentUploadProps) => {
   const uploadInstructions = isUploadLocked
     ? "Document uploads are disabled."
     : "PDF, JPG, PNG up to 10MB";
@@ -105,4 +105,6 @@ export default function CompanyDocumentUpload({
       </CardContent>
     </Card>
   );
-}
+};
+
+export default CompanyDocumentUpload;

@@ -19,6 +19,7 @@ import { z, ZodError } from "zod";
 import {
   getEmployerProfile,
   updateEmployerProfile,
+  type EmployerProfileResponse,
   type UpdateEmployerProfileRequest,
 } from "@/services/employerProfile";
 import { Edit } from "lucide-react";
@@ -177,7 +178,10 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // GET profile
-  const { data: profile, isLoading } = useQuery({
+  const {
+    data: profile,
+    isLoading,
+  } = useQuery<EmployerProfileResponse>({
     queryKey: ["employerProfile", userId],
     queryFn: () => getEmployerProfile(userId!),
     enabled: !!userId,
@@ -199,7 +203,11 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
   }, [profile]);
 
   // PATCH profile
-  const mutation = useMutation({
+  const mutation = useMutation<
+    EmployerProfileResponse,
+    unknown,
+    UpdateEmployerProfileRequest
+  >({
     mutationFn: (payload: UpdateEmployerProfileRequest) =>
       updateEmployerProfile(payload),
     onSuccess: () => {
@@ -217,10 +225,11 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
     },
   });
 
-  const set = (k: keyof CompanyForm, v: string) =>
-    setFormData((p) => ({ ...p, [k]: v }));
+  const set = (k: keyof CompanyForm, v: string): void => {
+    setFormData((prev) => ({ ...prev, [k]: v }));
+  };
 
-  const validate = () => {
+  const validate = (): boolean => {
     try {
       formSchema.parse({
         companyName: (formData.companyName ?? "").trim(),
@@ -249,7 +258,7 @@ export default function CompanyInfoForm({ userId }: { userId?: string }) {
     }
   };
 
-  const submit = () => {
+  const submit = (): void => {
     if (!validate()) return;
     if (!userId) {
       toast.error("Missing userId in URL.");
