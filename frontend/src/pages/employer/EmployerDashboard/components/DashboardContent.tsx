@@ -64,43 +64,39 @@ type AggregateStats = {
   newThisWeek: number;
 };
 
-const THAI_TIMEZONE = "Asia/Bangkok";
+const BANGKOK_OFFSET_MS = 7 * 60 * 60 * 1000;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const formatDateInBangkok = (iso: string): Date => {
-  const formatter = new Intl.DateTimeFormat("en-CA", {
-    timeZone: THAI_TIMEZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  return new Date(formatter.format(new Date(iso)));
+const toBangkokDate = (value: string | Date): Date => {
+  const src = typeof value === "string" ? new Date(value) : new Date(value);
+  return new Date(src.getTime() + BANGKOK_OFFSET_MS);
 };
 
 const isSameThaiDay = (isoDate: string, reference = new Date()): boolean => {
-  const created = formatDateInBangkok(isoDate);
-  const ref = formatDateInBangkok(reference.toISOString());
+  const created = toBangkokDate(isoDate);
+  const ref = toBangkokDate(reference);
 
   return (
-    created.getFullYear() === ref.getFullYear() &&
-    created.getMonth() === ref.getMonth() &&
-    created.getDate() === ref.getDate()
+    created.getUTCFullYear() === ref.getUTCFullYear() &&
+    created.getUTCMonth() === ref.getUTCMonth() &&
+    created.getUTCDate() === ref.getUTCDate()
   );
 };
 
 const isThaiDateInCurrentWeek = (isoDate: string, reference = new Date()): boolean => {
-  const created = formatDateInBangkok(isoDate);
-  const ref = formatDateInBangkok(reference.toISOString());
+  const created = toBangkokDate(isoDate);
+  const ref = toBangkokDate(reference);
 
-  const day = ref.getDay();
-  const diffToMonday = (day + 6) % 7;
-  const monday = new Date(ref);
-  monday.setDate(ref.getDate() - diffToMonday);
-  monday.setHours(0, 0, 0, 0);
+  const dayOfWeek = ref.getUTCDay();
+  const diffToMonday = (dayOfWeek + 6) % 7;
 
-  return created >= monday && created <= ref;
+  const currentMonday = new Date(ref.getTime());
+  currentMonday.setUTCHours(0, 0, 0, 0);
+  currentMonday.setUTCDate(currentMonday.getUTCDate() - diffToMonday);
+
+  const nextMonday = new Date(currentMonday.getTime() + DAY_IN_MS * 7);
+
+  return created >= currentMonday && created < nextMonday;
 };
 
 const formatRelativeDate = (iso: string, now = new Date()): string => {
