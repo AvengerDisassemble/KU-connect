@@ -1,5 +1,5 @@
 import { BASE_URL } from "@/lib/config";
-import { refreshAccessToken } from "@/services/auth";
+import { clearAuthSession, refreshAccessToken } from "@/services/auth";
 
 // Generic API
 interface ApiResponse<T> {
@@ -40,7 +40,8 @@ export interface UpdateEmployerProfileRequest {
 // internal helpers
 const buildRequestInit = (init?: RequestInit): RequestInit => {
   const headers = new Headers(init?.headers ?? {});
-  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  if (!headers.has("Content-Type"))
+    headers.set("Content-Type", "application/json");
 
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("accessToken");
@@ -51,15 +52,25 @@ const buildRequestInit = (init?: RequestInit): RequestInit => {
   return { ...init, headers, credentials: "include" };
 };
 
-const authorizedFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+const authorizedFetch = async (
+  input: RequestInfo | URL,
+  init?: RequestInit
+) => {
   let response = await fetch(input, buildRequestInit(init));
   if (response.status === 401) {
     try {
       await refreshAccessToken();
-    } catch {
-      throw new Error("Session expired. Please log in again.");
+    } catch (error) {
+      clearAuthSession();
+      throw error instanceof Error
+        ? error
+        : new Error("Session expired. Please log in again.");
     }
     response = await fetch(input, buildRequestInit(init));
+    if (response.status === 401) {
+      clearAuthSession();
+      throw new Error("Session expired. Please log in again.");
+    }
   }
   return response;
 };
@@ -67,7 +78,9 @@ const authorizedFetch = async (input: RequestInfo | URL, init?: RequestInit) => 
 // APIs
 
 // GET /profile/:userId
-export const getEmployerProfile = async (userId: string): Promise<EmployerProfileResponse> => {
+export const getEmployerProfile = async (
+  userId: string
+): Promise<EmployerProfileResponse> => {
   const res = await authorizedFetch(`${BASE_URL}/profile/${userId}`);
   if (!res.ok) throw new Error("Failed to fetch profile");
   const body: ApiResponse<EmployerProfileResponse> = await res.json();
@@ -85,6 +98,7 @@ export const updateEmployerProfile = async (
   });
   if (!res.ok) throw new Error("Failed to update profile");
   const body: ApiResponse<EmployerProfileResponse> = await res.json();
-  if (!body.success) throw new Error(body.message || "Failed to update profile");
+  if (!body.success)
+    throw new Error(body.message || "Failed to update profile");
   return body.data;
 };

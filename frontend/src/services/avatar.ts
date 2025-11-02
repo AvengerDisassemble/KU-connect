@@ -1,5 +1,5 @@
 import { BASE_URL } from "@/lib/config";
-import { refreshAccessToken } from "@/services/auth";
+import { clearAuthSession, refreshAccessToken } from "@/services/auth";
 
 export const AVATAR_ACCEPTED_TYPES = [
   "image/jpeg",
@@ -62,11 +62,22 @@ const authorizedFetch = async (
   if (response.status === 401) {
     try {
       await refreshAccessToken();
-    } catch {
-      throw toAvatarError("Session expired. Please log in again.", 401);
+    } catch (error) {
+      clearAuthSession();
+      throw toAvatarError(
+        error instanceof Error
+          ? error.message
+          : "Session expired. Please log in again.",
+        401
+      );
     }
 
     response = await fetch(input, buildRequestInit(init));
+
+    if (response.status === 401) {
+      clearAuthSession();
+      throw toAvatarError("Session expired. Please log in again.", 401);
+    }
   }
 
   return response;

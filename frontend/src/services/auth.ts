@@ -38,6 +38,10 @@ export function setAuthSession({
   window.dispatchEvent(new Event(AUTH_EVENT));
 }
 
+export function clearAuthSession(): void {
+  setAuthSession({ accessToken: null, refreshToken: null, user: null });
+}
+
 export interface LoginResponse {
   success: boolean;
   message: string;
@@ -78,7 +82,7 @@ export interface RegisterEmployerData {
  */
 export async function login(
   email: string,
-  password: string,
+  password: string
 ): Promise<LoginResponse> {
   const response = await fetch(`${BASE_URL}/login`, {
     method: "POST",
@@ -139,40 +143,92 @@ export async function logout(): Promise<void> {
     }
   }
 
-  setAuthSession({ accessToken: null, refreshToken: null, user: null });
+  clearAuthSession();
 }
 
 /**
  * Refresh access token using refresh token
  */
-export async function refreshAccessToken(): Promise<LoginResponse> {
-  const response = await fetch(`${BASE_URL}/auth/refresh`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-  });
+let refreshPromise: Promise<LoginResponse> | null = null;
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("Token refresh failed:", errorText);
-    throw new Error(errorText || "Token refresh failed");
+export async function refreshAccessToken(): Promise<LoginResponse> {
+  if (typeof window === "undefined") {
+    throw new Error("Token refresh is only available in the browser");
   }
 
-  const data = await response.json();
+  if (refreshPromise) {
+    return refreshPromise;
+  }
 
-  // Update stored tokens
-  if (data.success) {
+  const storedRefreshToken = localStorage.getItem("refreshToken");
+
+  if (!storedRefreshToken) {
+    clearAuthSession();
+    throw new Error("Refresh token missing");
+  }
+
+  refreshPromise = (async (): Promise<LoginResponse> => {
+    const response = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ refreshToken: storedRefreshToken }),
+    });
+
+    const raw = await response.text();
+    let parsed: LoginResponse | { message?: string; success?: boolean } | null =
+      null;
+    if (raw) {
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = null;
+      }
+    }
+
+    const failureMessage =
+      parsed &&
+      typeof parsed === "object" &&
+      "message" in parsed &&
+      parsed.message
+        ? String(parsed.message)
+        : raw || "Token refresh failed";
+
+    if (!response.ok) {
+      console.error("Token refresh failed:", failureMessage);
+      clearAuthSession();
+      throw new Error(failureMessage);
+    }
+
+    if (!parsed || typeof parsed !== "object" || !("success" in parsed)) {
+      clearAuthSession();
+      throw new Error("Token refresh response was invalid");
+    }
+
+    const data = parsed as LoginResponse;
+
+    if (!data.success) {
+      clearAuthSession();
+      throw new Error(data.message || failureMessage);
+    }
+
     const { accessToken, refreshToken, user } = data.data ?? {};
     setAuthSession({
       accessToken: accessToken ?? null,
       refreshToken: refreshToken ?? null,
       user: user ?? null,
     });
-  }
 
-  return data;
+    return data;
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
 }
 
 /**
@@ -214,7 +270,7 @@ export async function registerEmployer(data: RegisterEmployerData) {
     }
 
     const err = new Error(
-      errorBody?.message || "Employer registration failed",
+      errorBody?.message || "Employer registration failed"
     ) as Error & { errors?: unknown };
     if (errorBody?.errors) {
       err.errors = errorBody.errors;

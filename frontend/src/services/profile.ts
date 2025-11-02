@@ -1,5 +1,5 @@
 import { BASE_URL } from "@/lib/config";
-import { refreshAccessToken } from "@/services/auth";
+import { clearAuthSession, refreshAccessToken } from "@/services/auth";
 
 export interface ProfileResponse {
   id: string;
@@ -73,11 +73,19 @@ const authorizedFetch = async (
   if (response.status === 401) {
     try {
       await refreshAccessToken();
-    } catch {
-      throw new Error("Session expired. Please log in again.");
+    } catch (error) {
+      clearAuthSession();
+      throw error instanceof Error
+        ? error
+        : new Error("Session expired. Please log in again.");
     }
 
     response = await fetch(input, buildRequestInit(init));
+
+    if (response.status === 401) {
+      clearAuthSession();
+      throw new Error("Session expired. Please log in again.");
+    }
   }
 
   return response;
