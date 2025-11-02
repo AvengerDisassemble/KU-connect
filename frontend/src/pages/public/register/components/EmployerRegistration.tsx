@@ -15,6 +15,7 @@ import { CheckCircle2, Upload, X, FileText, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { registerEmployer } from "@/services/auth";
+import { phoneSchema } from "./phoneSchema";
 
 const step1Schema = z
   .object({
@@ -26,6 +27,7 @@ const step1Schema = z
     email: z.string().email("Invalid email address").max(255),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
+    phoneNumber: phoneSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -60,16 +62,6 @@ const step3Schema = z.object({
     .max(255)
     .optional()
     .or(z.literal("")),
-  phone: z
-    .string()
-    .regex(
-      /^[0-9+\s\-()]*$/,
-      "Phone number must contain only digits and valid separators"
-    )
-    .min(9, "Phone number must be at least 9 digits")
-    .max(20, "Phone number must not exceed 20 digits")
-    .optional()
-    .or(z.literal("")),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
   proofFile: fileSchema,
 });
@@ -80,13 +72,13 @@ interface FormData {
   email: string;
   password: string;
   confirmPassword: string;
+  phoneNumber: string;
   companyName: string;
   address: string;
   logo: File | null;
   description: string;
   industry: string;
   contactEmail: string;
-  phone: string;
   website: string;
   proofFile: File | null;
 }
@@ -109,13 +101,13 @@ const EmployerRegistration = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    phoneNumber: "",
     companyName: "",
     address: "",
     logo: null,
     description: "",
     industry: "",
     contactEmail: "",
-    phone: "",
     website: "",
     proofFile: null,
   });
@@ -192,6 +184,7 @@ const EmployerRegistration = () => {
           email: formData.email,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
+          phoneNumber: formData.phoneNumber,
         });
       } else if (step === 2) {
         step2Schema.parse({
@@ -202,10 +195,9 @@ const EmployerRegistration = () => {
         });
       } else if (step === 3) {
         step3Schema.parse({
-          phone: formData.phone,
+          contactEmail: formData.contactEmail,
           website: formData.website,
           proofFile: formData.proofFile,
-          contactEmail: formData.contactEmail,
         });
       }
       setErrors({});
@@ -252,6 +244,7 @@ const EmployerRegistration = () => {
         surname: formData.surname.trim(),
         email: formData.email.trim(),
         password: formData.password,
+        phoneNumber: formData.phoneNumber.trim(),
         companyName: formData.companyName.trim(),
         address: formData.address.trim(),
       });
@@ -450,6 +443,38 @@ const EmployerRegistration = () => {
                   role="alert"
                 >
                   {errors.email}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
+                Phone Number
+              </Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                placeholder="+66 12 345 6789"
+                value={formData.phoneNumber}
+                onChange={(e) =>
+                  handleInputChange("phoneNumber", e.target.value)
+                }
+                className={`h-11 sm:h-12 ${
+                  errors.phoneNumber ? "border-destructive" : ""
+                }`}
+                aria-invalid={!!errors.phoneNumber}
+                aria-describedby={
+                  errors.phoneNumber ? "phone-number-error" : undefined
+                }
+                required
+              />
+              {errors.phoneNumber && (
+                <p
+                  id="phone-number-error"
+                  className="text-sm text-destructive"
+                  role="alert"
+                >
+                  {errors.phoneNumber}
                 </p>
               )}
             </div>
@@ -820,33 +845,6 @@ const EmployerRegistration = () => {
                   role="alert"
                 >
                   {errors.contactEmail}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm sm:text-base">
-                Phone Number
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+66 12 345 6789"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
-                className={`h-11 sm:h-12 ${
-                  errors.phone ? "border-destructive" : ""
-                }`}
-                aria-invalid={!!errors.phone}
-                aria-describedby={errors.phone ? "phone-error" : undefined}
-              />
-              {errors.phone && (
-                <p
-                  id="phone-error"
-                  className="text-sm text-destructive"
-                  role="alert"
-                >
-                  {errors.phone}
                 </p>
               )}
             </div>

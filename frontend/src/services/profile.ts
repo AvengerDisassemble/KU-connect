@@ -8,6 +8,7 @@ export interface ProfileResponse {
   username?: string;
   email: string;
   verified: boolean;
+  phoneNumber?: string | null;
   student?: {
     id: string;
     userId: string;
@@ -31,6 +32,7 @@ export interface UpdateProfileRequest {
   expectedGraduationYear?: number;
   email?: string;
   degreeTypeId?: string;
+  phoneNumber?: string;
 }
 
 /**

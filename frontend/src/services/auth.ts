@@ -66,6 +66,7 @@ export interface RegisterData {
   password: string;
   address: string;
   degreeTypeId: string;
+  phoneNumber: string;
 }
 
 export interface RegisterEmployerData {
@@ -73,6 +74,7 @@ export interface RegisterEmployerData {
   surname: string;
   email: string;
   password: string;
+  phoneNumber: string;
   companyName: string;
   address: string;
 }

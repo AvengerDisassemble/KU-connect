@@ -35,15 +35,19 @@ import { fetchDegreeTypes, type DegreeType } from "@/services/degree";
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
   surname: z.string().min(1, "Last name is required").max(50),
-  // phoneNumber: z.preprocess(
-  //   (v) => (v === "" ? undefined : v),
-  //   z
-  //     .string()
-  //     .regex(/^[0-9]+$/, "Phone number must contain only digits")
-  //     .min(9, "Phone number must be at least 9 digits")
-  //     .max(15, "Phone number must not exceed 15 digits")
-  //     .optional()
-  // ),
+  phoneNumber: z
+    .string()
+    .trim()
+    .refine(
+      (value) => {
+        if (!value) return false;
+        const normalized = value.startsWith("+") ? value.slice(1) : value;
+        return /^\d{9,15}$/.test(normalized);
+      },
+      {
+        message: "Phone number must contain 9-15 digits and may start with +",
+      }
+    ),
   address: z.string().min(1),
   gpa: z.preprocess(
     (v) => (v === "" ? undefined : v),
@@ -51,15 +55,15 @@ const profileSchema = z.object({
       .number()
       .min(0, "GPA must be at least 0.00")
       .max(4, "GPA must not exceed 4.00")
-      .optional(),
+      .optional()
   ),
   expectedGraduationYear: z.preprocess(
     (v) => (v === "" ? undefined : v),
-    z.coerce.number().min(1988).max(2100).optional(),
+    z.coerce.number().min(1988).max(2100).optional()
   ),
   degreeTypeId: z.preprocess(
     (v) => (typeof v === "string" ? v.trim() : v),
-    z.string().min(1, "Degree type is required"),
+    z.string().min(1, "Degree type is required")
   ),
 });
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -108,7 +112,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
     defaultValues: {
       name: "",
       surname: "",
-      // phoneNumber: undefined,
+      phoneNumber: "",
       address: "",
       gpa: undefined,
       expectedGraduationYear: undefined,
@@ -141,7 +145,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
       form.reset({
         name: profile.name || "",
         surname: profile.surname || "",
-        // phoneNumber: profile.phoneNumber || "",
+        phoneNumber: profile.phoneNumber ?? "",
         address: profile.student?.address || "",
         gpa: profile.student?.gpa,
         expectedGraduationYear: profile.student?.expectedGraduationYear,
@@ -160,12 +164,13 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
       gpa?: number;
       degreeTypeId?: string;
       expectedGraduationYear?: number;
-      // phoneNumber?: string;
+      phoneNumber: string;
     } = {
       userId: userId!,
       name: data.name.trim(),
       surname: data.surname.trim(),
       address: data.address,
+      phoneNumber: data.phoneNumber.trim(),
     };
 
     if (typeof data.gpa === "number" && !Number.isNaN(data.gpa)) {
@@ -180,10 +185,6 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
     ) {
       payload.expectedGraduationYear = data.expectedGraduationYear;
     }
-    // if (data.phoneNumber && data.phoneNumber.trim().length > 0) {
-    //   payload.phoneNumber = data.phoneNumber.trim();
-    // }
-
     mutation.mutate(payload);
   };
 
@@ -256,13 +257,13 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                       (data) => {
                         console.log(
                           "Form is valid, calling onSubmit with data:",
-                          data,
+                          data
                         );
                         onSubmit(data);
                       },
                       (errors) => {
                         console.error("Validation errors:", errors);
-                      },
+                      }
                     )();
                   }}
                   className="flex items-center gap-2"
@@ -326,7 +327,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                     </FormItem>
                   )}
                 />
-                {/* <FormField
+                <FormField
                   control={form.control}
                   name="phoneNumber"
                   render={({ field }) => (
@@ -339,12 +340,15 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                           {...field}
                           className="bg-background border-border"
                           readOnly={!isEditing}
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="e.g. +66912345678"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
-                /> */}
+                />
               </div>
 
               {/* Row 2: Address & Degree Type */}
@@ -410,8 +414,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                         <Input
                           value={
                             degreeOptions.find(
-                              (opt) =>
-                                opt.id === form.getValues("degreeTypeId"),
+                              (opt) => opt.id === form.getValues("degreeTypeId")
                             )?.name ||
                             profile?.student?.degreeType?.name ||
                             ""
