@@ -51,15 +51,15 @@ const profileSchema = z.object({
       .number()
       .min(0, "GPA must be at least 0.00")
       .max(4, "GPA must not exceed 4.00")
-      .optional()
+      .optional(),
   ),
   expectedGraduationYear: z.preprocess(
     (v) => (v === "" ? undefined : v),
-    z.coerce.number().min(1988).max(2100).optional()
+    z.coerce.number().min(1988).max(2100).optional(),
   ),
   degreeTypeId: z.preprocess(
     (v) => (typeof v === "string" ? v.trim() : v),
-    z.string().min(1, "Degree type is required")
+    z.string().min(1, "Degree type is required"),
   ),
 });
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -256,13 +256,13 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                       (data) => {
                         console.log(
                           "Form is valid, calling onSubmit with data:",
-                          data
+                          data,
                         );
                         onSubmit(data);
                       },
                       (errors) => {
                         console.error("Validation errors:", errors);
-                      }
+                      },
                     )();
                   }}
                   className="flex items-center gap-2"
@@ -410,7 +410,8 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                         <Input
                           value={
                             degreeOptions.find(
-                              (opt) => opt.id === form.getValues("degreeTypeId")
+                              (opt) =>
+                                opt.id === form.getValues("degreeTypeId"),
                             )?.name ||
                             profile?.student?.degreeType?.name ||
                             ""
