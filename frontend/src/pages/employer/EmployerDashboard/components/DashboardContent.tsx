@@ -1,11 +1,14 @@
+"use client";
+
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   useMutation,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Search, RefreshCw } from "lucide-react";
+import { RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import DashboardHeader from "./DashboardHeader";
@@ -54,11 +57,57 @@ type ApplicantRecord = {
   application: JobApplication;
 };
 
-const formatRelativeDate = (iso: string) => {
+type AggregateStats = {
+  total: number;
+  qualified: number;
+  newToday: number;
+  newThisWeek: number;
+};
+
+const THAI_TIMEZONE = "Asia/Bangkok";
+
+const formatDateInBangkok = (iso: string): Date => {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: THAI_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+  return new Date(formatter.format(new Date(iso)));
+};
+
+const isSameThaiDay = (isoDate: string, reference = new Date()): boolean => {
+  const created = formatDateInBangkok(isoDate);
+  const ref = formatDateInBangkok(reference.toISOString());
+
+  return (
+    created.getFullYear() === ref.getFullYear() &&
+    created.getMonth() === ref.getMonth() &&
+    created.getDate() === ref.getDate()
+  );
+};
+
+const isThaiDateInCurrentWeek = (isoDate: string, reference = new Date()): boolean => {
+  const created = formatDateInBangkok(isoDate);
+  const ref = formatDateInBangkok(reference.toISOString());
+
+  const day = ref.getDay();
+  const diffToMonday = (day + 6) % 7;
+  const monday = new Date(ref);
+  monday.setDate(ref.getDate() - diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  return created >= monday && created <= ref;
+};
+
+const formatRelativeDate = (iso: string, now = new Date()): string => {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "unknown";
 
-  const diff = Date.now() - date.getTime();
+  const diff = now.getTime() - date.getTime();
   if (diff < 0) return "just now";
 
   const minutes = Math.floor(diff / 60000);
@@ -102,6 +151,32 @@ const mapJobToViewModel = (
     applicants: total,
     shortlisted,
   };
+};
+
+const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
+  if (!records.length) {
+    return { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 };
+  }
+
+  return records.reduce<AggregateStats>(
+    (acc, record) => {
+      if (record.status === "QUALIFIED") {
+        acc.qualified += 1;
+      }
+
+      if (isSameThaiDay(record.submittedAt)) {
+        acc.newToday += 1;
+      }
+
+      if (isThaiDateInCurrentWeek(record.submittedAt)) {
+        acc.newThisWeek += 1;
+      }
+
+      acc.total += 1;
+      return acc;
+    },
+    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 }
+  );
 };
 
 const EmployerDashboardContent = () => {
@@ -232,14 +307,14 @@ const EmployerDashboardContent = () => {
     return filteredJobs.flatMap((job) => {
       const apps = applicantsByJob?.[job.id] ?? [];
       return apps.map((app) => {
-        const user = app.student?.user;
+        const userInfo = app.student?.user;
         const name =
-          [user?.name, user?.surname].filter(Boolean).join(" ") ||
+          [userInfo?.name, userInfo?.surname].filter(Boolean).join(" ") ||
           "Unknown applicant";
         return {
           id: app.id,
           name,
-          email: user?.email ?? null,
+          email: userInfo?.email ?? null,
           degree: app.student?.degreeType?.name ?? null,
           submittedAt: app.createdAt,
           status: app.status,
@@ -279,25 +354,10 @@ const EmployerDashboardContent = () => {
     });
   }, [applicantsForSelection, hasSearch, searchQuery]);
 
-  const aggregateStats = useMemo(() => {
-    if (!allApplicantRecords.length) {
-      return { total: 0, qualified: 0, newToday: 0 };
-    }
-    const now = Date.now();
-    const dayAgo = now - 24 * 60 * 60 * 1000;
-    return allApplicantRecords.reduce(
-      (acc, record) => {
-        const createdAt = new Date(record.submittedAt).getTime();
-        if (!Number.isNaN(createdAt) && createdAt >= dayAgo) {
-          acc.newToday += 1;
-        }
-        if (record.status === "QUALIFIED") acc.qualified += 1;
-        acc.total += 1;
-        return acc;
-      },
-      { total: 0, qualified: 0, newToday: 0 }
-    );
-  }, [allApplicantRecords]);
+  const aggregateStats = useMemo(
+    () => computeAggregateStats(allApplicantRecords),
+    [allApplicantRecords]
+  );
 
   const stats = {
     openJobs: jobCards.filter((job) => job.status === "open").length,
@@ -314,7 +374,6 @@ const EmployerDashboardContent = () => {
   };
 
   const loadingJobs = profileLoading || jobsLoading;
-
   const showJobsError = !loadingJobs && (profileError || jobsError);
 
   return (
@@ -323,7 +382,7 @@ const EmployerDashboardContent = () => {
         onPostJob={() => navigate("/employer/job-postings/create")}
       />
 
-      <NotificationBanner newApplications={aggregateStats.newToday} />
+      <NotificationBanner newApplications={aggregateStats.newThisWeek} />
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
         <StatCard label="Open Jobs" value={stats.openJobs} />
@@ -339,7 +398,9 @@ const EmployerDashboardContent = () => {
           <p className="mb-2 font-semibold">Unable to load your jobs.</p>
           <Button
             variant="outline"
-            onClick={() => { void refetchJobs(); }}
+            onClick={() => {
+              void refetchJobs();
+            }}
             disabled={jobsRefetching}
             className="inline-flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed"
           >
@@ -353,9 +414,7 @@ const EmployerDashboardContent = () => {
         <div className="lg:col-span-5">
           <Card className="overflow-hidden rounded-2xl border-0 shadow-md">
             <div className="flex items-center justify-between border-b border-border p-6">
-              <h2 className="text-xl font-bold">
-                My Open Jobs
-              </h2>
+              <h2 className="text-xl font-bold">My Open Jobs</h2>
               <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white">
                 {filteredJobs.length}
               </span>
@@ -380,8 +439,7 @@ const EmployerDashboardContent = () => {
                 ))}
                 {!jobCards.length && (
                   <div className="p-6 text-sm text-muted-foreground">
-                    No jobs published yet. Create your first posting to see it
-                    here.
+                    No jobs published yet. Create your first posting to see it here.
                   </div>
                 )}
               </div>
@@ -395,7 +453,9 @@ const EmployerDashboardContent = () => {
               <div>
                 <h2 className="text-xl font-bold">Applicants Inbox</h2>
                 {selectedJob ? (
-                  <p className="text-sm text-muted-foreground">{selectedJob.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedJob.title}
+                  </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Showing applicants across all your jobs.
@@ -430,7 +490,9 @@ const EmployerDashboardContent = () => {
                 <p>Unable to load applicants.</p>
                 <Button
                   variant="outline"
-                  onClick={() => { void refetchAllApplicants(); }}
+                  onClick={() => {
+                    void refetchAllApplicants();
+                  }}
                   disabled={applicantsFetching}
                   className="inline-flex w-fit items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed"
                 >
@@ -443,8 +505,8 @@ const EmployerDashboardContent = () => {
                 {hasSearch
                   ? "No applicants match your current filters."
                   : selectedJobId
-                    ? "No applications for this job yet."
-                    : "No applications received yet."}
+                  ? "No applications for this job yet."
+                  : "No applications received yet."}
               </div>
             ) : (
               <div className="px-4 pb-6 sm:px-6">
@@ -483,8 +545,8 @@ const EmployerDashboardContent = () => {
                             application={record.application}
                             jobTitle={record.jobTitle}
                             decisionPending={manageMutation.isPending}
-                            onDecision={async (applicationId, status) => {
-                              await manageMutation.mutateAsync({
+                            onDecision={(applicationId, status) => {
+                              void manageMutation.mutateAsync({
                                 jobId: record.jobId,
                                 applicationId,
                                 status,
