@@ -258,6 +258,6 @@ router.post("/logout", authLimiter, logout);
  * @desc Get current user profile
  * @access Private
  */
-router.get("/me", authMiddleware, getProfile);
+router.get("/me", authLimiter, authMiddleware, getProfile);
 
 module.exports = router;
