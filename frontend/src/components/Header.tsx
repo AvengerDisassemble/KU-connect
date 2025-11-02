@@ -1,16 +1,23 @@
-import { Search, Bell, Menu, LogOut } from "lucide-react";
+import { Search, Bell, Menu, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
+import { useAvatar } from "@/hooks/useAvatar";
+import { getInitials } from "@/utils/getInitials";
 import Logo from "@/assets/logo.png";
 
 const Header = () => {
   const { user, isAuthenticated } = useAuth();
   const isStudent = user?.role === "student";
   const navigate = useNavigate();
+  const {
+    avatarUrl,
+    isLoading: isAvatarLoading,
+    isFetching: isAvatarFetching,
+  } = useAvatar(user?.id);
 
   const handleLogout = async () => {
     try {
@@ -21,18 +28,7 @@ const Header = () => {
     }
   };
 
-  // Generate initials from user name
-  const getInitials = (name?: string, surname?: string) => {
-    if (name && surname) {
-      return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
-    }
-
-    if (name) {
-      return name.charAt(0).toUpperCase();
-    }
-
-    return "U";
-  };
+  const isAvatarBusy = isAvatarLoading || isAvatarFetching;
 
   if (isAuthenticated && !isStudent) {
     return null;
@@ -93,8 +89,19 @@ const Header = () => {
         {isAuthenticated && isStudent && user ? (
           <div className="flex items-center gap-2">
             <Avatar className="bg-primary w-9 h-9 rounded-full">
+              {avatarUrl ? (
+                <AvatarImage
+                  src={avatarUrl}
+                  alt="Profile avatar"
+                  className="object-cover"
+                />
+              ) : null}
               <AvatarFallback className="text-primary text-sm font-medium">
-                {getInitials(user.name, user.surname)}
+                {isAvatarBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  getInitials(user.name, user.surname)
+                )}
               </AvatarFallback>
             </Avatar>
             <Button
