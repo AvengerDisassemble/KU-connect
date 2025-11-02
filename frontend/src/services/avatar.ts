@@ -107,7 +107,14 @@ export const validateAvatarFile = (file: File): AvatarValidationResult => {
 
 export const downloadAvatar = async (userId: string): Promise<Blob | null> => {
   const response = await authorizedFetch(
-    `${BASE_URL}/profile/avatar/${userId}/download`
+    `${BASE_URL}/profile/avatar/${userId}/download`,
+    {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-cache, no-store, max-age=0",
+        Pragma: "no-cache",
+      },
+    }
   );
 
   if (response.status === 404) {

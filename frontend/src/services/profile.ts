@@ -9,6 +9,8 @@ export interface ProfileResponse {
   email: string;
   verified: boolean;
   phoneNumber?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   student?: {
     id: string;
     userId: string;
@@ -16,6 +18,11 @@ export interface ProfileResponse {
     address: string;
     gpa?: number;
     expectedGraduationYear?: number;
+    resumeKey?: string | null;
+    transcriptKey?: string | null;
+    verificationDocKey?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
     degreeType?: {
       id: string;
       name: string;

@@ -1,4 +1,4 @@
-import { Edit, Download, MoreHorizontal, Save, X } from "lucide-react";
+import { Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProfile, updateProfile } from "@/services/profile";
 import { fetchDegreeTypes, type DegreeType } from "@/services/degree";
+import ResumeSection from "./ResumeSection";
 
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
@@ -495,35 +496,11 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
         </CardContent>
       </Card>
 
-      {/* Resume Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Resume</CardTitle>
-          <CardDescription>
-            Add a resume to save time and autofill certain job applications. You
-            can also share it to hear from employers about openings.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <div className="flex items-center gap-4 p-4 border border-border rounded-lg bg-background">
-            <div className="w-10 h-10 bg-primary rounded flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">📄</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-foreground">Resume.pdf</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Download className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ResumeSection
+        userId={userId}
+        resumeKey={profile?.student?.resumeKey ?? null}
+        updatedAt={profile?.student?.updatedAt ?? profile?.updatedAt ?? null}
+      />
     </div>
   );
 };
