@@ -17,6 +17,7 @@ export interface EmployerProfileResponse {
   email: string;
   verified: boolean;
   phoneNumber?: string | null;
+  avatarKey?: string | null;
   hr?: {
     id: string;
     userId: string;
@@ -150,4 +151,60 @@ export const uploadEmployerVerificationDocument = async (
   }
   if (!body.success) throw new Error(body.message || "Failed to upload verification document");
   return body.data;
+};
+
+interface EmployerAvatarResponse {
+  fileKey: string;
+}
+
+export const uploadEmployerAvatar = async (
+  file: File
+): Promise<EmployerAvatarResponse> => {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  const res = await requestWithPolicies({
+    key: `POST /profile/avatar`,
+    execute: () =>
+      authorizedFetch(`${BASE_URL}/profile/avatar`, {
+        method: "POST",
+        body: formData,
+      }),
+  });
+
+  const body = (await readJson(res)) as ApiResponse<EmployerAvatarResponse> | null;
+
+  if (!res.ok || !body) {
+    const message = body?.message || `${res.status} ${res.statusText}`;
+    throw new Error(message || "Failed to upload avatar");
+  }
+
+  if (!body.success) {
+    throw new Error(body.message || "Failed to upload avatar");
+  }
+
+  return body.data;
+};
+
+export const fetchEmployerAvatar = async (userId: string): Promise<ArrayBuffer | null> => {
+  const res = await requestWithPolicies({
+    key: `GET /profile/avatar/${userId}/download`,
+    execute: () =>
+      authorizedFetch(`${BASE_URL}/profile/avatar/${userId}/download`, {
+        headers: {
+          Accept: "image/*",
+        },
+      }),
+  });
+
+  if (res.status === 404) {
+    return null;
+  }
+
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText}`);
+  }
+
+  const buffer = await res.arrayBuffer();
+  return buffer.byteLength ? buffer : null;
 };
