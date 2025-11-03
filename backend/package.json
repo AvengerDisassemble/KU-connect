@@ -10,7 +10,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest --runInBand",
+    "test": "jest --ci --runInBand --verbose",
     "test:quiet": "jest --silent --runInBand",
     "test:verbose": "SHOW_LOGS=true jest --runInBand",
     "test:summary": "jest --verbose=false --runInBand",

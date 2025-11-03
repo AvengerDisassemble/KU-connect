@@ -16,7 +16,6 @@ jobs:
     defaults:
       run:
         working-directory: backend
-        shell: bash
 
     steps:
       - name: Checkout
@@ -40,4 +39,14 @@ jobs:
         run: npx prisma migrate deploy
 
       - name: Run tests
-        run: npm test
+        env:
+          SHOW_LOGS: true
+        run: |
+          npm test 2>&1 | tee jest-output.txt
+
+      - name: Upload Jest Output (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-output
+          path: backend/jest-output.txt
