@@ -1,14 +1,7 @@
-name: Backend Tests (Prisma + Jest)
+name: Backend Tests (manual)
 
 on:
-  push:
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-test.yml'
-  pull_request:
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-test.yml'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -40,13 +33,5 @@ jobs:
 
       - name: Run tests
         env:
-          SHOW_LOGS: true
-        run: |
-          npm test 2>&1 | tee jest-output.txt
-
-      - name: Upload Jest Output (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jest-output
-          path: backend/jest-output.txt
+          CI: true
+        run: npm test

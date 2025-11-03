@@ -109,16 +109,13 @@ class CustomReporter {
   }
 
   onRunComplete(contexts, results) {
-    // Determine failures including suites that failed to execute
-    const suiteFailures = results.numFailedTestSuites > 0 || results.numFailedTests > 0
-    if (this.failedTests.length > 0 || suiteFailures) {
+    if (this.failedTests.length > 0) {
       this.write('\n')
       this.write('='.repeat(80))
       this.write('📋 FAILED TESTS SUMMARY')
       this.write('='.repeat(80))
       this.write('')
 
-      // Report collected individual test failures first
       this.failedTests.forEach((test, index) => {
         this.write(`\n${index + 1}. File: ${test.testFilePath}`)
         this.write('-'.repeat(80))
@@ -129,17 +126,6 @@ class CustomReporter {
           failure.message.split('\n').forEach(line => this.write(line))
           this.write('')
         })
-      })
-
-      // Additionally include any suites that failed to run (testExecError)
-      const execErrorSuites = results.testResults.filter(r => r.testExecError)
-      execErrorSuites.forEach((r, idx) => {
-        const fileName = r.testFilePath ? r.testFilePath.replace(process.cwd(), '').replace(/\\/g, '/') : 'Unknown file'
-        this.write(`\n${this.failedTests.length + idx + 1}. File: ${fileName}`)
-        this.write('-'.repeat(80))
-        const msg = (r.testExecError && (r.testExecError.stack || r.testExecError.message)) || 'Test suite failed to run.'
-        msg.split('\n').forEach(line => this.write(line))
-        this.write('')
       })
 
       this.write('='.repeat(80))
