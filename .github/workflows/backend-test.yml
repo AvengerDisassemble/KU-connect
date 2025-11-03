@@ -1,30 +1,43 @@
-name: Run Jest Tests with Prisma Migration
+name: Backend Tests (Prisma + Jest)
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-test.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-test.yml'
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+        shell: bash
 
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'  # specify your node version
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Install Dependencies
-      run: cd backend; npm install
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-    - name: Copy env files
-      run: cd backend; cp .env.example .env
+      - name: Install dependencies
+        run: npm install
 
-    - name: Generate Prisma Client First
-      run: cd backend; npx prisma generate
+      - name: Copy env
+        run: cp .env.example .env
 
-    - name: Run Prisma Migrate
-      run: cd backend; npx prisma migrate deploy
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
-    - name: Run Jest Tests
-      run: cd backend; npm test
+      - name: Run Prisma Migrations
+        run: npx prisma migrate deploy
+
+      - name: Run tests
+        run: npm test
