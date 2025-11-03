@@ -732,11 +732,11 @@ export const getSavedJobs = async (
 // POST /api/job/:id/apply - Apply to job
 export const applyToJob = async (
   jobId: string,
-  resumeId?: string
+  resumeLink?: string
 ): Promise<{ applicationId: string }> => {
-  console.log("[jobs.applyToJob] jobId:", jobId, "resumeId:", resumeId);
+  console.log("[jobs.applyToJob] jobId:", jobId, "resumeLink:", resumeLink);
 
-  const requestBody = resumeId ? { resumeId } : {};
+  const requestBody = resumeLink ? { resumeLink } : {};
 
   const res = await authorizedFetch(`${BASE_URL}/job/${jobId}`, {
     method: "POST",
