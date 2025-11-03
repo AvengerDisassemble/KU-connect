@@ -6,7 +6,11 @@
  * Otherwise, the application becomes vulnerable to denial-of-service attacks
  */
 
-const rateLimit = require('express-rate-limit')
+// Use express-rate-limit with IPv6-safe key generator helper
+const erl = require('express-rate-limit')
+const rateLimit = erl
+// In newer versions, ipKeyGenerator is exported; fall back to req.ip if unavailable
+const ipKeyGenerator = erl.ipKeyGenerator || ((req) => req.ip)
 
 /**
  * General API rate limiter - Applied to all routes
@@ -121,9 +125,7 @@ const adminReadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   // Use user ID instead of IP for authenticated admin requests
-  keyGenerator: (req) => {
-    return req.user ? `admin_read_${req.user.id}` : req.ip
-  },
+  keyGenerator: (req, res) => (req.user ? `admin_read_${req.user.id}` : ipKeyGenerator(req, res)),
   skip: (req) => process.env.NODE_ENV === 'test'
 })
 
@@ -142,9 +144,7 @@ const adminWriteLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.user ? `admin_write_${req.user.id}` : req.ip
-  },
+  keyGenerator: (req, res) => (req.user ? `admin_write_${req.user.id}` : ipKeyGenerator(req, res)),
   skip: (req) => process.env.NODE_ENV === 'test'
 })
 
@@ -163,9 +163,7 @@ const adminCriticalLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.user ? `admin_critical_${req.user.id}` : req.ip
-  },
+  keyGenerator: (req, res) => (req.user ? `admin_critical_${req.user.id}` : ipKeyGenerator(req, res)),
   skip: (req) => process.env.NODE_ENV === 'test'
 })
 
@@ -184,9 +182,7 @@ const adminAnnouncementLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    return req.user ? `admin_announcement_${req.user.id}` : req.ip
-  },
+  keyGenerator: (req, res) => (req.user ? `admin_announcement_${req.user.id}` : ipKeyGenerator(req, res)),
   skip: (req) => process.env.NODE_ENV === 'test'
 })
 
