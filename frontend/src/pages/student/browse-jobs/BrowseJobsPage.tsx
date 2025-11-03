@@ -7,10 +7,10 @@ import {
   JobList,
   JobDetailSheet,
   JobDetailView,
+  JobApplicationDialog,
 } from "./components";
 import type { TabKey, SelectOption } from "./types";
 import {
-  applyToJob,
   getSavedJobs,
   listJobs,
   toggleSaveJob,
@@ -34,7 +34,10 @@ const BrowseJobs = () => {
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
   const [isDetailSheetOpen, setDetailSheetOpen] = useState(false);
-  const [isApplying, setIsApplying] = useState(false);
+  const [jobPendingApply, setJobPendingApply] = useState<JobResponse | null>(
+    null
+  );
+  const [isSubmittingApplication, setSubmittingApplication] = useState(false);
   const [isDesktop, setIsDesktop] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(min-width: 1024px)").matches;
@@ -338,37 +341,60 @@ const BrowseJobs = () => {
     [queryClient]
   );
 
-  const handleApplyToJob = useCallback(
-    async (jobId: string) => {
+  const isApplicationBusy = Boolean(jobPendingApply) || isSubmittingApplication;
+
+  const handleRequestApply = useCallback(
+    (jobId: string) => {
       if (!jobId) return;
+
+      if (isApplicationBusy) {
+        toast.info("Please wait for the current application to finish.");
+        return;
+      }
 
       if (appliedJobs.has(jobId)) {
         toast.info("You have already applied to this job.");
         return;
       }
 
-      try {
-        setIsApplying(true);
-        await applyToJob(jobId);
-        setAppliedJobs((prev) => {
-          const next = new Set(prev);
-          next.add(jobId);
-          return next;
-        });
-        toast.success("Application submitted successfully.");
-        queryClient.invalidateQueries({ queryKey: ["jobs", "list"] });
-        queryClient.invalidateQueries({ queryKey: ["jobs", "saved"] });
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "Failed to submit application.";
-        toast.error(message);
-      } finally {
-        setIsApplying(false);
+      const jobFromList =
+        jobs.find((job) => job.id === jobId) ??
+        browseJobs.find((job) => job.id === jobId) ??
+        savedJobsList.find((job) => job.id === jobId) ??
+        null;
+
+      if (!jobFromList) {
+        toast.error(
+          "We could not find job details. Please refresh and try again."
+        );
+        return;
+      }
+
+      setJobPendingApply(jobFromList);
+    },
+    [appliedJobs, jobs, browseJobs, savedJobsList, isApplicationBusy]
+  );
+
+  const handleApplicationSuccess = useCallback(
+    (jobId: string) => {
+      setAppliedJobs((prev) => {
+        const next = new Set(prev);
+        next.add(jobId);
+        return next;
+      });
+      setJobPendingApply(null);
+    },
+    [setAppliedJobs, setJobPendingApply]
+  );
+
+  const handleApplicationDialogChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setJobPendingApply(null);
+        setSubmittingApplication(false);
       }
     },
-    [appliedJobs, queryClient]
+    [setJobPendingApply, setSubmittingApplication]
   );
 
   const handleSelectJob = useCallback(
@@ -431,9 +457,9 @@ const BrowseJobs = () => {
           <div className="sticky top-0 flex h-screen w-full flex-col bg-card">
             <JobDetailView
               job={selectedJob}
-              onApply={handleApplyToJob}
+              onApply={handleRequestApply}
               isApplied={Boolean(isSelectedJobApplied)}
-              isApplying={isApplying}
+              isApplying={isApplicationBusy}
             />
           </div>
         </section>
@@ -444,12 +470,20 @@ const BrowseJobs = () => {
             selectedJob={selectedJob}
             onOpenChange={setDetailSheetOpen}
             onClose={handleCloseDetailSheet}
-            onApply={handleApplyToJob}
+            onApply={handleRequestApply}
             isApplied={Boolean(isSelectedJobApplied)}
-            isApplying={isApplying}
+            isApplying={isApplicationBusy}
           />
         ) : null}
       </main>
+
+      <JobApplicationDialog
+        job={jobPendingApply}
+        open={Boolean(jobPendingApply)}
+        onOpenChange={handleApplicationDialogChange}
+        onApplied={handleApplicationSuccess}
+        onSubmittingChange={(next) => setSubmittingApplication(next)}
+      />
     </div>
   );
 };
