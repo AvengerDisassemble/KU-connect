@@ -1,10 +1,8 @@
 const request = require('supertest')
 const app = require('../../src/app')
 const { hashPassword } = require('../../src/utils/passwordUtils')
-const { PrismaClient } = require('../../src/generated/prisma')
+const prisma = require('../../src/models/prisma')
 const jwt = require('jsonwebtoken')
-
-const prisma = new PrismaClient()
 
 describe('Dashboard Professor Counting Fix', () => {
   let adminToken
@@ -41,6 +39,26 @@ describe('Dashboard Professor Counting Fix', () => {
 
   afterAll(async () => {
     // Cleanup
+    // Remove related records first to satisfy FK constraints
+    await prisma.professor.deleteMany({
+      where: {
+        user: {
+          email: {
+            contains: 'test.prof.dashboard'
+          }
+        }
+      }
+    })
+    await prisma.admin.deleteMany({
+      where: {
+        user: {
+          email: {
+            contains: 'test.admin.dashboard'
+          }
+        }
+      }
+    })
+    // Now remove the users themselves
     await prisma.user.deleteMany({
       where: {
         email: {
