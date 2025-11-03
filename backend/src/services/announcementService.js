@@ -3,8 +3,7 @@
  * @description Service for managing announcements and notifications
  */
 
-const { PrismaClient } = require('../generated/prisma')
-const prisma = new PrismaClient()
+const prisma = require('../models/prisma')
 
 /**
  * Create a new announcement

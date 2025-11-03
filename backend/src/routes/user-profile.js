@@ -11,10 +11,9 @@ const { authMiddleware } = require('../middlewares/authMiddleware')
 const { roleMiddleware } = require('../middlewares/roleMiddleware')
 const { asyncErrorHandler } = require('../middlewares/errorHandler')
 const { strictLimiter } = require('../middlewares/rateLimitMiddleware')
-const { PrismaClient } = require('../generated/prisma')
+const prisma = require('../models/prisma')
 
 const router = express.Router()
-const prisma = new PrismaClient()
 
 // Emit a single-process warning when this module is required
 if (!global.__deprecated_user_profile_warned) {

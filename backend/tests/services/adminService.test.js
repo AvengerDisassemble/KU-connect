@@ -3,39 +3,52 @@
  * @module tests/services/adminService.test
  */
 
-const { PrismaClient } = require('../../src/generated/prisma')
-const adminService = require('../../src/services/adminService')
 const { hashPassword, generateSecurePassword } = require('../../src/utils/passwordUtils')
 const { sendProfessorWelcomeEmail } = require('../../src/utils/emailUtils')
 
 // Mock dependencies
 jest.mock('../../src/utils/passwordUtils')
 jest.mock('../../src/utils/emailUtils')
-jest.mock('../../src/generated/prisma', () => {
-  const mockPrismaClient = {
-    user: {
-      findUnique: jest.fn(),
-      create: jest.fn()
-    },
-    professor: {
-      create: jest.fn()
-    },
-    $transaction: jest.fn()
-  }
-  return {
-    PrismaClient: jest.fn(() => mockPrismaClient)
-  }
-})
+
+// Mock Prisma singleton used by the service
+const mockPrisma = {
+  user: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    count: jest.fn(),
+    groupBy: jest.fn(),
+    findMany: jest.fn(),
+    update: jest.fn()
+  },
+  professor: {
+    create: jest.fn(),
+    findUnique: jest.fn()
+  },
+  $transaction: jest.fn(),
+  job: { count: jest.fn(), findMany: jest.fn() },
+  application: { count: jest.fn(), groupBy: jest.fn(), findMany: jest.fn() },
+  announcement: { count: jest.fn(), findMany: jest.fn() },
+  jobReport: { count: jest.fn() },
+  student: { count: jest.fn(), findUnique: jest.fn() },
+  hR: { count: jest.fn() },
+  resume: { count: jest.fn() }
+}
+jest.mock('../../src/models/prisma', () => mockPrisma)
+
+// Import after mocks so the service uses the mocked prisma
+const adminService = require('../../src/services/adminService')
 
 describe('AdminService - createProfessorUser', () => {
-  let prisma
-
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks()
     
-    // Get prisma instance
-    prisma = new PrismaClient()
+    // Reset mock prisma methods
+    Object.values(mockPrisma).forEach((v) => {
+      if (v && typeof v === 'object') {
+        Object.values(v).forEach((fn) => typeof fn === 'function' && fn.mockReset && fn.mockReset())
+      }
+    })
     
     // Setup default mock implementations
     hashPassword.mockResolvedValue('$2b$12$hashedPassword')
@@ -53,8 +66,8 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue(null) // No existing user
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null) // No existing user
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -85,7 +98,7 @@ describe('AdminService - createProfessorUser', () => {
 
       const result = await adminService.createProfessorUser(professorData)
 
-      expect(result.user).toBeDefined()
+  expect(result.user).toBeDefined()
       expect(result.user.email).toBe('john.smith@ku.ac.th')
       expect(result.user.status).toBe('APPROVED')
       expect(result.user.verified).toBe(true)
@@ -106,8 +119,8 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -152,8 +165,8 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -199,8 +212,8 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -246,8 +259,8 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+  mockPrisma.user.findUnique.mockResolvedValue(null)
+  mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -291,8 +304,8 @@ describe('AdminService - createProfessorUser', () => {
       }
 
       let createdUser = null
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockImplementation((data) => {
@@ -333,8 +346,8 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -379,8 +392,8 @@ describe('AdminService - createProfessorUser', () => {
 
       sendProfessorWelcomeEmail.mockRejectedValue(new Error('Email service unavailable'))
       
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -426,8 +439,8 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue(null)
-      prisma.$transaction.mockImplementation(async (callback) => {
+      mockPrisma.user.findUnique.mockResolvedValue(null)
+      mockPrisma.$transaction.mockImplementation(async (callback) => {
         return callback({
           user: {
             create: jest.fn().mockResolvedValue({
@@ -472,7 +485,7 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue({
+      mockPrisma.user.findUnique.mockResolvedValue({
         id: 'existing-user',
         email: 'duplicate@ku.ac.th'
       })
@@ -489,7 +502,7 @@ describe('AdminService - createProfessorUser', () => {
         createdBy: 'admin-id-123'
       }
 
-      prisma.user.findUnique.mockResolvedValue({
+      mockPrisma.user.findUnique.mockResolvedValue({
         id: 'existing-user-2',
         email: 'duplicate2@ku.ac.th'
       })

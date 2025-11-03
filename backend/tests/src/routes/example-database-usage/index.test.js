@@ -7,17 +7,13 @@
 const request = require('supertest')
 const express = require('express')
 
-// Mock the Prisma module before importing the route
+// Mock the Prisma singleton before importing the route
 const mockFindMany = jest.fn()
-jest.mock('../../../../src/generated/prisma', () => {
-  return {
-    PrismaClient: jest.fn().mockImplementation(() => ({
-      user: {
-        findMany: mockFindMany
-      }
-    }))
+jest.mock('../../../../src/models/prisma', () => ({
+  user: {
+    findMany: mockFindMany
   }
-})
+}))
 
 const exampleDbRouter = require('../../../../src/routes/example-database-usage/index')
 

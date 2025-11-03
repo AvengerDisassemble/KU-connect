@@ -1,8 +1,7 @@
-const { PrismaClient } = require('../generated/prisma')
+const prisma = require('../models/prisma')
 const { hashPassword, generateSecurePassword } = require('../utils/passwordUtils')
 const { sendProfessorWelcomeEmail } = require('../utils/emailUtils')
 
-const prisma = new PrismaClient()
 
 /**
  * Approve a pending user

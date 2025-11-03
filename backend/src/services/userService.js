@@ -3,8 +3,7 @@
  * @description User management service for admin operations
  */
 
-const { PrismaClient } = require('../generated/prisma')
-const prisma = new PrismaClient()
+const prisma = require('../models/prisma')
 
 /**
  * Get all pending users
