@@ -1,37 +1,30 @@
-name: Backend Tests (manual)
+name: Run Jest Tests with Prisma Migration
 
-on:
-  workflow_dispatch:
+on: [push]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'  # specify your node version
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
+    - name: Install Dependencies
+      run: cd backend; npm install
 
-      - name: Install dependencies
-        run: npm install
+    - name: Copy env files
+      run: cd backend; cp .env.example .env
 
-      - name: Copy env
-        run: cp .env.example .env
+    - name: Run Prisma Migrate
+      run: cd backend; npx prisma migrate deploy
 
-      - name: Generate Prisma Client
-        run: npx prisma generate
+    - name: Generate Prisma Client
+      run: cd backend; npx prisma generate
 
-      - name: Run Prisma Migrations
-        run: npx prisma migrate deploy
-
-      - name: Run tests
-        env:
-          CI: true
-        run: npm test
+    - name: Run Jest Tests
+      run: cd backend; npm test
