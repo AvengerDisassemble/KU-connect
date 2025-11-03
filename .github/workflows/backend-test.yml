@@ -20,8 +20,11 @@ jobs:
     - name: Copy env files
       run: cd backend; cp .env.example .env
 
-    - name: Setup Test Database
-      run: cd backend; npx prisma migrate dev --skip-seed
+    - name: Generate Prisma Client First
+      run: cd backend; npx prisma generate
+
+    - name: Run Prisma Migrate
+      run: cd backend; npx prisma migrate deploy
 
     - name: Run Jest Tests
       run: cd backend; npm test
