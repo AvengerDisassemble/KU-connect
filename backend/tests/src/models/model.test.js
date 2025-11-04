@@ -3,10 +3,10 @@
  * @author KU Connect Team
  */
 
-const assert = require('assert')
+const assert = require("assert");
 // ...existing code...
-describe('models', () => {
-  it('should have tests implemented', () => {
-    assert.ok(true)
-  })
-})
+describe("models", () => {
+  it("should have tests implemented", () => {
+    assert.ok(true);
+  });
+});

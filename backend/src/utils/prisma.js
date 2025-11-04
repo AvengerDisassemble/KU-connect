@@ -6,4 +6,4 @@
  * without duplicating client instantiation logic.
  */
 
-module.exports = require('../models/prisma')
+module.exports = require("../models/prisma");

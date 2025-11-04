@@ -38,6 +38,7 @@ npx prisma migrate dev --name add_user_and_profile_docs_keys
 ```
 
 This adds the following fields:
+
 - `User.avatarKey`
 - `Student.resumeKey`
 - `Student.transcriptKey`
@@ -67,6 +68,7 @@ NODE_ENV=development
 When using `STORAGE_PROVIDER=local`, files are stored in `<project>/uploads/`. The server automatically serves this directory in development mode.
 
 Directory structure:
+
 ```
 uploads/
   avatars/
@@ -90,6 +92,7 @@ uploads/
 ### Avatar Endpoints
 
 **Upload Avatar**
+
 ```http
 POST /api/profile/avatar
 Authorization: Bearer <token>
@@ -99,6 +102,7 @@ Body: avatar (file, image/*, max 2MB)
 ```
 
 **Get Avatar URL**
+
 ```http
 GET /api/profile/avatar/:userId
 Authorization: Bearer <token>
@@ -107,6 +111,7 @@ Authorization: Bearer <token>
 ### Resume Endpoints (Students only)
 
 **Upload Resume**
+
 ```http
 POST /api/documents/resume
 Authorization: Bearer <token>
@@ -116,15 +121,18 @@ Body: resume (file, PDF, max 10MB)
 ```
 
 **Get Resume URL**
+
 ```http
 GET /api/documents/resume/:userId
 Authorization: Bearer <token>
 ```
-*Access: Owner or ADMIN*
+
+_Access: Owner or ADMIN_
 
 ### Transcript Endpoints (Students only)
 
 **Upload Transcript**
+
 ```http
 POST /api/documents/transcript
 Authorization: Bearer <token>
@@ -134,15 +142,18 @@ Body: transcript (file, PDF, max 10MB)
 ```
 
 **Get Transcript URL**
+
 ```http
 GET /api/documents/transcript/:userId
 Authorization: Bearer <token>
 ```
-*Access: Owner or ADMIN*
+
+_Access: Owner or ADMIN_
 
 ### Employer Verification Endpoints (HR only)
 
 **Upload Verification Document**
+
 ```http
 POST /api/documents/employer-verification
 Authorization: Bearer <token>
@@ -152,15 +163,18 @@ Body: verification (file, JPEG/PNG/PDF, max 10MB)
 ```
 
 **Get Verification Document URL**
+
 ```http
 GET /api/documents/employer-verification/:userId
 Authorization: Bearer <token>
 ```
-*Access: Owner or ADMIN*
+
+_Access: Owner or ADMIN_
 
 ### Job-Specific Resume Endpoints (Students)
 
 **Upsert Job Application Resume**
+
 ```http
 POST /api/jobs/:jobId/resume
 Authorization: Bearer <token>
@@ -172,30 +186,38 @@ Body: resume (file, PDF, max 10MB)
 Option 2 - Use profile resume:
 Body: { "mode": "profile" }
 ```
-*Access: STUDENT only*
+
+_Access: STUDENT only_
 
 **Get Job Application Resume URL**
+
 ```http
 GET /api/jobs/:jobId/resume/:studentUserId
 Authorization: Bearer <token>
 ```
-*Access: Owner student, job's HR owner, or ADMIN*
+
+_Access: Owner student, job's HR owner, or ADMIN_
 
 **Get Own Job Application Resume URL (convenience)**
+
 ```http
 GET /api/jobs/:jobId/resume/self
 Authorization: Bearer <token>
 ```
-*Access: STUDENT only (returns current user's resume)*
+
+_Access: STUDENT only (returns current user's resume)_
 
 **Delete Job Application Resume**
+
 ```http
 DELETE /api/jobs/:jobId/resume
 Authorization: Bearer <token>
 ```
-*Access: STUDENT only (owner)*
+
+_Access: STUDENT only (owner)_
 
 **Note:** Each student can have only one resume per job. The endpoint supports two modes:
+
 - **UPLOAD mode**: Upload a PDF resume specifically for this job (stored in `resumes/job-applications/{jobId}/`)
 - **PROFILE mode**: Use the student's profile resume (references existing `Student.resumeKey`)
 
@@ -208,6 +230,7 @@ npm test
 ```
 
 Test files:
+
 - `tests/services/storage/interface.test.js` - Provider interface compliance
 - `tests/services/storage/localStorageProvider.test.js` - Local storage operations
 - `tests/services/storage/s3StorageProvider.test.js` - S3 operations (requires AWS credentials)
@@ -219,6 +242,7 @@ Test files:
 ## Architecture
 
 ### Storage Provider Interface
+
 ```javascript
 class StorageProvider {
   async uploadFile(buffer, filename, mimeType, userId, options)
@@ -228,6 +252,7 @@ class StorageProvider {
 ```
 
 ### Local Provider
+
 - Stores files in `uploads/<prefix>/`
 - Returns URL: `/uploads/<prefix>/<filename>`
 - File naming: `<uuid>.<ext>`
@@ -239,11 +264,13 @@ class StorageProvider {
   - `resumes/job-applications/{jobId}/` - Job-specific resumes
 
 ### S3 Provider
+
 - Stores in S3 bucket with prefix
 - Returns signed URLs (valid 5 minutes)
 - Uses AWS SDK v3
 
 ### Factory Pattern
+
 `storageFactory.js` creates the appropriate provider based on `STORAGE_PROVIDER` env variable.
 
 ## Security Notes
@@ -267,18 +294,20 @@ To switch from local to S3:
 ## Troubleshooting
 
 **Multer errors:**
+
 - Check file size limits
 - Verify MIME type matches allowed types
 - Ensure field name matches API docs
 
 **S3 errors:**
+
 - Verify AWS credentials
 - Check bucket permissions
 - Ensure region is correct
 - Check bucket exists
 
 **Local storage errors:**
+
 - Verify write permissions on `uploads/` directory
 - Check disk space
 - Ensure `STORAGE_PROVIDER=local` is set
-

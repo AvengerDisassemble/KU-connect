@@ -3,7 +3,7 @@
  * @description Service layer for job report management
  */
 
-const prisma = require('../models/prisma')
+const prisma = require("../models/prisma");
 
 /**
  * Checks if a job belongs to the given HR
@@ -14,9 +14,9 @@ const prisma = require('../models/prisma')
 async function isJobOwnedByHr(jobId, hrId) {
   const job = await prisma.job.findUnique({
     where: { id: jobId },
-    select: { hrId: true }
-  })
-  return job && job.hrId === hrId
+    select: { hrId: true },
+  });
+  return job && job.hrId === hrId;
 }
 
 /**
@@ -31,11 +31,11 @@ async function isJobOwnedByUser(jobId, userId) {
     where: { id: jobId },
     include: {
       hr: {
-        select: { userId: true }
-      }
-    }
-  })
-  return job && job.hr && job.hr.userId === userId
+        select: { userId: true },
+      },
+    },
+  });
+  return job && job.hr && job.hr.userId === userId;
 }
 
 /**
@@ -48,45 +48,44 @@ async function isJobOwnedByUser(jobId, userId) {
  */
 async function createReport(userId, jobId, reason) {
   // Check if job exists and get job details
-  const job = await prisma.job.findUnique({ 
+  const job = await prisma.job.findUnique({
     where: { id: jobId },
     include: {
       hr: {
         select: {
-          userId: true
-        }
-      }
-    }
-  })
-  
+          userId: true,
+        },
+      },
+    },
+  });
+
   if (!job) {
-    const err = new Error('Job not found')
-    err.code = 'JOB_NOT_FOUND'
-    throw err
+    const err = new Error("Job not found");
+    err.code = "JOB_NOT_FOUND";
+    throw err;
   }
 
   // Prevent user from reporting their own job (additional safety check)
   if (job.hr && job.hr.userId === userId) {
-    const err = new Error('Cannot report your own job')
-    err.code = 'OWNER_REPORT'
-    throw err
+    const err = new Error("Cannot report your own job");
+    err.code = "OWNER_REPORT";
+    throw err;
   }
 
   // Check for duplicate report
   const existing = await prisma.jobReport.findFirst({
-    where: { jobId, userId }
-  })
+    where: { jobId, userId },
+  });
   if (existing) {
-    const err = new Error('Duplicate report')
-    err.code = 'DUPLICATE_REPORT'
-    throw err
+    const err = new Error("Duplicate report");
+    err.code = "DUPLICATE_REPORT";
+    throw err;
   }
 
   return prisma.jobReport.create({
-    data: { userId, jobId, reason }
-  })
+    data: { userId, jobId, reason },
+  });
 }
-
 
 /**
  * Lists all job reports with job and reporter info (Admin only)
@@ -96,10 +95,10 @@ async function listReports() {
   return prisma.jobReport.findMany({
     include: {
       job: { include: { hr: true } },
-      user: true
+      user: true,
     },
-    orderBy: { createdAt: 'desc' }
-  })
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 /**
@@ -112,9 +111,9 @@ async function deleteReport(reportId) {
     where: { id: reportId },
     include: {
       job: { include: { hr: true } },
-      user: true
-    }
-  })
+      user: true,
+    },
+  });
 }
 
 module.exports = {
@@ -122,5 +121,5 @@ module.exports = {
   isJobOwnedByUser,
   createReport,
   listReports,
-  deleteReport
-}
+  deleteReport,
+};

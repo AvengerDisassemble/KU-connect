@@ -54,6 +54,7 @@
 ## Database Flow - Three Scenarios
 
 ### Scenario 1: Existing Account
+
 ```
 findOrCreateGoogleUser(profile)
   │
@@ -65,6 +66,7 @@ findOrCreateGoogleUser(profile)
 ```
 
 ### Scenario 2: Existing Email, New Provider
+
 ```
 findOrCreateGoogleUser(profile)
   │
@@ -82,6 +84,7 @@ findOrCreateGoogleUser(profile)
 ```
 
 ### Scenario 3: Brand New User
+
 ```
 findOrCreateGoogleUser(profile)
   │

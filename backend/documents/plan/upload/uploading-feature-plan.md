@@ -3,6 +3,7 @@
 This plan adds a provider-based file storage layer for multiple user documents (Resume/Portfolio, Transcript, Employer Verification Documents) and profile avatars, wiring it into the existing Express + Prisma backend so the frontend/API remain unchanged when switching storage backends.
 
 ## Context and constraints
+
 - Runtime: Node.js, Express 5, CommonJS modules ("type": "commonjs")
 - ORM: Prisma with generated client in `src/generated/prisma`
 - Auth: JWT, `req.user.id` is available on authenticated routes
@@ -14,6 +15,7 @@ This plan adds a provider-based file storage layer for multiple user documents (
   - Employer Verification Document: JPEG/PNG/PDF, max 10 MB, one per HR
 
 ## Deliverables
+
 - Storage Provider Interface + concrete providers (local, S3)
 - Provider factory selected by `STORAGE_PROVIDER`
 - Endpoints (proposed):
@@ -27,6 +29,7 @@ This plan adds a provider-based file storage layer for multiple user documents (
 ---
 
 ## Step 0 — Dependencies and project configuration
+
 - Add runtime dependencies:
   - `multer` (memoryStorage + validation)
   - `fs-extra` (already present) for local provider
@@ -36,15 +39,17 @@ This plan adds a provider-based file storage layer for multiple user documents (
   - Ensure `dotenv` is in dependencies (server uses it already)
 
 Notes:
+
 - Keep code CommonJS (`require/module.exports`).
 - Follow JavaScript Standard Style: single quotes, no semicolons.
 
 ---
 
 ## Step 1 — Prisma schema update
+
 - File: `backend/prisma/schema.prisma`
 - Add to `model User`:
-  - `avatarKey String?`  // nullable, stores provider-specific key
+  - `avatarKey String?` // nullable, stores provider-specific key
 - Add to `model Student`:
   - `resumeKey String?`
   - `transcriptKey String?`
@@ -57,6 +62,7 @@ Notes:
 ---
 
 ## Step 2 — Storage Provider Interface
+
 - File: `src/services/storage/storageProvider.js`
 - Export an abstract base class with async methods:
   - `uploadFile(buffer, filename, mimeType, userId, options) -> Promise<string>` returns a fileKey
@@ -71,6 +77,7 @@ Notes:
 ---
 
 ## Step 3 — Local storage provider
+
 - File: `src/services/storage/localStorageProvider.js`
 - Behavior:
   - Root folder: `<project>/uploads`
@@ -87,6 +94,7 @@ Notes:
 ---
 
 ## Step 4 — S3 storage provider
+
 - File: `src/services/storage/s3StorageProvider.js`
 - Env required:
   - `AWS_ACCESS_KEY_ID`
@@ -105,6 +113,7 @@ Notes:
 ---
 
 ## Step 5 — Provider factory
+
 - File: `src/services/storageFactory.js`
 - Read `process.env.STORAGE_PROVIDER`:
   - `'s3'` -> instantiate S3 provider
@@ -114,11 +123,12 @@ Notes:
 ---
 
 ## Step 6 — Controller integration
+
 - Files:
   - Avatar in `src/controllers/profileController.js` (as before)
   - New controller `src/controllers/documentsController.js` for resume, transcript, employer verification
 - Add handlers:
-  1) `uploadAvatar(req, res)`
+  1. `uploadAvatar(req, res)`
      - Use `multer.memoryStorage()` middleware in route
      - Validation:
        - `file.mimetype.startsWith('image/')`
@@ -127,29 +137,29 @@ Notes:
        - `const userId = req.user.id`
        - Optional: fetch current `avatarKey` and delete it to avoid orphans (best effort)
   - `const fileKey = await storageProvider.uploadFile(file.buffer, file.originalname, file.mimetype, userId, { prefix: 'avatars' })`
-       - `await prisma.user.update({ where: { id: userId }, data: { avatarKey: fileKey } })`
-       - Return `{ success: true, message, data: { fileKey } }`
-  2) `getAvatarUrl(req, res)`
+    - `await prisma.user.update({ where: { id: userId }, data: { avatarKey: fileKey } })`
+    - Return `{ success: true, message, data: { fileKey } }`
+  2. `getAvatarUrl(req, res)`
      - Determine `requestedUserId = req.params.userId`
      - Fetch user; if no `avatarKey`, return 404 or `{ url: null }`
-    - `const url = await storageProvider.getFileUrl(user.avatarKey)`
-     - Return `{ url }`
-  3) `uploadResume(req, res)` (students only)
-    - Multer: memory storage, limits: 10 MB
-    - Validation: `file.mimetype === 'application/pdf'`
-    - Upload with `{ prefix: 'resumes' }`; save to `Student.resumeKey`
-  4) `getResumeUrl(req, res)`
-    - Fetch student by `userId`, ensure `resumeKey` exists, return `{ url }`
-  5) `uploadTranscript(req, res)` (students only)
-    - Multer: 10 MB; Validation: `application/pdf` (allow only PDF for simplicity)
-    - Upload with `{ prefix: 'transcripts' }`; save to `Student.transcriptKey`
-  6) `getTranscriptUrl(req, res)`
-    - Fetch student by `userId`, ensure `transcriptKey` exists, return `{ url }`
-  7) `uploadEmployerVerification(req, res)` (HR only)
-    - Multer: 10 MB; Validation: `image/jpeg|image/png|application/pdf`
-    - Upload with `{ prefix: 'employer-docs' }`; save to `HR.verificationDocKey`
-  8) `getEmployerVerificationUrl(req, res)`
-    - Fetch HR by `userId`, ensure `verificationDocKey` exists, return `{ url }`
+  - `const url = await storageProvider.getFileUrl(user.avatarKey)`
+  - Return `{ url }`
+  3. `uploadResume(req, res)` (students only)
+  - Multer: memory storage, limits: 10 MB
+  - Validation: `file.mimetype === 'application/pdf'`
+  - Upload with `{ prefix: 'resumes' }`; save to `Student.resumeKey`
+  4. `getResumeUrl(req, res)`
+  - Fetch student by `userId`, ensure `resumeKey` exists, return `{ url }`
+  5. `uploadTranscript(req, res)` (students only)
+  - Multer: 10 MB; Validation: `application/pdf` (allow only PDF for simplicity)
+  - Upload with `{ prefix: 'transcripts' }`; save to `Student.transcriptKey`
+  6. `getTranscriptUrl(req, res)`
+  - Fetch student by `userId`, ensure `transcriptKey` exists, return `{ url }`
+  7. `uploadEmployerVerification(req, res)` (HR only)
+  - Multer: 10 MB; Validation: `image/jpeg|image/png|application/pdf`
+  - Upload with `{ prefix: 'employer-docs' }`; save to `HR.verificationDocKey`
+  8. `getEmployerVerificationUrl(req, res)`
+  - Fetch HR by `userId`, ensure `verificationDocKey` exists, return `{ url }`
 
 - Style: Add JSDoc, consistent error responses, and log errors with context
 - Access control suggestion:
@@ -159,6 +169,7 @@ Notes:
 ---
 
 ## Step 7 — Routes
+
 - Files:
   - `src/routes/profile/index.js` — add avatar endpoints
   - `src/routes/documents/index.js` — add document endpoints for resume/transcript/employer verification
@@ -179,6 +190,7 @@ Notes:
 ---
 
 ## Step 8 — Server static mount (development only)
+
 - File: `server.js`
 - When `STORAGE_PROVIDER === 'local'` and `NODE_ENV !== 'production'`, add:
   - `const express = require('express')`
@@ -189,8 +201,9 @@ Notes:
 ---
 
 ## Step 9 — Environment variables
+
 - `.env` additions:
-  - `STORAGE_PROVIDER=local`  # or `s3`
+  - `STORAGE_PROVIDER=local` # or `s3`
   - For S3:
     - `AWS_ACCESS_KEY_ID=...`
     - `AWS_SECRET_ACCESS_KEY=...`
@@ -201,17 +214,19 @@ Notes:
 ---
 
 ## Step 10 — Tests (Non-negotiable)
+
 - Folder: `tests/services/storage/`
 - Add stubs:
-  1) `interface.test.js` — asserts providers implement all required methods
-  2) `localStorageProvider.test.js` — uploads a small buffer, expects a key, verifies file exists, then deletes
-  3) `s3StorageProvider.test.js` — only runs when S3 env vars are present; uploads, fetches signed URL, and deletes
-  4) `documentsController.test.js` — validates mime/size rules and role access (use supertest + in-memory multer)
+  1. `interface.test.js` — asserts providers implement all required methods
+  2. `localStorageProvider.test.js` — uploads a small buffer, expects a key, verifies file exists, then deletes
+  3. `s3StorageProvider.test.js` — only runs when S3 env vars are present; uploads, fetches signed URL, and deletes
+  4. `documentsController.test.js` — validates mime/size rules and role access (use supertest + in-memory multer)
 - Use temporary artifacts and clean up after tests
 
 ---
 
 ## Error handling and security notes
+
 - Validate mime types strictly (avatars: `image/*`; resume: PDF; transcript: PDF; employer verification: JPEG/PNG/PDF)
 - Enforce size caps via `multer` limits (avatars: 2 MB; others: 10 MB)
 - Sanitize and generate server-side keys; never reuse raw client filenames
@@ -222,6 +237,7 @@ Notes:
 ---
 
 ## Rollout checklist
+
 - [ ] Install dependencies
 - [ ] Add `avatarKey`, `Student.resumeKey`, `Student.transcriptKey`, `HR.verificationDocKey` to Prisma schema and migrate
 - [ ] Implement interface + providers + factory
@@ -234,6 +250,7 @@ Notes:
 ---
 
 ## Acceptance criteria
+
 - Avatar:
   - `POST /api/profile/avatar` accepts a single image (<2 MB) and stores key in DB
   - `GET /api/profile/avatar/:userId` returns `{ url }` (signed for S3; direct for local)

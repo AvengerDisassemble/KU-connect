@@ -1,9 +1,11 @@
-const express = require('express')
-const { registerEnterprise } = require('../../controllers/authController')
-const { validateEnterpriseRegistration } = require('../../validators/authValidator')
-const { authLimiter } = require('../../middlewares/rateLimitMiddleware')
+const express = require("express");
+const { registerEnterprise } = require("../../controllers/authController");
+const {
+  validateEnterpriseRegistration,
+} = require("../../validators/authValidator");
+const { authLimiter } = require("../../middlewares/rateLimitMiddleware");
 
-const router = express.Router()
+const router = express.Router();
 
 /**
  * @route POST /register/enterprise
@@ -11,6 +13,11 @@ const router = express.Router()
  * @access Public
  * Rate limited to 5 requests per 15 minutes to prevent account spam
  */
-router.post('/', authLimiter, validateEnterpriseRegistration, registerEnterprise)
+router.post(
+  "/",
+  authLimiter,
+  validateEnterpriseRegistration,
+  registerEnterprise,
+);
 
-module.exports = router
+module.exports = router;

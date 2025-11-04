@@ -3,8 +3,8 @@
  * @description Factory for creating storage provider instances based on environment configuration
  */
 
-const LocalStorageProvider = require('./storage/localStorageProvider')
-const S3StorageProvider = require('./storage/s3StorageProvider')
+const LocalStorageProvider = require("./storage/localStorageProvider");
+const S3StorageProvider = require("./storage/s3StorageProvider");
 
 /**
  * Create and return storage provider instance
@@ -13,19 +13,18 @@ const S3StorageProvider = require('./storage/s3StorageProvider')
  * @returns {StorageProvider} Storage provider instance
  */
 function createStorageProvider() {
-  const providerType = process.env.STORAGE_PROVIDER || 'local'
-  
+  const providerType = process.env.STORAGE_PROVIDER || "local";
+
   switch (providerType.toLowerCase()) {
-    case 's3':
-      console.info('Using S3 storage provider')
-      return new S3StorageProvider()
-    case 'local':
+    case "s3":
+      console.info("Using S3 storage provider");
+      return new S3StorageProvider();
+    case "local":
     default:
-      console.info('Using local file system storage provider')
-      return new LocalStorageProvider()
+      console.info("Using local file system storage provider");
+      return new LocalStorageProvider();
   }
 }
 
 // Export singleton instance
-module.exports = createStorageProvider()
-
+module.exports = createStorageProvider();

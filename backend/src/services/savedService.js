@@ -3,7 +3,7 @@
  * @description Business logic for Saved Jobs feature using Prisma
  */
 
-const prisma = require('../models/prisma')
+const prisma = require("../models/prisma");
 
 /**
  * Lists saved jobs for a user with pagination
@@ -15,10 +15,10 @@ const prisma = require('../models/prisma')
  * @param {number} [opts.pageSize=20]
  * @returns {Promise<{items:Array, page:number, pageSize:number, total:number}>}
  */
-async function listSavedJobs (userId, { page = 1, pageSize = 20 } = {}) {
-  const pageNum = Math.max(parseInt(page, 10) || 1, 1)
-  const size = Math.max(parseInt(pageSize, 10) || 20, 1)
-  const skip = (pageNum - 1) * size
+async function listSavedJobs(userId, { page = 1, pageSize = 20 } = {}) {
+  const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+  const size = Math.max(parseInt(pageSize, 10) || 20, 1);
+  const skip = (pageNum - 1) * size;
 
   const [items, total] = await Promise.all([
     prisma.savedJob.findMany({
@@ -27,21 +27,21 @@ async function listSavedJobs (userId, { page = 1, pageSize = 20 } = {}) {
       skip,
       include: {
         job: {
-          include: { hr: true, tags: true }
-        }
+          include: { hr: true, tags: true },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     }),
-    prisma.savedJob.count({ where: { userId } })
-  ])
+    prisma.savedJob.count({ where: { userId } }),
+  ]);
 
   // Map items to return the job objects for convenience
-  const jobs = items.map(s => ({
+  const jobs = items.map((s) => ({
     savedAt: s.createdAt,
-    job: s.job
-  }))
+    job: s.job,
+  }));
 
-  return { items: jobs, page: pageNum, pageSize: size, total }
+  return { items: jobs, page: pageNum, pageSize: size, total };
 }
 
 /**
@@ -52,28 +52,28 @@ async function listSavedJobs (userId, { page = 1, pageSize = 20 } = {}) {
  * @param {string} jobId
  * @returns {Promise<object>} created record
  */
-async function addSavedJob (userId, jobId) {
+async function addSavedJob(userId, jobId) {
   try {
     const saved = await prisma.savedJob.create({
-      data: { userId, jobId }
-    })
-    return saved
+      data: { userId, jobId },
+    });
+    return saved;
   } catch (error) {
-    console.error('savedService.addSavedJob error:', error)
-    console.error(error && error.stack)
+    console.error("savedService.addSavedJob error:", error);
+    console.error(error && error.stack);
     // Map Prisma unique constraint to ALREADY_SAVED
-    if (error && error.code === 'P2002') {
-      const err = new Error('Already saved')
-      err.code = 'ALREADY_SAVED'
-      throw err
+    if (error && error.code === "P2002") {
+      const err = new Error("Already saved");
+      err.code = "ALREADY_SAVED";
+      throw err;
     }
     // Map record not found (foreign key) to NOT_FOUND when possible
-    if (error && error.code === 'P2025') {
-      const err = new Error('Not found')
-      err.code = 'NOT_FOUND'
-      throw err
+    if (error && error.code === "P2025") {
+      const err = new Error("Not found");
+      err.code = "NOT_FOUND";
+      throw err;
     }
-    throw error
+    throw error;
   }
 }
 
@@ -85,17 +85,17 @@ async function addSavedJob (userId, jobId) {
  * @param {string} jobId
  * @returns {Promise<void>}
  */
-async function removeSavedJob (userId, jobId) {
-  const result = await prisma.savedJob.deleteMany({ where: { userId, jobId } })
+async function removeSavedJob(userId, jobId) {
+  const result = await prisma.savedJob.deleteMany({ where: { userId, jobId } });
   if (result.count === 0) {
-    const err = new Error('Not found')
-    err.code = 'NOT_FOUND'
-    throw err
+    const err = new Error("Not found");
+    err.code = "NOT_FOUND";
+    throw err;
   }
 }
 
 module.exports = {
   listSavedJobs,
   addSavedJob,
-  removeSavedJob
-}
+  removeSavedJob,
+};

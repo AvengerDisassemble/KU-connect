@@ -6,25 +6,26 @@
  * and add a Deprecation/Warning header to all responses. Do not add new logic here.
  */
 
-const express = require('express')
-const { authMiddleware } = require('../middlewares/authMiddleware')
-const { roleMiddleware } = require('../middlewares/roleMiddleware')
-const { asyncErrorHandler } = require('../middlewares/errorHandler')
-const { strictLimiter } = require('../middlewares/rateLimitMiddleware')
-const { PrismaClient } = require('../generated/prisma')
+const express = require("express");
+const { authMiddleware } = require("../middlewares/authMiddleware");
+const { roleMiddleware } = require("../middlewares/roleMiddleware");
+const { asyncErrorHandler } = require("../middlewares/errorHandler");
+const { strictLimiter } = require("../middlewares/rateLimitMiddleware");
+const { PrismaClient } = require("../generated/prisma");
 
-const router = express.Router()
-const prisma = new PrismaClient()
+const router = express.Router();
+const prisma = new PrismaClient();
 
 // Emit a single-process warning when this module is required
 if (!global.__deprecated_user_profile_warned) {
-  const message = 'routes/user-profile.js is deprecated. Use backend/src/controllers/profileController.js instead.'
+  const message =
+    "routes/user-profile.js is deprecated. Use backend/src/controllers/profileController.js instead.";
   // Prefer process.emitWarning for debuggability, still log for visibility
-  if (typeof process.emitWarning === 'function') {
-    process.emitWarning(message, { type: 'DeprecationWarning' })
+  if (typeof process.emitWarning === "function") {
+    process.emitWarning(message, { type: "DeprecationWarning" });
   }
-  console.warn(`DEPRECATION: ${message}`)
-  global.__deprecated_user_profile_warned = true
+  console.warn(`DEPRECATION: ${message}`);
+  global.__deprecated_user_profile_warned = true;
 }
 
 /**
@@ -34,19 +35,25 @@ if (!global.__deprecated_user_profile_warned) {
 function deprecationMiddleware(req, res, next) {
   // RFC-standard-ish headers: Deprecation, Sunset, Warning. Provide a link to the replacement API.
   try {
-    res.setHeader('Deprecation', 'true')
+    res.setHeader("Deprecation", "true");
     // Optional: a human-readable warning header
-    res.setHeader('Warning', '299 - "Deprecated API: use /api/profile (controllers/profileController.js) instead"')
+    res.setHeader(
+      "Warning",
+      '299 - "Deprecated API: use /api/profile (controllers/profileController.js) instead"',
+    );
     // Link header pointing to recommended replacement (can be adjusted to real URL)
-    res.setHeader('Link', '</api/profile>; rel="alternate"; title="New profile controller"')
+    res.setHeader(
+      "Link",
+      '</api/profile>; rel="alternate"; title="New profile controller"',
+    );
   } catch (e) {
     // ignore header-setting failures
   }
-  next()
+  next();
 }
 
 // apply deprecation middleware to all routes in this router
-router.use(deprecationMiddleware)
+router.use(deprecationMiddleware);
 
 /**
  * Get current user profile with role-specific data
@@ -56,8 +63,8 @@ router.use(deprecationMiddleware)
  * @access Private (All authenticated users)
  */
 const getUserProfile = asyncErrorHandler(async (req, res) => {
-  const userId = req.user.id
-  const userRole = req.user.role
+  const userId = req.user.id;
+  const userRole = req.user.role;
 
   // Base user information
   const baseUser = await prisma.user.findUnique({
@@ -70,24 +77,24 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
       role: true,
       verified: true,
       createdAt: true,
-      updatedAt: true
-    }
-  })
+      updatedAt: true,
+    },
+  });
 
   if (!baseUser) {
     return res.status(404).json({
       success: false,
-      message: 'User not found'
-    })
+      message: "User not found",
+    });
   }
 
   // Fetch role-specific data based on user type
-  let roleSpecificData = {}
-  let userCapabilities = []
-  let dashboardPath = ''
+  let roleSpecificData = {};
+  let userCapabilities = [];
+  let dashboardPath = "";
 
   switch (userRole) {
-    case 'STUDENT':
+    case "STUDENT":
       const studentData = await prisma.student.findUnique({
         where: { userId },
         include: {
@@ -98,23 +105,23 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
                 select: {
                   id: true,
                   title: true,
-                  location: true
-                }
-              }
-            }
+                  location: true,
+                },
+              },
+            },
           },
           applications: {
             include: {
               job: {
                 select: {
                   id: true,
-                  title: true
-                }
-              }
-            }
-          }
-        }
-      })
+                  title: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
       roleSpecificData = {
         studentId: studentData?.id,
@@ -123,41 +130,41 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
         expectedGraduationYear: studentData?.expectedGraduationYear,
         degreeType: studentData?.degreeType?.name,
         totalInterests: studentData?.interests?.length || 0,
-        totalApplications: studentData?.applications?.length || 0
-      }
+        totalApplications: studentData?.applications?.length || 0,
+      };
 
       userCapabilities = [
-        'view_jobs',
-        'apply_to_jobs',
-        'manage_profile',
-        'upload_resume',
-        'track_applications'
-      ]
+        "view_jobs",
+        "apply_to_jobs",
+        "manage_profile",
+        "upload_resume",
+        "track_applications",
+      ];
 
-      dashboardPath = '/student/dashboard'
-      break
+      dashboardPath = "/student/dashboard";
+      break;
 
-    case 'PROFESSOR':
+    case "PROFESSOR":
       const professorData = await prisma.professor.findUnique({
-        where: { userId }
-      })
+        where: { userId },
+      });
 
       roleSpecificData = {
         professorId: professorData?.id,
-        department: professorData?.department
-      }
+        department: professorData?.department,
+      };
 
       userCapabilities = [
-        'view_student_profiles',
-        'view_job_statistics',
-        'access_reports',
-        'mentor_students'
-      ]
+        "view_student_profiles",
+        "view_job_statistics",
+        "access_reports",
+        "mentor_students",
+      ];
 
-      dashboardPath = '/professor/dashboard'
-      break
+      dashboardPath = "/professor/dashboard";
+      break;
 
-    case 'EMPLOYER':
+    case "EMPLOYER":
       const hrData = await prisma.hR.findUnique({
         where: { userId },
         include: {
@@ -166,11 +173,11 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
               id: true,
               title: true,
               location: true,
-              application_deadline: true
-            }
-          }
-        }
-      })
+              application_deadline: true,
+            },
+          },
+        },
+      });
 
       roleSpecificData = {
         hrId: hrData?.id,
@@ -180,33 +187,34 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
         companySize: hrData?.companySize,
         website: hrData?.website,
         totalJobPostings: hrData?.jobs?.length || 0,
-        activeJobPostings: hrData?.jobs?.filter(job => 
-          new Date(job.application_deadline) > new Date()
-        ).length || 0
-      }
+        activeJobPostings:
+          hrData?.jobs?.filter(
+            (job) => new Date(job.application_deadline) > new Date(),
+          ).length || 0,
+      };
 
       userCapabilities = [
-        'post_jobs',
-        'manage_job_postings',
-        'view_applications',
-        'contact_candidates',
-        'company_analytics'
-      ]
+        "post_jobs",
+        "manage_job_postings",
+        "view_applications",
+        "contact_candidates",
+        "company_analytics",
+      ];
 
-      dashboardPath = '/employer/dashboard'
-      break
+      dashboardPath = "/employer/dashboard";
+      break;
 
-    case 'ADMIN':
+    case "ADMIN":
       const adminData = await prisma.admin.findUnique({
-        where: { userId }
-      })
+        where: { userId },
+      });
 
       // Get some admin statistics
       const [totalUsers, totalJobs, totalApplications] = await Promise.all([
         prisma.user.count(),
         prisma.job.count(),
-        prisma.resume.count()
-      ])
+        prisma.resume.count(),
+      ]);
 
       roleSpecificData = {
         adminId: adminData?.id,
@@ -216,33 +224,33 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
           totalApplications,
           totalStudents: await prisma.student.count(),
           totalEmployers: await prisma.hR.count(),
-          totalProfessors: await prisma.professor.count()
-        }
-      }
+          totalProfessors: await prisma.professor.count(),
+        },
+      };
 
       userCapabilities = [
-        'manage_all_users',
-        'moderate_content',
-        'view_system_analytics',
-        'manage_job_postings',
-        'system_configuration',
-        'export_data'
-      ]
+        "manage_all_users",
+        "moderate_content",
+        "view_system_analytics",
+        "manage_job_postings",
+        "system_configuration",
+        "export_data",
+      ];
 
-      dashboardPath = '/admin/dashboard'
-      break
+      dashboardPath = "/admin/dashboard";
+      break;
 
     default:
       roleSpecificData = {
-        message: 'Unknown user role'
-      }
-      userCapabilities = []
-      dashboardPath = '/dashboard'
+        message: "Unknown user role",
+      };
+      userCapabilities = [];
+      dashboardPath = "/dashboard";
   }
 
   res.json({
     success: true,
-    message: 'User profile retrieved successfully',
+    message: "User profile retrieved successfully",
     data: {
       user: baseUser,
       roleData: roleSpecificData,
@@ -251,11 +259,11 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
       userType: {
         role: userRole,
         description: getRoleDescription(userRole),
-        permissions: getUserPermissions(userRole)
-      }
-    }
-  })
-})
+        permissions: getUserPermissions(userRole),
+      },
+    },
+  });
+});
 
 /**
  * Get role-specific dashboard data
@@ -264,17 +272,17 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
  * @access Private (All authenticated users)
  */
 const getDashboardData = asyncErrorHandler(async (req, res) => {
-  const userRole = req.user.role
-  const userId = req.user.id
+  const userRole = req.user.role;
+  const userId = req.user.id;
 
-  let dashboardData = {}
+  let dashboardData = {};
 
   switch (userRole) {
-    case 'STUDENT':
+    case "STUDENT":
       // Get recent job postings and user's applications
       const recentJobs = await prisma.job.findMany({
         take: 5,
-        orderBy: { id: 'desc' },
+        orderBy: { id: "desc" },
         select: {
           id: true,
           title: true,
@@ -282,20 +290,20 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
           application_deadline: true,
           hr: {
             select: {
-              companyName: true
-            }
-          }
-        }
-      })
+              companyName: true,
+            },
+          },
+        },
+      });
 
       const myApplications = await prisma.application.findMany({
         where: {
           student: {
-            userId
-          }
+            userId,
+          },
         },
         take: 5,
-        orderBy: { id: 'desc' },
+        orderBy: { id: "desc" },
         include: {
           job: {
             select: {
@@ -304,36 +312,36 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
               location: true,
               hr: {
                 select: {
-                  companyName: true
-                }
-              }
-            }
-          }
-        }
-      })
+                  companyName: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
       dashboardData = {
         recentJobs,
         myApplications,
         quickActions: [
-          'Browse Jobs',
-          'Update Profile',
-          'Upload Resume',
-          'View Applications'
-        ]
-      }
-      break
+          "Browse Jobs",
+          "Update Profile",
+          "Upload Resume",
+          "View Applications",
+        ],
+      };
+      break;
 
-    case 'EMPLOYER':
+    case "EMPLOYER":
       // Get company's job postings and recent applications
       const myJobPostings = await prisma.job.findMany({
         where: {
           hr: {
-            userId
-          }
+            userId,
+          },
         },
         take: 5,
-        orderBy: { id: 'desc' },
+        orderBy: { id: "desc" },
         select: {
           id: true,
           title: true,
@@ -341,47 +349,47 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
           application_deadline: true,
           _count: {
             select: {
-              applications: true
-            }
-          }
-        }
-      })
+              applications: true,
+            },
+          },
+        },
+      });
 
       dashboardData = {
         myJobPostings,
         quickActions: [
-          'Post New Job',
-          'Review Applications',
-          'Edit Company Profile',
-          'View Analytics'
-        ]
-      }
-      break
+          "Post New Job",
+          "Review Applications",
+          "Edit Company Profile",
+          "View Analytics",
+        ],
+      };
+      break;
 
-    case 'PROFESSOR':
+    case "PROFESSOR":
       // Get department insights
       const departmentStats = await prisma.professor.findUnique({
         where: { userId },
         include: {
-          _count: true
-        }
-      })
+          _count: true,
+        },
+      });
 
       dashboardData = {
         departmentInfo: {
           department: departmentStats?.department,
-          role: 'Professor'
+          role: "Professor",
         },
         quickActions: [
-          'View Student Progress',
-          'Access Reports',
-          'Department Analytics',
-          'Mentoring Tools'
-        ]
-      }
-      break
+          "View Student Progress",
+          "Access Reports",
+          "Department Analytics",
+          "Mentoring Tools",
+        ],
+      };
+      break;
 
-    case 'ADMIN':
+    case "ADMIN":
       // Get system overview
       const systemOverview = await Promise.all([
         prisma.user.count(),
@@ -389,51 +397,51 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
         prisma.resume.count(),
         prisma.user.findMany({
           take: 5,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           select: {
             id: true,
             name: true,
             surname: true,
             email: true,
             role: true,
-            createdAt: true
-          }
-        })
-      ])
+            createdAt: true,
+          },
+        }),
+      ]);
 
       dashboardData = {
         systemStats: {
           totalUsers: systemOverview[0],
           totalJobs: systemOverview[1],
-          totalApplications: systemOverview[2]
+          totalApplications: systemOverview[2],
         },
         recentUsers: systemOverview[3],
         quickActions: [
-          'Manage Users',
-          'System Analytics',
-          'Content Moderation',
-          'Export Reports'
-        ]
-      }
-      break
+          "Manage Users",
+          "System Analytics",
+          "Content Moderation",
+          "Export Reports",
+        ],
+      };
+      break;
 
     default:
       dashboardData = {
-        message: 'Dashboard not configured for this user type',
-        quickActions: []
-      }
+        message: "Dashboard not configured for this user type",
+        quickActions: [],
+      };
   }
 
   res.json({
     success: true,
-    message: 'Dashboard data retrieved successfully',
+    message: "Dashboard data retrieved successfully",
     data: {
       userRole,
       dashboard: dashboardData,
-      timestamp: new Date().toISOString()
-    }
-  })
-})
+      timestamp: new Date().toISOString(),
+    },
+  });
+});
 
 /**
  * Role-specific endpoint - Only accessible by specific roles
@@ -443,19 +451,19 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
 const adminOnlyEndpoint = asyncErrorHandler(async (req, res) => {
   res.json({
     success: true,
-    message: 'Admin-only endpoint accessed successfully',
+    message: "Admin-only endpoint accessed successfully",
     data: {
-      message: 'This endpoint is only accessible by administrators',
+      message: "This endpoint is only accessible by administrators",
       userRole: req.user.role,
       adminPrivileges: [
-        'System Configuration',
-        'User Management',
-        'Data Export',
-        'Security Settings'
-      ]
-    }
-  })
-})
+        "System Configuration",
+        "User Management",
+        "Data Export",
+        "Security Settings",
+      ],
+    },
+  });
+});
 
 /**
  * Role-specific endpoint - Only accessible by employers
@@ -465,31 +473,31 @@ const adminOnlyEndpoint = asyncErrorHandler(async (req, res) => {
 const employerOnlyEndpoint = asyncErrorHandler(async (req, res) => {
   res.json({
     success: true,
-    message: 'Employer-only endpoint accessed successfully',
+    message: "Employer-only endpoint accessed successfully",
     data: {
-      message: 'This endpoint is only accessible by employers',
+      message: "This endpoint is only accessible by employers",
       userRole: req.user.role,
       employerPrivileges: [
-        'Job Posting',
-        'Application Review',
-        'Candidate Communication',
-        'Company Analytics'
-      ]
-    }
-  })
-})
+        "Job Posting",
+        "Application Review",
+        "Candidate Communication",
+        "Company Analytics",
+      ],
+    },
+  });
+});
 
 /**
  * Helper function to get role description
  */
 function getRoleDescription(role) {
   const descriptions = {
-    STUDENT: 'Student or Alumni - Can browse and apply for jobs',
-    PROFESSOR: 'University Staff - Can view analytics and mentor students',
-    EMPLOYER: 'Company Representative - Can post jobs and manage applications',
-    ADMIN: 'System Administrator - Full system access and management'
-  }
-  return descriptions[role] || 'Unknown role'
+    STUDENT: "Student or Alumni - Can browse and apply for jobs",
+    PROFESSOR: "University Staff - Can view analytics and mentor students",
+    EMPLOYER: "Company Representative - Can post jobs and manage applications",
+    ADMIN: "System Administrator - Full system access and management",
+  };
+  return descriptions[role] || "Unknown role";
 }
 
 /**
@@ -497,18 +505,28 @@ function getRoleDescription(role) {
  */
 function getUserPermissions(role) {
   const permissions = {
-    STUDENT: ['read:jobs', 'create:application', 'update:profile'],
-    PROFESSOR: ['read:analytics', 'read:students', 'create:reports'],
-    EMPLOYER: ['create:jobs', 'read:applications', 'update:company'],
-    ADMIN: ['*'] // Full access
-  }
-  return permissions[role] || []
+    STUDENT: ["read:jobs", "create:application", "update:profile"],
+    PROFESSOR: ["read:analytics", "read:students", "create:reports"],
+    EMPLOYER: ["create:jobs", "read:applications", "update:company"],
+    ADMIN: ["*"], // Full access
+  };
+  return permissions[role] || [];
 }
 
 // Route definitions (still available but deprecated)
-router.get('/me', authMiddleware, getUserProfile)
-router.get('/dashboard', authMiddleware, getDashboardData)
-router.get('/admin-only', authMiddleware, roleMiddleware(['ADMIN']), adminOnlyEndpoint)
-router.get('/employer-only', authMiddleware, roleMiddleware(['EMPLOYER']), employerOnlyEndpoint)
+router.get("/me", authMiddleware, getUserProfile);
+router.get("/dashboard", authMiddleware, getDashboardData);
+router.get(
+  "/admin-only",
+  authMiddleware,
+  roleMiddleware(["ADMIN"]),
+  adminOnlyEndpoint,
+);
+router.get(
+  "/employer-only",
+  authMiddleware,
+  roleMiddleware(["EMPLOYER"]),
+  employerOnlyEndpoint,
+);
 
-module.exports = router
+module.exports = router;
