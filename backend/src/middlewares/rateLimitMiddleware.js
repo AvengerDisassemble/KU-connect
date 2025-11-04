@@ -11,7 +11,7 @@ try {
   rateLimit = require('express-rate-limit')
 } catch (err) {
   // Provide stub that returns middleware passthroughs in test environments
-  rateLimit = () => (opts) => {
+  rateLimit = (opts) => {
     return (req, res, next) => next()
   }
 }
