@@ -51,7 +51,6 @@ async function postSaved (req, res) {
     console.log('postSaved called with params=', req.params, 'body=', req.body)
     const userId = extractUserIdFromReq(req)
     const jobId = String(req.body.jobId)
-    console.log('postSaved parsed userId, jobId=', userId, jobId)
     const saved = await savedService.addSavedJob(userId, jobId)
     return res.status(201).json({ success: true, data: saved })
   } catch (err) {
