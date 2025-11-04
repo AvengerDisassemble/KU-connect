@@ -17,13 +17,8 @@ try {
 if (!validatorsAvailable) {
   // Minimal validators for test environments where express-validator isn't installed
   function validateUserId (req, res, next) {
-    // Be permissive: accept any non-empty param value under common names to avoid false negatives in tests
-    const val = (req.params && (req.params.user_id || req.params.userId || req.params.id)) || ''
-    if (!val || typeof val === 'object') {
-      // fallback to permissive behavior — allow through to route handlers
-      return next()
-    }
-    return next()
+    // Permissive fallback: always allow through to route handlers in test environments
+    return next();
   }
 
   function validateJobIdInBody (req, res, next) {
