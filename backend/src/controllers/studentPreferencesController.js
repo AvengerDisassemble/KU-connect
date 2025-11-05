@@ -23,17 +23,17 @@ const getPreferences = asyncErrorHandler(async (req, res) => {
 
 /**
  * Create or update student preferences
- * @route PUT /api/students/preferences
+ * @route PATCH /api/students/preferences
  */
 const upsertPreferences = asyncErrorHandler(async (req, res) => {
   const userId = req.user.id
-  const { desiredLocation, minSalary, currency, payPeriod, remoteWork } = req.body
+  const { desiredLocation, minSalary, industry, jobType, remoteWork } = req.body
 
   const preference = await studentPreferenceService.upsertPreferenceByUserId(userId, {
     desiredLocation,
     minSalary,
-    currency,
-    payPeriod,
+    industry,
+    jobType,
     remoteWork
   })
 

@@ -26,8 +26,13 @@ async function getRecommendedJobsForStudent(userId, limit = 10) {
     throw error
   }
 
-  // Determine preferred location (from preference or student address)
-  const preferredLocation = student.preference?.desiredLocation || student.address
+  // Get preference data
+  const preference = student.preference
+  const preferredLocation = preference?.desiredLocation || student.address
+  const minSalary = preference?.minSalary
+  const preferredIndustry = preference?.industry
+  const preferredJobType = preference?.jobType
+  const remoteWork = preference?.remoteWork
 
   // Build where clause for job query
   const where = {
@@ -39,15 +44,32 @@ async function getRecommendedJobsForStudent(userId, limit = 10) {
   // Add location filter if available
   if (preferredLocation) {
     where.location = {
-      contains: preferredLocation,
-      mode: 'insensitive'
+      contains: preferredLocation
     }
   }
 
-  // Query jobs with filters
-  const jobs = await prisma.job.findMany({
+  // Add minimum salary filter if specified
+  if (minSalary !== null && minSalary !== undefined) {
+    where.minSalary = {
+      gte: minSalary
+    }
+  }
+
+  // Add industry filter if specified (filter by HR company industry)
+  if (preferredIndustry) {
+    where.hr = {
+      industry: preferredIndustry
+    }
+  }
+
+  // Add job type filter if specified
+  if (preferredJobType) {
+    where.jobType = preferredJobType
+  }
+
+  // Query all matching jobs first
+  let jobs = await prisma.job.findMany({
     where,
-    take: limit,
     orderBy: {
       id: 'desc'
     },
@@ -55,16 +77,37 @@ async function getRecommendedJobsForStudent(userId, limit = 10) {
       id: true,
       title: true,
       location: true,
+      jobType: true,
+      workArrangement: true,
+      minSalary: true,
+      maxSalary: true,
       application_deadline: true,
       hr: {
         select: {
-          companyName: true
+          companyName: true,
+          industry: true
         }
       }
     }
   })
 
-  return jobs
+  // Filter by remote work preference if specified (case-insensitive match)
+  if (remoteWork) {
+    const remoteWorkLower = remoteWork.toLowerCase()
+    jobs = jobs.filter(job => {
+      const workArrangement = job.workArrangement?.toLowerCase()
+      return workArrangement === remoteWorkLower
+    })
+  }
+
+  // Return limited results
+  return jobs.slice(0, limit).map(job => ({
+    id: job.id,
+    title: job.title,
+    location: job.location,
+    application_deadline: job.application_deadline,
+    hr: job.hr
+  }))
 }
 
 module.exports = {

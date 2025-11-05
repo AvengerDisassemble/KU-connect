@@ -34,7 +34,7 @@ async function getPreferenceByUserId(userId) {
 /**
  * Create or update student preference by userId
  * @param {string} userId - User ID
- * @param {object} data - Preference data
+ * @param {object} data - Preference data (only provided fields will be updated)
  * @returns {Promise<object>} Created or updated preference
  */
 async function upsertPreferenceByUserId(userId, data) {
@@ -50,23 +50,18 @@ async function upsertPreferenceByUserId(userId, data) {
     throw error
   }
 
+  // Filter out undefined values to support partial updates
+  const updateData = Object.fromEntries(
+    Object.entries(data).filter(([, value]) => value !== undefined)
+  )
+
   // Upsert preference
   const preference = await prisma.studentPreference.upsert({
     where: { studentId: student.id },
-    update: {
-      desiredLocation: data.desiredLocation,
-      minSalary: data.minSalary,
-      currency: data.currency,
-      payPeriod: data.payPeriod,
-      remoteWork: data.remoteWork
-    },
+    update: updateData,
     create: {
       studentId: student.id,
-      desiredLocation: data.desiredLocation,
-      minSalary: data.minSalary,
-      currency: data.currency,
-      payPeriod: data.payPeriod,
-      remoteWork: data.remoteWork
+      ...updateData
     }
   })
 
