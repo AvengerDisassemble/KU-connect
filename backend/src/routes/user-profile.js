@@ -11,10 +11,9 @@ const { authMiddleware } = require('../middlewares/authMiddleware')
 const { roleMiddleware } = require('../middlewares/roleMiddleware')
 const { asyncErrorHandler } = require('../middlewares/errorHandler')
 const { strictLimiter } = require('../middlewares/rateLimitMiddleware')
-const { PrismaClient } = require('../generated/prisma')
+const prisma = require('../models/prisma')
 
 const router = express.Router()
-const prisma = new PrismaClient()
 
 // Emit a single-process warning when this module is required
 if (!global.__deprecated_user_profile_warned) {
@@ -103,16 +102,31 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
               }
             }
           },
-          applications: {
-            include: {
-              job: {
-                select: {
-                  id: true,
-                  title: true
+          // Use 'applications' if it exists, otherwise fallback to 'resumes' for backward compatibility
+          applications: prisma.student.fields.applications
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
                 }
               }
-            }
-          }
+            : undefined,
+          resumes: !prisma.student.fields.applications && prisma.student.fields.resumes
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
+                }
+              }
+            : undefined
         }
       })
 
@@ -123,7 +137,7 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
         expectedGraduationYear: studentData?.expectedGraduationYear,
         degreeType: studentData?.degreeType?.name,
         totalInterests: studentData?.interests?.length || 0,
-        totalApplications: studentData?.applications?.length || 0
+        totalApplications: (studentData?.applications?.length ?? studentData?.resumes?.length) || 0
       }
 
       userCapabilities = [

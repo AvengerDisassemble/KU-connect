@@ -191,13 +191,19 @@ async function cleanupDatabase(prisma, options = {}) {
     // 5. Delete refresh tokens (they depend on users)
     await prisma.refreshToken.deleteMany()
 
-    // 6. Delete role-specific records (they depend on users)
+    // 6. Delete notifications (they depend on announcements and users)
+    await prisma.notification.deleteMany()
+
+    // 7. Delete announcements (they depend on users)
+    await prisma.announcement.deleteMany()
+
+    // 8. Delete role-specific records (they depend on users)
     await prisma.student.deleteMany()
     await prisma.professor.deleteMany()
     await prisma.admin.deleteMany()
     await prisma.hR.deleteMany()
 
-    // 7. Delete users
+    // 9. Delete users
     await prisma.user.deleteMany({
       where: {
         email: {
