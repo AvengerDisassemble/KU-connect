@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -10,13 +9,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import AdvancedFiltersSheet from "./AdvancedFiltersSheet";
 import type { SelectOption } from "../types";
 
 interface JobFilterBarProps {
@@ -128,132 +122,12 @@ const JobFilterBar = ({
     </Select>
   );
 
-  const AdvancedFiltersSheet = () => (
-    <Sheet open={isAdvancedFiltersOpen} onOpenChange={setIsAdvancedFiltersOpen}>
-      <SheetContent side="right" className="w-[400px] bg-white sm:max-w-md">
-        <SheetHeader className="border-b pb-4">
-          <SheetTitle className="text-lg font-semibold text-gray-900">
-            Advanced Filters
-          </SheetTitle>
-        </SheetHeader>
-
-        <div className="mt-6 space-y-6">
-          <div className="space-y-4">
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">
-                Job Type
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {jobTypeOptions.slice(1).map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={
-                      jobTypeFilter === option.value ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => onJobTypeFilterChange(option.value)}
-                    className={cn(
-                      "rounded-full",
-                      jobTypeFilter === option.value
-                        ? "bg-[var(--brand-teal)] hover:bg-[var(--brand-teal)]/90"
-                        : "border-gray-300 hover:border-gray-400"
-                    )}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">
-                Location
-              </label>
-              <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                {locationOptions.slice(1).map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={
-                      locationFilter === option.value ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => onLocationFilterChange(option.value)}
-                    className={cn(
-                      "rounded-full",
-                      locationFilter === option.value
-                        ? "bg-[var(--brand-teal)] hover:bg-[var(--brand-teal)]/90"
-                        : "border-gray-300 hover:border-gray-400"
-                    )}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700">
-                Work Style
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {workArrangementOptions.slice(1).map((option) => (
-                  <Button
-                    key={option.value}
-                    variant={
-                      workArrangementFilter === option.value
-                        ? "default"
-                        : "outline"
-                    }
-                    size="sm"
-                    onClick={() => onWorkArrangementFilterChange(option.value)}
-                    className={cn(
-                      "rounded-full",
-                      workArrangementFilter === option.value
-                        ? "bg-[var(--brand-teal)] hover:bg-[var(--brand-teal)]/90"
-                        : "border-gray-300 hover:border-gray-400"
-                    )}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => {
-                onClearFilters();
-                setIsAdvancedFiltersOpen(false);
-              }}
-              className="flex-1"
-            >
-              Clear All
-            </Button>
-            <Button
-              onClick={() => setIsAdvancedFiltersOpen(false)}
-              className="flex-1 bg-[var(--brand-teal)] hover:bg-[var(--brand-teal)]/90"
-            >
-              Apply Filters
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-
-  const hasActiveFilters =
-    jobTypeFilter !== "all" ||
-    locationFilter !== "all" ||
-    workArrangementFilter !== "all";
-
   return (
     <div className="bg-[var(--neutral-bg-2)] border-b border-gray-200">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="py-4">
+        <div className="py-3">
           {/* Single row with search and filters */}
-          <div className="flex items-center gap-3 overflow-x-auto pb-2">
+          <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1">
             {/* Search Input */}
             <div className="relative flex-shrink-0 w-full sm:w-auto sm:min-w-[280px] lg:min-w-[320px]">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -299,29 +173,20 @@ const JobFilterBar = ({
                 onChange={onWorkArrangementFilterChange}
                 isActive={workArrangementFilter !== "all"}
               />
-              <Button
-                variant="outline"
-                onClick={() => setIsAdvancedFiltersOpen(true)}
-                className="h-9 px-3 rounded-md border border-gray-300 font-medium text-sm transition-all flex items-center gap-2 shadow-sm hover:border-gray-400 hover:bg-gray-50 flex-shrink-0"
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-                <span>Filters</span>
-                {hasActiveFilters && (
-                  <Badge
-                    variant="secondary"
-                    className="ml-1 h-5 min-w-5 px-1.5 rounded-full bg-[var(--brand-lime)] text-white text-xs font-semibold"
-                  >
-                    {
-                      [
-                        jobTypeFilter,
-                        locationFilter,
-                        workArrangementFilter,
-                      ].filter((f) => f !== "all").length
-                    }
-                  </Badge>
-                )}
-                <AdvancedFiltersSheet />
-              </Button>
+              <AdvancedFiltersSheet
+                open={isAdvancedFiltersOpen}
+                onOpenChange={setIsAdvancedFiltersOpen}
+                jobTypeFilter={jobTypeFilter}
+                locationFilter={locationFilter}
+                workArrangementFilter={workArrangementFilter}
+                locationOptions={locationOptions}
+                onJobTypeFilterChange={onJobTypeFilterChange}
+                onLocationFilterChange={onLocationFilterChange}
+                onWorkArrangementFilterChange={onWorkArrangementFilterChange}
+                onClearFilters={onClearFilters}
+                jobTypeOptions={jobTypeOptions}
+                workArrangementOptions={workArrangementOptions}
+              />
             </div>
           </div>
         </div>

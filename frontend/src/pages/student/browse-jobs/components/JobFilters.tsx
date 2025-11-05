@@ -39,7 +39,7 @@ const JobFilters = ({
         {/* Header with Title and Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-6">
-            <h1 className="text-3xl font-bold text-[var(--neutral-text-primary)] tracking-tight">
+            <h1 className="text-3xl font-bold text-primary tracking-tight">
               Jobs
             </h1>
             <Tabs
@@ -47,16 +47,16 @@ const JobFilters = ({
               onValueChange={(value) => onTabChange(value as TabKey)}
               className="hidden md:block"
             >
-              <TabsList className="bg-gray-100 rounded-lg p-1">
+              <TabsList className="relative bg-gray-100 rounded-lg p-1">
                 <TabsTrigger
                   value="search"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 text-sm font-medium transition-all"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:translate-y-[-2px] data-[state=inactive]:opacity-70 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ease-out"
                 >
                   Search
                 </TabsTrigger>
                 <TabsTrigger
                   value="saved"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md px-4 py-2 text-sm font-medium transition-all"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:translate-y-[-2px] data-[state=inactive]:opacity-70 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ease-out"
                 >
                   {savedCount ? `Saved (${savedCount})` : "Saved"}
                 </TabsTrigger>
@@ -76,13 +76,13 @@ const JobFilters = ({
             <TabsList className="bg-gray-100 rounded-lg p-1 w-full">
               <TabsTrigger
                 value="search"
-                className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex-1 px-3 py-2 text-sm font-medium transition-all"
+                className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:translate-y-[-1px] data-[state=inactive]:opacity-70 rounded-md flex-1 px-3 py-2 text-sm font-medium transition-all duration-200 ease-out"
               >
                 Search
               </TabsTrigger>
               <TabsTrigger
                 value="saved"
-                className="data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-md flex-1 px-3 py-2 text-sm font-medium transition-all"
+                className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:translate-y-[-1px] data-[state=inactive]:opacity-70 rounded-md flex-1 px-3 py-2 text-sm font-medium transition-all duration-200 ease-out"
               >
                 {savedCount ? `Saved (${savedCount})` : "Saved"}
               </TabsTrigger>

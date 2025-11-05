@@ -106,30 +106,6 @@ const LandingPage = () => {
         }`}
       >
         <div className="max-w-6xl mx-auto">
-          {/*<div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { number: "5,000+", label: "Active Students", icon: Users },
-              { number: "500+", label: "Partner Companies", icon: Building2 },
-              { number: "1,200+", label: "Jobs Posted", icon: Briefcase },
-              { number: "95%", label: "Success Rate", icon: TrendingUp },
-            ].map((stat, index) => (
-              <div
-                key={index}
-                className="text-center space-y-2"
-                style={{ transitionDelay: `${index * 100}ms` }}
-              >
-                <div className="flex justify-center text-primary">
-                  <stat.icon className="w-8 h-8" />
-                </div>
-                <div className="text-3xl font-bold text-foreground">
-                  {stat.number}
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-          </div>*/}
         </div>
       </section>
 
