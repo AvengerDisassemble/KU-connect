@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import EmployerSidebar from "@/components/EmployerSideBar";
+import EmployerPageShell from "@/components/EmployerPageShell";
 import CompanyProfileCard from "@/pages/employer/JobPosting/components/CompanyProfileCard";
 import JobPostingForm from "@/pages/employer/JobPosting/components/JobPostingForm";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +10,6 @@ import {
   getEmployerProfile,
   type EmployerProfileResponse,
 } from "@/services/employerProfile";
-
-const SIDEBAR_W = 280;
 
 export default function JobPostingPage() {
   const { user, isAuthenticated } = useAuth();
@@ -70,52 +68,38 @@ export default function JobPostingPage() {
   });
 
   return (
-    <>
-      <div className="fixed inset-0 -z-50 pointer-events-none bg-bg-1" />
+    <EmployerPageShell title="Post a Job">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-8 text-center">
+          <h1 className="mb-8 text-3xl font-bold text-accent">
+            Post a Job
+          </h1>
 
-      <aside
-        className="fixed inset-y-0 left-0 z-20"
-        style={{ width: SIDEBAR_W }}
-      >
-        <EmployerSidebar />
-      </aside>
-
-      <main
-        className="min-h-screen"
-        style={{ paddingLeft: SIDEBAR_W }}
-      >
-        <div className="mx-auto max-w-4xl p-8">
-          <div className="mb-8 text-center">
-            <h1 className="mb-8 text-3xl font-bold text-accent">
-              Post a Job
-            </h1>
-
-            <p className="text-muted-foreground">
-              Connect with talented KU engineering students ready to join your team
-            </p>
-          </div>
-
-          <Card className="rounded-2xl border-none shadow-sm">
-            <CardContent className="p-8">
-              <CompanyProfileCard
-                userId={user.id}
-                prefetchedProfile={employerProfile}
-                loadingOverride={employerProfileLoading}
-              />
-              {employerProfileError && (
-                <p className="mt-4 text-sm text-destructive">
-                  Failed to load company profile. Please try again later.
-                </p>
-              )}
-              <JobPostingForm
-                userId={user.id}
-                prefetchedProfile={employerProfile}
-                profileLoading={employerProfileLoading}
-              />
-            </CardContent>
-          </Card>
+          <p className="text-muted-foreground">
+            Connect with talented KU engineering students ready to join your team
+          </p>
         </div>
-      </main>
-    </>
+
+        <Card className="rounded-2xl border-none shadow-sm">
+          <CardContent className="p-6 sm:p-8">
+            <CompanyProfileCard
+              userId={user.id}
+              prefetchedProfile={employerProfile}
+              loadingOverride={employerProfileLoading}
+            />
+            {employerProfileError && (
+              <p className="mt-4 text-sm text-destructive">
+                Failed to load company profile. Please try again later.
+              </p>
+            )}
+            <JobPostingForm
+              userId={user.id}
+              prefetchedProfile={employerProfile}
+              profileLoading={employerProfileLoading}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </EmployerPageShell>
   );
 }

@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import EmployerSidebar from "@/components/EmployerSideBar";
+import EmployerPageShell from "@/components/EmployerPageShell";
 import CompanyInfoForm from "@/pages/employer/profile/components/CompanyInfoForm";
 import VerificationChecklist, {
   type VerificationItem,
@@ -147,47 +147,43 @@ export default function EmployerProfilePage() {
   };
 
   return (
-    <>
-      <div className="fixed inset-0 -z-50 pointer-events-none bg-background" />
+    <EmployerPageShell
+      title="Company Profile"
+      backgroundClassName="bg-background"
+      contentClassName="bg-muted/20"
+    >
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6">
+          <h1 className="mb-6 text-3xl font-bold text-foreground">
+            Company Profile & Verification
+          </h1>
+          <p className="text-muted-foreground">
+            Manage your company information and verification status
+          </p>
+        </div>
 
-      <aside className="fixed inset-y-0 left-0 z-20 w-[280px]">
-        <EmployerSidebar />
-      </aside>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <CompanyInfoForm userId={userId} />
 
-      <main className="min-h-screen pl-[280px] p-6 bg-muted/20">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-foreground mb-6">
-              Company Profile & Verification
-            </h1>
-            <p className="text-muted-foreground">
-              Manage your company information and verification status
-            </p>
+            <CompanyDocumentUpload
+              uploadedFile={uploadedFile}
+              onFileChange={handleFileChange}
+              onRemoveFile={handleRemoveFile}
+              onSubmit={handleSubmitVerification}
+              isSubmitting={uploadMutation.isPending}
+              hasExistingDocument={hasVerificationDocument}
+              isUploadLocked={isUploadLocked}
+              statusMessage={uploadStateMessage}
+              isLoading={isProfileLoading}
+            />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              <CompanyInfoForm userId={userId} />
-
-              <CompanyDocumentUpload
-                uploadedFile={uploadedFile}
-                onFileChange={handleFileChange}
-                onRemoveFile={handleRemoveFile}
-                onSubmit={handleSubmitVerification}
-                isSubmitting={uploadMutation.isPending}
-                hasExistingDocument={hasVerificationDocument}
-                isUploadLocked={isUploadLocked}
-                statusMessage={uploadStateMessage}
-                isLoading={isProfileLoading}
-              />
-            </div>
-
-            <div className="lg:col-span-1">
-              <VerificationChecklist items={verificationItems} />
-            </div>
+          <div className="lg:col-span-1">
+            <VerificationChecklist items={verificationItems} />
           </div>
         </div>
-      </main>
-    </>
+      </div>
+    </EmployerPageShell>
   );
 }

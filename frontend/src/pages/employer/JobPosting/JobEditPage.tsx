@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import EmployerSidebar from "@/components/EmployerSideBar";
+import EmployerPageShell from "@/components/EmployerPageShell";
 import CompanyProfileCard from "@/pages/employer/JobPosting/components/CompanyProfileCard";
 import JobPostingForm, {
   type JobFormState,
@@ -39,8 +39,6 @@ import {
 } from "@/services/jobs";
 import { getEmployerProfile, type EmployerProfileResponse } from "@/services/employerProfile";
 import { toSubmitPayload } from "./utils";
-
-const SIDEBAR_W = 280;
 
 const mapJobDetailToForm = (job: JobDetail): JobFormState => ({
   title: job.title,
@@ -259,37 +257,22 @@ const JobEditPage = () => {
   }
 
   return (
-    <>
-      <div className="fixed inset-0 -z-50 pointer-events-none bg-bg-1" />
+    <EmployerPageShell title="Edit Job">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-8 text-center">
+          <h1 className="mb-8 text-3xl font-bold text-accent">Edit Job</h1>
+          <p className="text-muted-foreground">
+            Update your job information and manage applicants.
+          </p>
+        </div>
 
-      <aside
-        className="fixed inset-y-0 left-0 z-20"
-        style={{ width: SIDEBAR_W }}
-      >
-        <EmployerSidebar />
-      </aside>
-
-      <main
-        className="min-h-screen"
-        style={{ paddingLeft: SIDEBAR_W }}
-      >
-        <div className="mx-auto max-w-4xl p-8">
-          <div className="mb-8 text-center">
-            <h1 className="mb-8 text-3xl font-bold text-accent">
-              Edit Job
-            </h1>
-            <p className="text-muted-foreground">
-              Update your job information and manage applicants.
-            </p>
-          </div>
-
-          <Card className="rounded-2xl border-none shadow-sm">
-            <CardContent className="p-8">
-              <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate("/employer")}
+        <Card className="rounded-2xl border-none shadow-sm">
+          <CardContent className="p-6 sm:p-8">
+            <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/employer")}
                   >
                     ← Back to dashboard
                   </Button>
@@ -372,11 +355,10 @@ const JobEditPage = () => {
                   />
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </>
+          </CardContent>
+        </Card>
+      </div>
+    </EmployerPageShell>
   );
 };
 
