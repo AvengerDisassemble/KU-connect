@@ -3,9 +3,11 @@
  * @description Controller for profile management endpoints with authentication and standardized responses
  */
 
+const { asyncErrorHandler } = require('../middlewares/errorHandler')
 const profileService = require('../services/profileService')
 const storageProvider = require('../services/storageFactory')
 const prisma = require('../models/prisma')
+const studentRecommendationService = require('../services/studentRecommendationService')
 
 /**
  * Updates an existing profile
@@ -266,11 +268,304 @@ async function downloadAvatar(req, res) {
   }
 }
 
+/**
+ * Get dashboard data for authenticated user (Student and Employer dashboard)
+ * @route GET /api/profile/dashboard
+ */
+const getDashboardData = asyncErrorHandler(async (req, res) => {
+  const { role: userRole, id: userId } = req.user
+
+  // Handle different user roles
+  if (userRole === 'STUDENT') {
+    // Find student
+    const student = await prisma.student.findUnique({
+      where: { userId },
+      select: { id: true }
+    })
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: 'Student profile not found'
+      })
+    }
+
+    // Parallel queries for student dashboard data
+    const [recentJobs, myApplications, recommendedJobs, totalJobs, applicationStatsRaw] = await Promise.all([
+      // Recent jobs (last 5)
+      prisma.job.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          location: true,
+          jobType: true,
+          application_deadline: true,
+          createdAt: true,
+          hr: {
+            select: {
+              companyName: true
+            }
+          }
+        }
+      }),
+
+      // My applications (last 5)
+      prisma.application.findMany({
+        where: { studentId: student.id },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          job: {
+            select: {
+              id: true,
+              title: true,
+              location: true,
+              hr: {
+                select: {
+                  companyName: true
+                }
+              }
+            }
+          }
+        }
+      }),
+
+      // Recommended jobs
+      studentRecommendationService.getRecommendedJobsForStudent(userId, 10),
+
+      // Total jobs count
+      prisma.job.count(),
+
+      // Application stats grouped by status
+      prisma.application.groupBy({
+        by: ['status'],
+        where: {
+          studentId: student.id
+        },
+        _count: {
+          _all: true
+        }
+      })
+    ])
+
+    // Transform application stats
+    const applicationStats = {
+      total: 0,
+      submitted: 0,
+      qualified: 0,
+      rejected: 0,
+      hired: 0
+    }
+
+    applicationStatsRaw.forEach(stat => {
+      const count = stat._count._all
+      applicationStats.total += count
+
+      if (stat.status === 'PENDING') {
+        applicationStats.submitted = count
+      } else if (stat.status === 'QUALIFIED') {
+        applicationStats.qualified = count
+      } else if (stat.status === 'REJECTED') {
+        applicationStats.rejected = count
+      }
+    })
+
+    // Build student response
+    return res.status(200).json({
+      success: true,
+      message: 'Student dashboard retrieved',
+      data: {
+        userRole: 'STUDENT',
+        dashboard: {
+          totals: {
+            jobs: totalJobs
+          },
+          applicationStats,
+          recentJobs,
+          myApplications,
+          recommendedJobs,
+          quickActions: [
+            'Browse Jobs',
+            'Update Preferences',
+            'Upload Resume',
+            'View Applications'
+          ]
+        },
+        timestamp: new Date().toISOString()
+      }
+    })
+  } else if (userRole === 'EMPLOYER') {
+    // Find HR profile
+    const hr = await prisma.hR.findUnique({
+      where: { userId },
+      select: { id: true, companyName: true }
+    })
+
+    if (!hr) {
+      return res.status(404).json({
+        success: false,
+        message: 'Employer profile not found'
+      })
+    }
+
+    // Parallel queries for employer dashboard data
+    const [myJobPostings, recentApplications, totalApplications, applicationsByStatus] = await Promise.all([
+      // My job postings (last 5)
+      prisma.job.findMany({
+        where: { hrId: hr.id },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          location: true,
+          jobType: true,
+          application_deadline: true,
+          createdAt: true,
+          _count: {
+            select: {
+              applications: true
+            }
+          }
+        }
+      }),
+
+      // Recent applications to my jobs (last 5)
+      prisma.application.findMany({
+        where: {
+          job: {
+            hrId: hr.id
+          }
+        },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          job: {
+            select: {
+              id: true,
+              title: true
+            }
+          },
+          student: {
+            select: {
+              id: true,
+              user: {
+                select: {
+                  name: true,
+                  surname: true,
+                  email: true
+                }
+              },
+              degreeType: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      }),
+
+      // Total applications to my jobs
+      prisma.application.count({
+        where: {
+          job: {
+            hrId: hr.id
+          }
+        }
+      }),
+
+      // Applications grouped by status
+      prisma.application.groupBy({
+        by: ['status'],
+        where: {
+          job: {
+            hrId: hr.id
+          }
+        },
+        _count: {
+          _all: true
+        }
+      })
+    ])
+
+    // Count active vs expired jobs
+    const now = new Date()
+    const activeJobs = myJobPostings.filter(job => new Date(job.application_deadline) > now).length
+    const expiredJobs = myJobPostings.filter(job => new Date(job.application_deadline) <= now).length
+
+    // Transform application stats
+    const applicationStats = {
+      total: totalApplications,
+      pending: 0,
+      qualified: 0,
+      rejected: 0
+    }
+
+    applicationsByStatus.forEach(stat => {
+      const count = stat._count._all
+
+      if (stat.status === 'PENDING') {
+        applicationStats.pending = count
+      } else if (stat.status === 'QUALIFIED') {
+        applicationStats.qualified = count
+      } else if (stat.status === 'REJECTED') {
+        applicationStats.rejected = count
+      }
+    })
+
+    // Build employer response
+    return res.status(200).json({
+      success: true,
+      message: 'Employer dashboard retrieved',
+      data: {
+        userRole: 'EMPLOYER',
+        dashboard: {
+          companyInfo: {
+            companyName: hr.companyName
+          },
+          totals: {
+            jobPostings: myJobPostings.length,
+            activeJobs,
+            expiredJobs,
+            totalApplications
+          },
+          applicationStats,
+          myJobPostings,
+          recentApplications,
+          quickActions: [
+            'Post New Job',
+            'Review Applications',
+            'Edit Company Profile',
+            'View Analytics'
+          ]
+        },
+        timestamp: new Date().toISOString()
+      }
+    })
+  } else {
+    // Unsupported role
+    return res.status(403).json({
+      success: false,
+      message: 'Dashboard not available for this user role'
+    })
+  }
+})
+
 module.exports = {
   updateProfile,
   getProfile,
   listProfiles,
   uploadAvatar,
-  downloadAvatar
+  downloadAvatar,
+  getDashboardData
 }
 
