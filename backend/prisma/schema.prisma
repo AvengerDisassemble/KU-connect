@@ -347,14 +347,14 @@ model Notification {
 }
 
 model StudentPreference {
-  id              String   @id @default(cuid())
-  studentId       String   @unique
+  id              String    @id @default(cuid())
+  studentId       String    @unique
   desiredLocation String?
   minSalary       Int?
-  currency        String?
-  payPeriod       String?
-  remoteWork      String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  industry        Industry? // preferred company industry
+  jobType         String?   // internship, part-time, full-time, contract
+  remoteWork      String?   // on-site, remote, hybrid
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
