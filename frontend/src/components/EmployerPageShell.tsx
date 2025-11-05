@@ -22,6 +22,8 @@ const EmployerPageShell: React.FC<EmployerPageShellProps> = ({
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const MOBILE_BAR_HEIGHT = "h-16";
+
   const closeMobile = useCallback(() => {
     setMobileOpen(false);
   }, []);
@@ -45,7 +47,7 @@ const EmployerPageShell: React.FC<EmployerPageShellProps> = ({
 
       {mobileOpen ? (
         <div
-          className="fixed inset-0 z-40 flex md:hidden"
+          className="fixed inset-0 z-50 flex md:hidden"
           role="dialog"
           aria-modal="true"
         >
@@ -80,7 +82,12 @@ const EmployerPageShell: React.FC<EmployerPageShellProps> = ({
       ) : null}
 
       <div className="flex min-h-screen flex-1 flex-col md:pl-[280px]">
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-background/90 px-4 py-3 shadow-sm md:hidden">
+        <div
+          className={cn(
+            "fixed inset-x-0 top-0 z-40 flex items-center justify-between gap-3 border-b border-border bg-background/95 px-4 shadow-sm backdrop-blur-sm md:hidden",
+            MOBILE_BAR_HEIGHT
+          )}
+        >
           <button
             type="button"
             onClick={openMobile}
@@ -97,6 +104,8 @@ const EmployerPageShell: React.FC<EmployerPageShellProps> = ({
             </span>
           ) : null}
         </div>
+
+        <div className={cn("md:hidden", MOBILE_BAR_HEIGHT)} aria-hidden="true" />
 
         <main className={cn("flex-1 p-4 sm:p-6", contentClassName)}>
           {children}

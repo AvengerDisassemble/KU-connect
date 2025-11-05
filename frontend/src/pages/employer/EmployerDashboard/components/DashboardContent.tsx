@@ -178,6 +178,8 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
 
 const JOBS_PAGE_SIZE = 5;
 const APPLICANTS_PAGE_SIZE = 5;
+const PANEL_HEIGHT_CLASS = "h-[520px]";
+const PANEL_SCROLL_AREA_CLASS = "flex-1 overflow-y-auto";
 
 const uniqueById = <T extends { id: string }>(items: T[]): T[] => {
   const seen = new Set<string>();
@@ -695,7 +697,9 @@ const EmployerDashboardContent = () => {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-5">
-          <Card className="overflow-hidden rounded-2xl border-0 shadow-md">
+          <Card
+            className={`flex ${PANEL_HEIGHT_CLASS} flex-col overflow-hidden rounded-2xl border-0 shadow-md`}
+          >
             <div className="flex items-center justify-between border-b border-border p-6">
               <h2 className="text-xl font-bold">My Open Jobs</h2>
               <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white">
@@ -703,33 +707,35 @@ const EmployerDashboardContent = () => {
               </span>
             </div>
 
-            {showJobsSkeleton ? (
-              <div className="space-y-4 p-6">
-                {[0, 1, 2].map((idx) => (
-                  <Skeleton key={idx} className="h-28 w-full rounded-xl" />
-                ))}
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {jobCards.length ? (
-                  jobCards.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      variant="list"
-                      onViewApplicants={handleViewApplicants}
-                      onEditJob={handleEditJob}
-                    />
-                  ))
-                ) : (
-                  <div className="p-6 text-sm text-muted-foreground">
-                    {jobCountBadge === 0
-                      ? "No jobs published yet. Create your first posting to see it here."
-                      : "No jobs on this page yet."}
-                  </div>
-                )}
-              </div>
-            )}
+            <div className={`${PANEL_SCROLL_AREA_CLASS} px-0`}>
+              {showJobsSkeleton ? (
+                <div className="space-y-4 p-6">
+                  {[0, 1, 2].map((idx) => (
+                    <Skeleton key={idx} className="h-28 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : (
+                <div className="divide-y divide-border">
+                  {jobCards.length ? (
+                    jobCards.map((job) => (
+                      <JobCard
+                        key={job.id}
+                        job={job}
+                        variant="list"
+                        onViewApplicants={handleViewApplicants}
+                        onEditJob={handleEditJob}
+                      />
+                    ))
+                  ) : (
+                    <div className="p-6 text-sm text-muted-foreground">
+                      {jobCountBadge === 0
+                        ? "No jobs published yet. Create your first posting to see it here."
+                        : "No jobs on this page yet."}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {totalJobPages > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
@@ -758,7 +764,9 @@ const EmployerDashboardContent = () => {
         </div>
 
         <div className="lg:col-span-7">
-          <Card className="overflow-hidden rounded-2xl border-0 p-0 shadow-md">
+          <Card
+            className={`flex ${PANEL_HEIGHT_CLASS} flex-col overflow-hidden rounded-2xl border-0 p-0 shadow-md`}
+          >
             <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
               <div>
                 <h2 className="text-xl font-bold">Applicants Inbox</h2>
@@ -789,93 +797,95 @@ const EmployerDashboardContent = () => {
               </div>
             </div>
 
-            {!loadedJobs.length ? (
-              <div className="p-6 text-sm text-muted-foreground">
-                {loadingJobs
-                  ? "Loading your jobs…"
-                  : "Publish a job posting to start receiving applications."}
-              </div>
-            ) : applicantsLoadingAll ? (
-              <div className="space-y-3 p-6">
-                {[0, 1, 2].map((idx) => (
-                  <Skeleton key={idx} className="h-16 w-full rounded-lg" />
-                ))}
-              </div>
-            ) : applicantsErrorAll ? (
-              <div className="flex flex-col gap-3 p-6 text-sm text-destructive">
-                <p>Unable to load applicants.</p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    void refetchAllApplicants();
-                  }}
-                  disabled={applicantsFetching}
-                  className="inline-flex w-fit items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Retry
-                </Button>
-              </div>
-            ) : applicantPageItems.length === 0 ? (
-              <div className="p-6 text-sm text-muted-foreground">
-                {hasSearch
-                  ? "No applicants match your current filters."
-                  : selectedJobId
-                  ? "No applications for this job yet."
-                  : "No applications received yet."}
-              </div>
-            ) : (
-              <div className="px-4 pb-6 sm:px-6">
-                <div className="space-y-2">
-                  <div className="overflow-hidden rounded-lg border border-border bg-[var(--neutral-bg-1)]">
-                    <table className="min-w-full table-fixed border-collapse text-left text-xs font-semibold uppercase text-[var(--neutral-text-secondary)]">
-                      <colgroup>
-                        <col className="w-[38%]" />
-                        <col className="w-[32%]" />
-                        <col className="w-[20%]" />
-                        <col className="w-[10%]" />
-                      </colgroup>
-                      <thead>
-                        <tr className="h-10">
-                          <th className="px-4">Applicant</th>
-                          <th className="px-4">Job</th>
-                          <th className="px-4 text-right">Submitted</th>
-                          <th className="px-4 text-right">Actions</th>
-                        </tr>
-                      </thead>
-                    </table>
-                  </div>
+            <div className={PANEL_SCROLL_AREA_CLASS}>
+              {!loadedJobs.length ? (
+                <div className="p-6 text-sm text-muted-foreground">
+                  {loadingJobs
+                    ? "Loading your jobs…"
+                    : "Publish a job posting to start receiving applications."}
+                </div>
+              ) : applicantsLoadingAll ? (
+                <div className="space-y-3 p-6">
+                  {[0, 1, 2].map((idx) => (
+                    <Skeleton key={idx} className="h-16 w-full rounded-lg" />
+                  ))}
+                </div>
+              ) : applicantsErrorAll ? (
+                <div className="flex flex-col gap-3 p-6 text-sm text-destructive">
+                  <p>Unable to load applicants.</p>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      void refetchAllApplicants();
+                    }}
+                    disabled={applicantsFetching}
+                    className="inline-flex w-fit items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Retry
+                  </Button>
+                </div>
+              ) : applicantPageItems.length === 0 ? (
+                <div className="p-6 text-sm text-muted-foreground">
+                  {hasSearch
+                    ? "No applicants match your current filters."
+                    : selectedJobId
+                    ? "No applications for this job yet."
+                    : "No applications received yet."}
+                </div>
+              ) : (
+                <div className="px-4 pb-6 sm:px-6">
+                  <div className="space-y-2">
+                    <div className="overflow-hidden rounded-lg border border-border bg-[var(--neutral-bg-1)]">
+                      <table className="min-w-full table-fixed border-collapse text-left text-xs font-semibold uppercase text-[var(--neutral-text-secondary)]">
+                        <colgroup>
+                          <col className="w-[38%]" />
+                          <col className="w-[32%]" />
+                          <col className="w-[20%]" />
+                          <col className="w-[10%]" />
+                        </colgroup>
+                        <thead>
+                          <tr className="h-10">
+                            <th className="px-4">Applicant</th>
+                            <th className="px-4">Job</th>
+                            <th className="px-4 text-right">Submitted</th>
+                            <th className="px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                      </table>
+                    </div>
 
-                  <div className="overflow-hidden rounded-lg border border-border">
-                    <table className="min-w-full table-fixed border-collapse text-sm text-foreground">
-                      <colgroup>
-                        <col className="w-[38%]" />
-                        <col className="w-[32%]" />
-                        <col className="w-[20%]" />
-                        <col className="w-[10%]" />
-                      </colgroup>
-                      <tbody className="align-top">
-                        {applicantPageItems.map((record) => (
-                          <ApplicantRow
-                            key={record.id}
-                            application={record.application}
-                            jobTitle={record.jobTitle}
-                            decisionPending={manageMutation.isPending}
-                            onDecision={(applicationId, status) => {
-                              void manageMutation.mutateAsync({
-                                jobId: record.jobId,
-                                applicationId,
-                                status,
-                              });
-                            }}
-                          />
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="overflow-hidden rounded-lg border border-border">
+                      <table className="min-w-full table-fixed border-collapse text-sm text-foreground">
+                        <colgroup>
+                          <col className="w-[38%]" />
+                          <col className="w-[32%]" />
+                          <col className="w-[20%]" />
+                          <col className="w-[10%]" />
+                        </colgroup>
+                        <tbody className="align-top">
+                          {applicantPageItems.map((record) => (
+                            <ApplicantRow
+                              key={record.id}
+                              application={record.application}
+                              jobTitle={record.jobTitle}
+                              decisionPending={manageMutation.isPending}
+                              onDecision={(applicationId, status) => {
+                                void manageMutation.mutateAsync({
+                                  jobId: record.jobId,
+                                  applicationId,
+                                  status,
+                                });
+                              }}
+                            />
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             {applicantTotalCount > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
