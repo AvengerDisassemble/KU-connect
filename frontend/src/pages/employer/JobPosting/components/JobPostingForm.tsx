@@ -45,13 +45,16 @@ function FieldLabel({
 
 function Chip({ text, onRemove }: { text: string; onRemove?: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border px-2 py-1 text-xs">
-      {text}
+    <span
+      className="inline-flex max-w-[220px] items-center gap-1 overflow-hidden rounded-full border px-2 py-1 text-xs"
+      title={text}
+    >
+      <span className="truncate">{text}</span>
       {onRemove && (
         <button
           type="button"
           onClick={onRemove}
-          className="ml-1 rounded-full p-0.5 hover:bg-muted"
+          className="ml-1 flex-shrink-0 rounded-full p-0.5 hover:bg-muted"
           aria-label={`remove ${text}`}
         >
           <X className="h-3 w-3" />
