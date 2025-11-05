@@ -6,7 +6,11 @@
  * Otherwise, the application becomes vulnerable to denial-of-service attacks
  */
 
-const rateLimit = require('express-rate-limit')
+// Use express-rate-limit with IPv6-safe key generator helper
+const erl = require('express-rate-limit')
+const rateLimit = erl
+// In newer versions, ipKeyGenerator is exported; fall back to req.ip if unavailable
+const ipKeyGenerator = erl.ipKeyGenerator || ((req) => req.ip)
 
 /**
  * General API rate limiter - Applied to all routes
@@ -106,6 +110,83 @@ const searchLimiter = rateLimit({
 })
 
 /**
+ * Admin read operations rate limiter
+ * Why: Admin dashboard and user listing can be expensive with large datasets
+ * Limits: 60 requests per 15 minutes per user (not IP, to allow multiple admins from same network)
+ */
+const adminReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 60, // 60 read requests per 15 minutes
+  message: {
+    success: false,
+    message: 'Too many admin read requests. Please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Use user ID instead of IP for authenticated admin requests
+  keyGenerator: (req, res) => (req.user ? `admin_read_${req.user.id}` : ipKeyGenerator(req, res)),
+  skip: (req) => process.env.NODE_ENV === 'test'
+})
+
+/**
+ * Admin write operations rate limiter - For user status changes, announcements
+ * Why: Prevent accidental or malicious mass operations on users
+ * Limits: 30 write operations per 15 minutes per admin user
+ */
+const adminWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // 30 write operations per 15 minutes
+  message: {
+    success: false,
+    message: 'Too many admin write operations. Please slow down and try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req, res) => (req.user ? `admin_write_${req.user.id}` : ipKeyGenerator(req, res)),
+  skip: (req) => process.env.NODE_ENV === 'test'
+})
+
+/**
+ * Admin critical operations rate limiter - For user approval/rejection/suspension
+ * Why: These operations have significant impact and should be done thoughtfully
+ * Limits: 20 critical operations per hour per admin user
+ */
+const adminCriticalLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 20, // 20 critical operations per hour
+  message: {
+    success: false,
+    message: 'Too many critical admin operations. Please wait before performing more user status changes.',
+    retryAfter: '1 hour'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req, res) => (req.user ? `admin_critical_${req.user.id}` : ipKeyGenerator(req, res)),
+  skip: (req) => process.env.NODE_ENV === 'test'
+})
+
+/**
+ * Admin announcement creation rate limiter
+ * Why: Prevent spam announcements and notification flooding
+ * Limits: 10 announcements per hour per admin
+ */
+const adminAnnouncementLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10, // 10 announcements per hour
+  message: {
+    success: false,
+    message: 'Too many announcements created. Please wait before creating more.',
+    retryAfter: '1 hour'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req, res) => (req.user ? `admin_announcement_${req.user.id}` : ipKeyGenerator(req, res)),
+  skip: (req) => process.env.NODE_ENV === 'test'
+})
+
+/**
  * Dashboard rate limiter - For dashboard data retrieval
  * Why: Dashboard queries aggregate multiple data sources but users access frequently
  * Limits: 200 requests per 15 minutes per IP (generous for frequent dashboard refreshes)
@@ -147,6 +228,10 @@ module.exports = {
   authLimiter,
   writeLimiter,
   searchLimiter,
+  adminReadLimiter,
+  adminWriteLimiter,
+  adminCriticalLimiter,
+  adminAnnouncementLimiter,
   dashboardLimiter,
   preferencesLimiter
 }

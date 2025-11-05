@@ -10,7 +10,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "jest --runInBand",
+    "test": "jest --ci --runInBand --verbose",
     "test:quiet": "jest --silent --runInBand",
     "test:verbose": "SHOW_LOGS=true jest --runInBand",
     "test:summary": "jest --verbose=false --runInBand",
@@ -32,6 +32,7 @@
     "install": "^0.13.0",
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.14",
     "mime-types": "^3.0.1",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",

@@ -186,6 +186,40 @@ describe('Authentication Endpoints', () => {
       expect(response.body.success).toBe(false)
       expect(response.body.errors).toBeDefined()
     })
+
+    it('should not allow suspended users to login', async () => {
+      // Create a suspended user
+      const degreeTypeId = await prisma.degreeType.findFirst({ where: { name: 'Computer Science' } }).then(d => d.id)
+      
+      await request(app)
+        .post('/api/register/alumni')
+        .send({
+          name: 'Suspended',
+          surname: 'User',
+          email: 'suspended.user@ku.th',
+          password: 'Password123',
+          degreeTypeId,
+          address: '123 Test St'
+        })
+
+      // Suspend the user
+      await prisma.user.update({
+        where: { email: 'suspended.user@ku.th' },
+        data: { status: 'SUSPENDED' }
+      })
+
+      // Try to login
+      const response = await request(app)
+        .post('/api/login')
+        .send({
+          email: 'suspended.user@ku.th',
+          password: 'Password123'
+        })
+        .expect(403)
+
+      expect(response.body.success).toBe(false)
+      expect(response.body.message).toContain('suspended')
+    })
   })
 
   describe('Authentication Protected Routes', () => {

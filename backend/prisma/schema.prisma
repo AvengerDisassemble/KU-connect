@@ -8,6 +8,7 @@ generator client {
   output   = "../src/generated/prisma"
 }
 
+// Test SQLite datasource for local/test usage
 // Use SQLite for test/dev
 datasource test_db {
   provider = "sqlite"
@@ -59,6 +60,27 @@ enum ApplicationStatus {
   REJECTED
 }
 
+enum UserStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum AnnouncementAudience {
+  ALL
+  STUDENTS
+  EMPLOYERS
+  PROFESSORS
+  ADMINS
+}
+
+enum NotificationPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 // ------------------------------
 //  MODELS
 // ------------------------------
@@ -71,6 +93,7 @@ model User {
   email         String         @unique
   username      String?        @unique
   role          Role
+  status        UserStatus     @default(PENDING)
   verified      Boolean        @default(false)
   avatarKey     String?        // Storage key for user avatar image
   phoneNumber   String?
@@ -81,8 +104,10 @@ model User {
   student       Student?
   hr            HR?
   refreshTokens RefreshToken[]
-  accounts     Account[]
+  accounts      Account[]
   reports       JobReport[]
+  announcements Announcement[]
+  notifications Notification[]
 }
 
 model RefreshToken {
@@ -115,10 +140,15 @@ model Account {
 }
 
 model Professor {
-  id         String @id @default(cuid())
-  userId     String @unique
-  department String
-  user       User   @relation(fields: [userId], references: [id])
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  department     String
+  phoneNumber    String?  // Optional phone number
+  officeLocation String?  // Optional office location
+  title          String?  // Optional academic title (Assistant Professor, Associate Professor, etc.)
+  user           User     @relation(fields: [userId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Admin {
@@ -286,6 +316,34 @@ model Resume {
   jobId        String
   job          Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   source       ResumeSource  @default(UPLOADED)
+}
+
+// ------------------------------
+//  ANNOUNCEMENT & NOTIFICATION MODELS
+// ------------------------------
+
+model Announcement {
+  id            String               @id @default(cuid())
+  title         String
+  content       String
+  audience      AnnouncementAudience
+  priority      NotificationPriority @default(MEDIUM)
+  isActive      Boolean              @default(true)
+  createdBy     String
+  creator       User                 @relation(fields: [createdBy], references: [id])
+  createdAt     DateTime             @default(now())
+  expiresAt     DateTime?
+  notifications Notification[]
+}
+
+model Notification {
+  id             String       @id @default(cuid())
+  announcementId String
+  userId         String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StudentPreference {
