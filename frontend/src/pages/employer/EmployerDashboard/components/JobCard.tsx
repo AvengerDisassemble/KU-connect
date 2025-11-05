@@ -39,19 +39,19 @@ const JobCard: React.FC<JobCardProps> = ({
 
   const Inner = (
     <>
-      <div className="mb-3 flex items-start justify-between">
-        <h3 className="text-xl font-semibold text-foreground">
+      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <h3 className="text-xl font-semibold text-foreground leading-snug line-clamp-2">
           {job.title}
         </h3>
         <Badge
           variant={badgeVariant}
-          className="rounded-full px-3 py-1 uppercase"
+          className="rounded-full px-3 py-1 uppercase self-start sm:self-auto"
         >
           {job.status}
         </Badge>
       </div>
 
-      <div className="mb-4 flex items-center gap-4 text-sm text-muted-foreground">
+      <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
         <span>
           <span className="font-semibold text-foreground">
             {job.applicants}
@@ -68,10 +68,12 @@ const JobCard: React.FC<JobCardProps> = ({
       </div>
 
       <div className="mb-4 text-sm text-muted-foreground">
-        Posted {job.postedDate} • {job.location}
+        <span className="inline-block max-w-full truncate" title={`Posted ${job.postedDate} • ${job.location}`}>
+          Posted {job.postedDate} • {job.location}
+        </span>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button
           onClick={handleViewApplicants}
           size="sm"

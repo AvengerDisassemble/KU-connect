@@ -29,7 +29,7 @@ const StatCard = ({
       />
 
       <div className="p-6 pl-8">
-        <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-secondary">
+        <p className="mb-2 text-sm text-black font-semibold uppercase tracking-wide">
           {label}
         </p>
         <p className="text-4xl font-bold text-primary">

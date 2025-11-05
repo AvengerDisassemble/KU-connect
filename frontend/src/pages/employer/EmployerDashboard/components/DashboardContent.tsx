@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -31,6 +31,7 @@ import {
   listJobs,
   getJobApplicants,
   manageApplication,
+  type JobListItem,
   type JobListResponse,
   type JobApplication,
 } from "@/services/jobs";
@@ -83,7 +84,10 @@ const isSameThaiDay = (isoDate: string, reference = new Date()): boolean => {
   );
 };
 
-const isThaiDateInCurrentWeek = (isoDate: string, reference = new Date()): boolean => {
+const isThaiDateInCurrentWeek = (
+  isoDate: string,
+  reference = new Date()
+): boolean => {
   const created = toBangkokDate(isoDate);
   const ref = toBangkokDate(reference);
 
@@ -154,25 +158,39 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
     return { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 };
   }
 
-  return records.reduce<AggregateStats>(
-    (acc, record) => {
-      if (record.status === "QUALIFIED") {
-        acc.qualified += 1;
-      }
+  return records.reduce<AggregateStats>((acc, record) => {
+    if (record.status === "QUALIFIED") {
+      acc.qualified += 1;
+    }
 
-      if (isSameThaiDay(record.submittedAt)) {
-        acc.newToday += 1;
-      }
+    if (isSameThaiDay(record.submittedAt)) {
+      acc.newToday += 1;
+    }
 
-      if (isThaiDateInCurrentWeek(record.submittedAt)) {
-        acc.newThisWeek += 1;
-      }
+    if (isThaiDateInCurrentWeek(record.submittedAt)) {
+      acc.newThisWeek += 1;
+    }
 
-      acc.total += 1;
-      return acc;
-    },
-    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 }
-  );
+    acc.total += 1;
+    return acc;
+  }, { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 });
+};
+
+const JOBS_PAGE_SIZE = 5;
+const APPLICANTS_PAGE_SIZE = 5;
+
+const uniqueById = <T extends { id: string }>(items: T[]): T[] => {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+};
+
+const areJobListsEqual = (a: JobListItem[] = [], b: JobListItem[] = []) => {
+  if (a.length !== b.length) return false;
+  return a.every((item, index) => item.id === b[index]?.id);
 };
 
 const EmployerDashboardContent = () => {
@@ -182,6 +200,15 @@ const EmployerDashboardContent = () => {
 
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+
+  const [jobPage, setJobPage] = useState(1);
+  const [jobsByPage, setJobsByPage] = useState<Map<number, JobListItem[]>>(
+    () => new Map()
+  );
+  const [jobsTotal, setJobsTotal] = useState(0);
+  const [jobsLimit, setJobsLimit] = useState(JOBS_PAGE_SIZE);
+
+  const [applicantPage, setApplicantPage] = useState(1);
 
   const {
     data: profile,
@@ -198,31 +225,232 @@ const EmployerDashboardContent = () => {
 
   const hrId: string | undefined = profile?.hr?.id;
 
+  useEffect(() => {
+    setJobsByPage(() => new Map());
+    setJobsTotal(0);
+    setJobsLimit(JOBS_PAGE_SIZE);
+    setJobPage(1);
+    setSelectedJobId(null);
+  }, [hrId]);
+
   const {
-    data: jobList,
-    isLoading: jobsLoading,
+    data: jobsPageData,
+    isLoading: jobsInitialLoading,
     isError: jobsError,
-    refetch: refetchJobs,
-    isRefetching: jobsRefetching,
+    refetch: refetchJobsPage,
+    isFetching: jobsFetching,
   } = useQuery<JobListResponse>({
-    queryKey: ["employer-jobs"],
-    queryFn: () => listJobs(),
-    enabled: !!user?.id,
+    queryKey: ["employer-jobs", hrId, jobPage, jobsLimit || JOBS_PAGE_SIZE],
+    queryFn: () => {
+      const payload: Record<string, unknown> = {
+        page: jobPage,
+        limit: jobsLimit || JOBS_PAGE_SIZE,
+      };
+      if (hrId) {
+        payload.hrId = hrId;
+      }
+      return listJobs(payload);
+    },
+    enabled: !!hrId,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: false,
+    placeholderData: (previousData) => previousData,
   });
 
-  const filteredJobs = useMemo<JobListResponse["items"][number][]>(() => {
-    if (!jobList?.items) return [];
-    if (!hrId) return [];
-    return jobList.items.filter((job) => job.hrId === hrId);
-  }, [jobList, hrId]);
+  useEffect(() => {
+    if (!jobsPageData) return;
 
-  const jobIds = useMemo<string[]>(
-    () => filteredJobs.map((job) => job.id).sort(),
-    [filteredJobs]
+    const normalizedItems = uniqueById<JobListItem>(jobsPageData.items);
+
+    setJobsByPage((prev) => {
+      const next = new Map(prev);
+      const current = next.get(jobsPageData.page);
+      if (current && areJobListsEqual(current, normalizedItems)) {
+        return prev;
+      }
+
+      if (!current && normalizedItems.length === 0) {
+        return prev;
+      }
+
+      next.set(jobsPageData.page, normalizedItems);
+      return next;
+    });
+
+    if (typeof jobsPageData.total === "number") {
+      setJobsTotal(jobsPageData.total);
+    }
+
+    if (jobsPageData.limit && jobsPageData.limit > 0) {
+      setJobsLimit((prev) =>
+        prev === jobsPageData.limit ? prev : jobsPageData.limit
+      );
+    }
+  }, [jobsPageData]);
+
+  const loadedJobs = useMemo<JobListItem[]>(() => {
+    const map = new Map<string, JobListItem>();
+    jobsByPage.forEach((items) => {
+      items.forEach((job) => {
+        if (!map.has(job.id)) {
+          map.set(job.id, job);
+        }
+      });
+    });
+    return Array.from(map.values());
+  }, [jobsByPage]);
+
+  useEffect(() => {
+    if (!loadedJobs.length) {
+      setSelectedJobId(null);
+      return;
+    }
+
+    setSelectedJobId((prev) => {
+      if (prev && loadedJobs.some((job) => job.id === prev)) {
+        return prev;
+      }
+      return null;
+    });
+  }, [loadedJobs]);
+
+  const jobIds = useMemo(
+    () => loadedJobs.map((job) => job.id).sort(),
+    [loadedJobs]
   );
+
+  const totalJobPages = useMemo(() => {
+    if (!jobsLimit) return 0;
+    if (!jobsTotal) return 0;
+    return Math.ceil(jobsTotal / jobsLimit);
+  }, [jobsLimit, jobsTotal]);
+
+  useEffect(() => {
+    if (!totalJobPages) {
+      setJobPage(1);
+      return;
+    }
+
+    setJobPage((prev) => Math.min(Math.max(prev, 1), totalJobPages));
+  }, [totalJobPages]);
+
+  const jobPageItems = useMemo<JobListItem[]>(() => {
+    const cached = jobsByPage.get(jobPage);
+    if (cached) {
+      return cached;
+    }
+
+    if (jobsPageData && jobsPageData.page === jobPage) {
+      return uniqueById<JobListItem>(jobsPageData.items);
+    }
+
+    return [];
+  }, [jobPage, jobsByPage, jobsPageData]);
+
+  const jobCountBadge = jobsTotal;
+  const jobPageLabel =
+    totalJobPages > 0
+      ? `${Math.min(jobPage, totalJobPages)} of ${totalJobPages}`
+      : "0 of 0";
+
+  const prefetchedJobPages = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    prefetchedJobPages.current.clear();
+  }, [hrId]);
+
+  useEffect(() => {
+    if (!hrId || !jobsTotal || !jobsLimit) {
+      return;
+    }
+
+    const knownPages = jobsByPage;
+    const totalPages = Math.ceil(jobsTotal / jobsLimit);
+    const toFetch: number[] = [];
+
+    for (let page = 1; page <= totalPages; page += 1) {
+      if (knownPages.has(page)) continue;
+      if (prefetchedJobPages.current.has(page)) continue;
+      toFetch.push(page);
+      prefetchedJobPages.current.add(page);
+    }
+
+    if (!toFetch.length) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const preload = async () => {
+      await Promise.all(
+        toFetch.map(async (page) => {
+          try {
+            const payload: Record<string, unknown> = {
+              page,
+              limit: jobsLimit || JOBS_PAGE_SIZE,
+            };
+            if (hrId) {
+              payload.hrId = hrId;
+            }
+            const response = await listJobs(payload);
+            if (cancelled) return;
+            const normalizedItems = uniqueById<JobListItem>(response.items);
+            if (!normalizedItems.length) return;
+            setJobsByPage((prev) => {
+              if (prev.has(page)) {
+                return prev;
+              }
+              const next = new Map(prev);
+              next.set(page, normalizedItems);
+              return next;
+            });
+            if (
+              typeof response.total === "number" &&
+              response.total !== jobsTotal
+            ) {
+              setJobsTotal(response.total);
+            }
+          } catch (error) {
+            console.error("Failed to preload jobs page", page, error);
+          }
+        })
+      );
+    };
+
+    void preload();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hrId, jobsTotal, jobsLimit, jobsByPage]);
+
+  const loadingJobs = profileLoading || jobsInitialLoading;
+  const showJobsError = !loadingJobs && (profileError || jobsError);
+  const jobsRefetching = jobsFetching && !loadingJobs;
+
+  const jobControlsDisabled = loadingJobs || jobsFetching;
+  const prevJobsDisabled = jobPage <= 1 || jobControlsDisabled;
+  const nextJobsDisabled =
+    jobControlsDisabled ||
+    jobsTotal === 0 ||
+    jobPage * jobsLimit >= jobsTotal;
+
+  const showJobsSkeleton =
+    loadingJobs ||
+    (!jobsInitialLoading && !jobsByPage.has(jobPage) && jobsFetching);
+
+  const handleNextJobsPage = useCallback(() => {
+    if (nextJobsDisabled) return;
+    setJobPage((prev) =>
+      totalJobPages ? Math.min(prev + 1, totalJobPages) : prev + 1
+    );
+  }, [nextJobsDisabled, totalJobPages]);
+
+  const handlePrevJobsPage = useCallback(() => {
+    if (prevJobsDisabled) return;
+    setJobPage((prev) => Math.max(prev - 1, 1));
+  }, [prevJobsDisabled]);
 
   const {
     data: applicantsByJob,
@@ -231,7 +459,7 @@ const EmployerDashboardContent = () => {
     refetch: refetchAllApplicants,
     isFetching: applicantsFetching,
   } = useQuery<Record<string, JobApplication[]>>({
-    queryKey: ["employer-all-applicants", jobIds],
+    queryKey: ["employer-all-applicants", hrId, jobIds],
     enabled: !!hrId && jobIds.length > 0,
     refetchOnWindowFocus: false,
     retry: false,
@@ -249,6 +477,162 @@ const EmployerDashboardContent = () => {
       return Object.fromEntries(entries);
     },
   });
+
+  const applicantsMap = applicantsByJob ?? {};
+
+  const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
+    if (!loadedJobs.length) {
+      return [];
+    }
+
+    return loadedJobs.flatMap((job) => {
+      const apps = applicantsMap[job.id] ?? [];
+      return apps.map((app) => {
+        const userInfo = app.student?.user;
+        const name =
+          [userInfo?.name, userInfo?.surname].filter(Boolean).join(" ") ||
+          "Unknown applicant";
+        return {
+          id: app.id,
+          name,
+          email: userInfo?.email ?? null,
+          degree: app.student?.degreeType?.name ?? null,
+          submittedAt: app.createdAt,
+          status: app.status,
+          jobId: job.id,
+          jobTitle: job.title,
+          application: app,
+        } satisfies ApplicantRecord;
+      });
+    });
+  }, [applicantsMap, loadedJobs]);
+
+  const baseApplicants = useMemo<ApplicantRecord[]>(() => {
+    if (!selectedJobId) {
+      return allApplicantRecords;
+    }
+
+    return allApplicantRecords.filter((record) => record.jobId === selectedJobId);
+  }, [allApplicantRecords, selectedJobId]);
+
+  const hasSearch = searchQuery.trim().length > 0;
+
+  const filteredApplicants = useMemo<ApplicantRecord[]>(() => {
+    if (!hasSearch) {
+      return baseApplicants;
+    }
+
+    const q = searchQuery.trim().toLowerCase();
+    return baseApplicants.filter((record) => {
+      return [
+        record.name,
+        record.email ?? "",
+        record.degree ?? "",
+        record.jobTitle,
+      ]
+        .filter(Boolean)
+        .some((field) => field.toLowerCase().includes(q));
+    });
+  }, [baseApplicants, hasSearch, searchQuery]);
+
+  useEffect(() => {
+    setApplicantPage(1);
+  }, [selectedJobId, searchQuery]);
+
+  const applicantTotalCount = filteredApplicants.length;
+
+  const totalApplicantPages =
+    applicantTotalCount === 0
+      ? 0
+      : Math.ceil(applicantTotalCount / APPLICANTS_PAGE_SIZE);
+
+  useEffect(() => {
+    if (!totalApplicantPages) {
+      setApplicantPage(1);
+      return;
+    }
+
+    setApplicantPage((prev) =>
+      Math.min(Math.max(prev, 1), totalApplicantPages)
+    );
+  }, [totalApplicantPages]);
+
+  const applicantPageItems = useMemo(
+    () =>
+      filteredApplicants.slice(
+        (applicantPage - 1) * APPLICANTS_PAGE_SIZE,
+        applicantPage * APPLICANTS_PAGE_SIZE
+      ),
+    [filteredApplicants, applicantPage]
+  );
+
+  const applicantControlsDisabled = applicantsFetching || applicantsLoadingAll;
+  const applicantPrevDisabled =
+    applicantControlsDisabled || applicantPage <= 1;
+  const applicantNextDisabled =
+    applicantControlsDisabled ||
+    totalApplicantPages === 0 ||
+    applicantPage * APPLICANTS_PAGE_SIZE >= applicantTotalCount;
+
+  const applicantPageLabel =
+    totalApplicantPages > 0
+      ? `${Math.min(applicantPage, totalApplicantPages)} of ${totalApplicantPages}`
+      : "0 of 0";
+
+  const aggregateStats = useMemo(
+    () => computeAggregateStats(allApplicantRecords),
+    [allApplicantRecords]
+  );
+
+  const openJobCount = useMemo(
+    () =>
+      loadedJobs.filter(
+        (job) => new Date(job.application_deadline).getTime() >= Date.now()
+      ).length,
+    [loadedJobs]
+  );
+
+  const stats = {
+    openJobs: openJobCount,
+    newApplicationsToday: aggregateStats.newToday,
+    offersMade: aggregateStats.qualified,
+  };
+
+  const jobCards: JobCardViewModel[] = useMemo(
+    () =>
+      jobPageItems.map((job) =>
+        mapJobToViewModel(job, applicantsMap[job.id])
+      ),
+    [applicantsMap, jobPageItems]
+  );
+
+  const selectedJob = useMemo(
+    () =>
+      selectedJobId
+        ? loadedJobs.find((job) => job.id === selectedJobId) ?? null
+        : null,
+    [loadedJobs, selectedJobId]
+  );
+
+  const handleViewApplicants = (jobId: string): void => {
+    setSelectedJobId((prev) => (prev === jobId ? null : jobId));
+  };
+
+  const handleEditJob = (jobId: string): void => {
+    navigate(`/employer/job-postings/${jobId}/edit`);
+  };
+
+  const handleNextApplicantPage = useCallback(() => {
+    if (applicantNextDisabled) return;
+    setApplicantPage((prev) =>
+      totalApplicantPages ? Math.min(prev + 1, totalApplicantPages) : prev + 1
+    );
+  }, [applicantNextDisabled, totalApplicantPages]);
+
+  const handlePrevApplicantPage = useCallback(() => {
+    if (applicantPrevDisabled) return;
+    setApplicantPage((prev) => Math.max(prev - 1, 1));
+  }, [applicantPrevDisabled]);
 
   const manageMutation = useMutation({
     mutationFn: ({
@@ -275,103 +659,6 @@ const EmployerDashboardContent = () => {
     },
   });
 
-  useEffect(() => {
-    if (!filteredJobs.length) {
-      setSelectedJobId(null);
-      return;
-    }
-
-    setSelectedJobId((prev) => {
-      if (prev && filteredJobs.some((job) => job.id === prev)) {
-        return prev;
-      }
-      return null;
-    });
-  }, [filteredJobs]);
-
-  const jobCards: JobCardViewModel[] = filteredJobs.map((job) =>
-    mapJobToViewModel(job, applicantsByJob?.[job.id])
-  );
-
-  const selectedJob = filteredJobs.find((job) => job.id === selectedJobId);
-
-  const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
-    if (!filteredJobs.length) {
-      return [];
-    }
-
-    return filteredJobs.flatMap((job) => {
-      const apps = applicantsByJob?.[job.id] ?? [];
-      return apps.map((app) => {
-        const userInfo = app.student?.user;
-        const name =
-          [userInfo?.name, userInfo?.surname].filter(Boolean).join(" ") ||
-          "Unknown applicant";
-        return {
-          id: app.id,
-          name,
-          email: userInfo?.email ?? null,
-          degree: app.student?.degreeType?.name ?? null,
-          submittedAt: app.createdAt,
-          status: app.status,
-          jobId: job.id,
-          jobTitle: job.title,
-          application: app,
-        } satisfies ApplicantRecord;
-      });
-    });
-  }, [filteredJobs, applicantsByJob]);
-
-  const applicantsForSelection = useMemo<ApplicantRecord[]>(() => {
-    if (!selectedJobId) {
-      return allApplicantRecords;
-    }
-
-    return allApplicantRecords.filter((record) => record.jobId === selectedJobId);
-  }, [allApplicantRecords, selectedJobId]);
-
-  const hasSearch = searchQuery.trim().length > 0;
-
-  const visibleApplicants = useMemo<ApplicantRecord[]>(() => {
-    if (!hasSearch) {
-      return applicantsForSelection;
-    }
-
-    const q = searchQuery.trim().toLowerCase();
-    return applicantsForSelection.filter((record) => {
-      return [
-        record.name,
-        record.email ?? "",
-        record.degree ?? "",
-        record.jobTitle,
-      ]
-        .filter(Boolean)
-        .some((field) => field.toLowerCase().includes(q));
-    });
-  }, [applicantsForSelection, hasSearch, searchQuery]);
-
-  const aggregateStats = useMemo(
-    () => computeAggregateStats(allApplicantRecords),
-    [allApplicantRecords]
-  );
-
-  const stats = {
-    openJobs: jobCards.filter((job) => job.status === "open").length,
-    newApplicationsToday: aggregateStats.newToday,
-    offersMade: aggregateStats.qualified,
-  };
-
-  const handleViewApplicants = (jobId: string): void => {
-    setSelectedJobId((prev) => (prev === jobId ? null : jobId));
-  };
-
-  const handleEditJob = (jobId: string): void => {
-    navigate(`/employer/job-postings/${jobId}/edit`);
-  };
-
-  const loadingJobs = profileLoading || jobsLoading;
-  const showJobsError = !loadingJobs && (profileError || jobsError);
-
   return (
     <div className="mx-auto w-full max-w-6xl px-2 sm:px-4">
       <DashboardHeader
@@ -395,9 +682,9 @@ const EmployerDashboardContent = () => {
           <Button
             variant="outline"
             onClick={() => {
-              void refetchJobs();
+              void refetchJobsPage();
             }}
-            disabled={jobsRefetching}
+            disabled={jobsFetching}
             className="inline-flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed"
           >
             <RefreshCw className="h-4 w-4" />
@@ -412,11 +699,11 @@ const EmployerDashboardContent = () => {
             <div className="flex items-center justify-between border-b border-border p-6">
               <h2 className="text-xl font-bold">My Open Jobs</h2>
               <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-primary px-3 text-sm font-semibold text-white">
-                {filteredJobs.length}
+                {jobCountBadge}
               </span>
             </div>
 
-            {loadingJobs ? (
+            {showJobsSkeleton ? (
               <div className="space-y-4 p-6">
                 {[0, 1, 2].map((idx) => (
                   <Skeleton key={idx} className="h-28 w-full rounded-xl" />
@@ -424,22 +711,49 @@ const EmployerDashboardContent = () => {
               </div>
             ) : (
               <div className="divide-y divide-border">
-                {jobCards.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    variant="list"
-                    onViewApplicants={handleViewApplicants}
-                    onEditJob={handleEditJob}
-                  />
-                ))}
-                {!jobCards.length && (
+                {jobCards.length ? (
+                  jobCards.map((job) => (
+                    <JobCard
+                      key={job.id}
+                      job={job}
+                      variant="list"
+                      onViewApplicants={handleViewApplicants}
+                      onEditJob={handleEditJob}
+                    />
+                  ))
+                ) : (
                   <div className="p-6 text-sm text-muted-foreground">
-                    No jobs published yet. Create your first posting to see it here.
+                    {jobCountBadge === 0
+                      ? "No jobs published yet. Create your first posting to see it here."
+                      : "No jobs on this page yet."}
                   </div>
                 )}
               </div>
             )}
+
+            {totalJobPages > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
+                <span className="text-sm text-muted-foreground">Page {jobPageLabel}</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePrevJobsPage}
+                    disabled={prevJobsDisabled}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleNextJobsPage}
+                    disabled={nextJobsDisabled}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </Card>
         </div>
 
@@ -466,14 +780,20 @@ const EmployerDashboardContent = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10"
-                  disabled={!filteredJobs.length || applicantsFetching}
+                  disabled={
+                    applicantControlsDisabled ||
+                    !loadedJobs.length ||
+                    loadingJobs
+                  }
                 />
               </div>
             </div>
 
-            {!filteredJobs.length ? (
+            {!loadedJobs.length ? (
               <div className="p-6 text-sm text-muted-foreground">
-                Publish a job posting to start receiving applications.
+                {loadingJobs
+                  ? "Loading your jobs…"
+                  : "Publish a job posting to start receiving applications."}
               </div>
             ) : applicantsLoadingAll ? (
               <div className="space-y-3 p-6">
@@ -496,7 +816,7 @@ const EmployerDashboardContent = () => {
                   Retry
                 </Button>
               </div>
-            ) : visibleApplicants.length === 0 ? (
+            ) : applicantPageItems.length === 0 ? (
               <div className="p-6 text-sm text-muted-foreground">
                 {hasSearch
                   ? "No applicants match your current filters."
@@ -535,7 +855,7 @@ const EmployerDashboardContent = () => {
                         <col className="w-[10%]" />
                       </colgroup>
                       <tbody className="align-top">
-                        {visibleApplicants.map((record) => (
+                        {applicantPageItems.map((record) => (
                           <ApplicantRow
                             key={record.id}
                             application={record.application}
@@ -556,6 +876,31 @@ const EmployerDashboardContent = () => {
                 </div>
               </div>
             )}
+
+            {applicantTotalCount > 0 ? (
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
+                <span className="text-sm text-muted-foreground">Page {applicantPageLabel}</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePrevApplicantPage}
+                    disabled={applicantPrevDisabled}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleNextApplicantPage}
+                    disabled={applicantNextDisabled}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+
             {applicantsFetching && !applicantsLoadingAll && (
               <div className="px-6 pb-4 text-xs text-muted-foreground">
                 Refreshing applicants…
