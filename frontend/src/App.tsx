@@ -10,8 +10,12 @@ import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
 import StudentProfilePage from "@/pages/student/profile/ProfilePage";
 // import BrowserJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
 import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
+import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
+import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
+import JobEditPage from "@/pages/employer/JobPosting/JobEditPage";
+
 
 const App: React.FC = () => {
   return (
@@ -51,6 +55,30 @@ const App: React.FC = () => {
             element={
               <Guard role="employer">
                 <EmployerDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer/profile/:userId"
+            element={
+              <Guard role="employer">
+                <EmployerProfilePage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer/job-postings/create"
+            element={
+              <Guard role="employer">
+                <JobPostingPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer/job-postings/:jobId/edit"
+            element={
+              <Guard role="employer">
+                <JobEditPage />
               </Guard>
             }
           />

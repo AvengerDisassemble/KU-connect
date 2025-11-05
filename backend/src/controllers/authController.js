@@ -68,7 +68,7 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
       role: 'STUDENT'
     },
     {
-      degreeTypeId: parseInt(degreeTypeId),
+      degreeTypeId, // Keep as string (cuid)
       address
     }
   )
@@ -87,13 +87,13 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
  * POST /register/enterprise
  */
 const registerEnterprise = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, companyName, address } = req.body
+  const { name, surname, email, password, companyName, address, phoneNumber } = req.body
 
   // Validate input
-  if (!name || !surname || !email || !password || !companyName || !address) {
+  if (!name || !surname || !email || !password || !companyName || !address || !phoneNumber) {
     return res.status(400).json({
       success: false,
-      message: 'All fields are required: name, surname, email, password, companyName, address'
+      message: 'All fields are required: name, surname, email, password, companyName, address, phoneNumber'
     })
   }
 
@@ -108,7 +108,8 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
     },
     {
       companyName,
-      address
+      address,
+      phoneNumber
     }
   )
 
@@ -183,7 +184,8 @@ const registerAdmin = asyncErrorHandler(async (req, res) => {
  * POST /auth/refresh
  */
 const refreshToken = asyncErrorHandler(async (req, res) => {
-  const refreshToken = req.cookies?.refreshToken
+  // Accept refresh token from either cookies or request body
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken
 
   if (!refreshToken) {
     return res.status(401).json({
@@ -206,7 +208,8 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
     success: true,
     message: 'Token refreshed successfully',
     data: {
-      user: result.user
+      user: result.user,
+      accessToken: result.accessToken  // Include token in response for clients that can't use cookies
     }
   })
 })
@@ -216,7 +219,8 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
  * POST /auth/logout
  */
 const logout = asyncErrorHandler(async (req, res) => {
-  const refreshToken = req.cookies?.refreshToken
+  // Accept refresh token from either cookies or request body
+  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken
 
   if (refreshToken) {
     await logoutUser(refreshToken)

@@ -1,0 +1,30 @@
+name: Run Jest Tests with Prisma Migration
+
+on: [push]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'  # specify your node version
+
+    - name: Install Dependencies
+      run: cd backend; npm install
+
+    - name: Copy env files
+      run: cd backend; cp .env.example .env
+
+    - name: Run Prisma Migrate
+      run: cd backend; npx prisma migrate deploy
+
+    - name: Generate Prisma Client
+      run: cd backend; npx prisma generate
+
+    - name: Run Jest Tests
+      run: cd backend; npm test

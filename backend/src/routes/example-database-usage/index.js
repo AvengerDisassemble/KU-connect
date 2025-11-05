@@ -2,9 +2,7 @@
  * Example subroute for database usage demonstration purposes
  * @module routes/example-database-usage/index
  */
-const { PrismaClient } = require('../../generated/prisma')
-
-const prisma = new PrismaClient()
+const prisma = require('../../models/prisma')
 
 const express = require('express')
 const router = express.Router()
@@ -42,7 +40,7 @@ async function createExampleProfessorUser() {
             console.log('Professor user already exists:', existingUser)
         }
     } catch (error) {
-        console.error('Error creating professor user:', error)
+        console.error('Error creating professor user:', error.message)
         throw error
     }
 }
@@ -53,7 +51,7 @@ router.get('/', async (req, res) => {
         const users = await prisma.user.findMany()
         res.json(users)
     } catch (error) {
-        console.error('Error fetching users:', error)
+        console.error('Error fetching users:', error.message)
         res.status(500).json({ error: 'Internal Server Error' })
     }
 })
@@ -64,7 +62,7 @@ router.get('/create-professor', async (req, res) => {
         await createExampleProfessorUser()
         res.status(201).json({ message: 'Professor user created successfully' })
     } catch (error) {
-        console.error('Error creating professor user:', error)
+        console.error('Error creating professor user:', error.message)
         res.status(500).json({ error: 'Internal Server Error' })
     }
 })

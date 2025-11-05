@@ -6,7 +6,21 @@
  * @param {Function} next - Express next function
  */
 function errorHandler (err, req, res, next) {
-  console.error('Error:', err)
+  // Log error safely without exposing sensitive information
+  // Only log error type, message, and code in production
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Error occurred:', {
+      name: err.name,
+      message: err.message,
+      code: err.code,
+      status: err.status
+    })
+  } else {
+    // Full error details in development for debugging
+    // Limit stack trace depth to avoid exposing too much information
+    const stack = err.stack ? err.stack.split('\n').slice(0, 5).join('\n') : ''
+    console.error('Error:', err.message, '\nStack:', stack)
+  }
 
   // Default error
   let error = {
@@ -29,21 +43,51 @@ function errorHandler (err, req, res, next) {
 
   // Custom application errors
   if (err.message) {
+    // Authentication errors (401)
     if (err.message.includes('Invalid credentials')) {
       error.message = 'Invalid credentials'
       error.statusCode = 401
-    } else if (err.message.includes('already registered') || err.message.includes('already exists')) {
+    } else if (err.message.includes('refresh token') || err.message.includes('Refresh token')) {
       error.message = err.message
-      error.statusCode = 409
-    } else if (err.message.includes('not found')) {
+      error.statusCode = 401
+    }
+    
+    // Forbidden errors (403)
+    else if (err.message.includes('Account suspended')) {
+      // Only for authentication middleware blocking suspended users
       error.message = err.message
-      error.statusCode = 404
+      error.statusCode = 403
     } else if (err.message.includes('Access denied') || err.message.includes('Forbidden')) {
       error.message = err.message
       error.statusCode = 403
+    }
+    
+    // Not found errors (404) - Check before "Invalid" to avoid conflicts
+    else if (err.message.includes('not found')) {
+      error.message = err.message
+      error.statusCode = 404
+    }
+    
+    // Bad request errors (400)
+    else if (err.message.includes('Cannot suspend your own account')) {
+      error.message = err.message
+      error.statusCode = 400
+    } else if (err.message.includes('Cannot reject an already-approved user')) {
+      error.message = err.message
+      error.statusCode = 400
+    } else if (err.message.includes('User is already')) {
+      // "User is already pending approval", "User is already approved", etc.
+      error.message = err.message
+      error.statusCode = 400
     } else if (err.message.includes('required') || err.message.includes('Invalid')) {
       error.message = err.message
       error.statusCode = 400
+    }
+    
+    // Conflict errors (409)
+    else if (err.message.includes('already registered') || err.message.includes('already exists')) {
+      error.message = err.message
+      error.statusCode = 409
     }
   }
 
@@ -63,6 +107,28 @@ function errorHandler (err, req, res, next) {
   if (err.name === 'TokenExpiredError') {
     error.message = 'Token expired'
     error.statusCode = 401
+  }
+
+  // Multer errors
+  if (err.name === 'MulterError') {
+    error.statusCode = 400
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      error.message = 'File size exceeds the 10 MB limit'
+    } else if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+      error.message = 'Unexpected field name. Please check the field name in your request.'
+    } else {
+      error.message = err.message || 'File upload error'
+    }
+  }
+
+  // Multer file filter errors
+  if (err.message && (
+    err.message.includes('Only PDF files are allowed') ||
+    err.message.includes('Only JPEG, PNG, or PDF files are allowed') ||
+    err.message.includes('Only JPEG, PNG, GIF, or WebP image files are allowed')
+  )) {
+    error.statusCode = 400
+    error.message = err.message
   }
 
   res.status(error.statusCode).json({

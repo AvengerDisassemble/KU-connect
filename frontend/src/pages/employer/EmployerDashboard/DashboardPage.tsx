@@ -1,7 +1,10 @@
-import React from "react";
+import EmployerPageShell from "@/components/EmployerPageShell";
+import EmployerDashboardContent from "./components/DashboardContent";
 
-const EmployerDashboardPage: React.FC = () => {
-  return <div className="p-4">Employer Dashboard (placeholder)</div>;
-};
-
-export default EmployerDashboardPage;
+export default function EmployerDashboardPage() {
+  return (
+    <EmployerPageShell title="Employer Dashboard">
+      <EmployerDashboardContent />
+    </EmployerPageShell>
+  );
+}

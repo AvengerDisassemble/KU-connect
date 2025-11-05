@@ -9,14 +9,14 @@ export interface ProfileResponse {
   email: string;
   verified: boolean;
   student?: {
-    id: number;
+    id: string;
     userId: string;
-    degreeTypeId: number;
+    degreeTypeId: string;
     address: string;
     gpa?: number;
     expectedGraduationYear?: number;
-    degreeType: {
-      id: number;
+    degreeType?: {
+      id: string;
       name: string;
     };
   };
@@ -30,7 +30,7 @@ export interface UpdateProfileRequest {
   address?: string;
   expectedGraduationYear?: number;
   email?: string;
-  degreeTypeId?: number;
+  degreeTypeId?: string;
 }
 
 /**

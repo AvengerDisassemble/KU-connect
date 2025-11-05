@@ -1,5 +1,5 @@
 /**
- * @module validators/profile.validator
+ * @module validators/profileValidator
  * @description Joi validation schemas for profile operations
  */
 
@@ -17,19 +17,24 @@ const updateProfileSchema = Joi.object({
   name: Joi.string().max(100).optional(),
   surname: Joi.string().max(100).optional(),
   email: Joi.any().forbidden().messages({
-  'any.unknown': 'Email cannot be changed. Please contact support.'
+  'any.forbidden': 'Email cannot be changed. Please contact support.'
   }),
-  phoneNumber: Joi.string()
-    .pattern(/^[0-9+\-()\s]+$/)
-    .optional()
-    .allow(null, ''),
-
+  
   // Optional role to specify which type of update
   role: Joi.string().valid('student', 'hr').optional(),
+  
+  // phoneNumber is optional for updates (database schema allows NULL)
+  phoneNumber: Joi.string()
+    .pattern(/^[0-9+\-()\s]{8,15}$/)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.pattern.base': 'Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces'
+    }),
 
   // Student-specific fields
   address: Joi.string().max(255).optional(),
-  degreeTypeId: Joi.number().integer().positive().optional(),
+  degreeTypeId: Joi.string().optional(), // Changed from number to string (cuid)
 
   gpa: Joi.number()
     .precision(2)
@@ -54,6 +59,7 @@ const updateProfileSchema = Joi.object({
 
   // HR-specific fields
   companyName: Joi.string().max(255).optional(),
+  description: Joi.string().max(1000).optional().allow(null),
   industry: Joi.string().optional(),
   companySize: Joi.string().optional(),
   website: Joi.string().uri().optional().allow(null, ''),

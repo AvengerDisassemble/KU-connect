@@ -11,13 +11,14 @@ import Logo from "@/assets/logo.png";
 
 const Header = () => {
   const { user, isAuthenticated } = useAuth();
+  const isStudent = user?.role === "student";
   const navigate = useNavigate();
 
   // Fetch user profile for display
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
     queryFn: () => getProfile(user!.id),
-    enabled: !!user?.id,
+    enabled: isStudent && !!user?.id,
   });
 
   const handleLogout = async () => {
@@ -35,6 +36,10 @@ const Header = () => {
     return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
   };
 
+  if (isAuthenticated && !isStudent) {
+    return null;
+  }
+
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
       {/* Left: Logo */}
@@ -43,45 +48,51 @@ const Header = () => {
       </Link>
 
       {/* Center: Navigation */}
-      <nav className="hidden md:flex items-center gap-6">
-        <Link
-          to="/student"
-          className="text-foreground hover:text-primary text-sm font-medium"
-        >
-          Home
-        </Link>
-        <Link
-          to="/student/browsejobs"
-          className="text-foreground hover:text-primary text-sm font-medium"
-        >
-          Browse Jobs
-        </Link>
-        <Link
-          to={user?.id ? `/student/profile/${user.id}` : "/student/profile"}
-          className="text-foreground hover:text-primary text-sm font-medium"
-        >
-          Profile
-        </Link>
-      </nav>
+      {isStudent && (
+        <nav className="hidden md:flex items-center gap-6">
+          <Link
+            to="/student"
+            className="text-foreground hover:text-primary text-sm font-medium"
+          >
+            Home
+          </Link>
+          <Link
+            to="/student/browsejobs"
+            className="text-foreground hover:text-primary text-sm font-medium"
+          >
+            Browse Jobs
+          </Link>
+          <Link
+            to={user?.id ? `/student/profile/${user.id}` : "/student/profile"}
+            className="text-foreground hover:text-primary text-sm font-medium"
+          >
+            Profile
+          </Link>
+        </nav>
+      )}
 
       {/* Right: Search, Notifications, User, Mobile Menu */}
       <div className="flex items-center gap-4">
         {/* Search */}
-        <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search"
-            className="pl-10 w-64 bg-muted border-0"
-          />
-        </div>
+        {isStudent && (
+          <div className="relative hidden md:block">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search"
+              className="pl-10 w-64 bg-muted border-0"
+            />
+          </div>
+        )}
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5" />
-        </Button>
+        {isStudent && (
+          <Button variant="ghost" size="icon" className="relative">
+            <Bell className="w-5 h-5" />
+          </Button>
+        )}
 
         {/* User Profile */}
-        {isAuthenticated && user ? (
+        {isAuthenticated && isStudent && user ? (
           <div className="flex items-center gap-2">
             <Avatar className="bg-primary w-9 h-9 rounded-full">
               <AvatarFallback className="text-primary text-sm font-medium">
@@ -116,9 +127,11 @@ const Header = () => {
         )}
 
         {/* Mobile menu */}
-        <Button variant="ghost" size="icon" className="md:hidden">
-          <Menu className="w-5 h-5" />
-        </Button>
+        {isStudent && (
+          <Button variant="ghost" size="icon" className="md:hidden">
+            <Menu className="w-5 h-5" />
+          </Button>
+        )}
       </div>
     </header>
   );

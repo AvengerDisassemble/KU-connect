@@ -1,15 +1,51 @@
 /**
- * This file is intended to be delete soon.
+ * @file deprecated - use backend/src/controllers/profileController.js
+ * @deprecated This router is deprecated and will be removed. Please migrate to backend/src/controllers/profileController.js
+ *
+ * The router will continue to work but will emit a deprecation warning on load
+ * and add a Deprecation/Warning header to all responses. Do not add new logic here.
  */
 
 const express = require('express')
 const { authMiddleware } = require('../middlewares/authMiddleware')
 const { roleMiddleware } = require('../middlewares/roleMiddleware')
 const { asyncErrorHandler } = require('../middlewares/errorHandler')
-const { PrismaClient } = require('../generated/prisma')
+const { strictLimiter } = require('../middlewares/rateLimitMiddleware')
+const prisma = require('../models/prisma')
 
 const router = express.Router()
-const prisma = new PrismaClient()
+
+// Emit a single-process warning when this module is required
+if (!global.__deprecated_user_profile_warned) {
+  const message = 'routes/user-profile.js is deprecated. Use backend/src/controllers/profileController.js instead.'
+  // Prefer process.emitWarning for debuggability, still log for visibility
+  if (typeof process.emitWarning === 'function') {
+    process.emitWarning(message, { type: 'DeprecationWarning' })
+  }
+  console.warn(`DEPRECATION: ${message}`)
+  global.__deprecated_user_profile_warned = true
+}
+
+/**
+ * Middleware to mark responses from this router as deprecated.
+ * Adds standard headers so clients and crawlers can detect deprecation.
+ */
+function deprecationMiddleware(req, res, next) {
+  // RFC-standard-ish headers: Deprecation, Sunset, Warning. Provide a link to the replacement API.
+  try {
+    res.setHeader('Deprecation', 'true')
+    // Optional: a human-readable warning header
+    res.setHeader('Warning', '299 - "Deprecated API: use /api/profile (controllers/profileController.js) instead"')
+    // Link header pointing to recommended replacement (can be adjusted to real URL)
+    res.setHeader('Link', '</api/profile>; rel="alternate"; title="New profile controller"')
+  } catch (e) {
+    // ignore header-setting failures
+  }
+  next()
+}
+
+// apply deprecation middleware to all routes in this router
+router.use(deprecationMiddleware)
 
 /**
  * Get current user profile with role-specific data
@@ -66,16 +102,31 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
               }
             }
           },
-          resumes: {
-            include: {
-              job: {
-                select: {
-                  id: true,
-                  title: true
+          // Use 'applications' if it exists, otherwise fallback to 'resumes' for backward compatibility
+          applications: prisma.student.fields.applications
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
                 }
               }
-            }
-          }
+            : undefined,
+          resumes: !prisma.student.fields.applications && prisma.student.fields.resumes
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
+                }
+              }
+            : undefined
         }
       })
 
@@ -86,7 +137,7 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
         expectedGraduationYear: studentData?.expectedGraduationYear,
         degreeType: studentData?.degreeType?.name,
         totalInterests: studentData?.interests?.length || 0,
-        totalApplications: studentData?.resumes?.length || 0
+        totalApplications: (studentData?.applications?.length ?? studentData?.resumes?.length) || 0
       }
 
       userCapabilities = [
@@ -251,7 +302,7 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
         }
       })
 
-      const myApplications = await prisma.resume.findMany({
+      const myApplications = await prisma.application.findMany({
         where: {
           student: {
             userId
@@ -304,7 +355,7 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
           application_deadline: true,
           _count: {
             select: {
-              resumes: true
+              applications: true
             }
           }
         }
@@ -404,7 +455,6 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
  * @access Private (Admin only)
  */
 const adminOnlyEndpoint = asyncErrorHandler(async (req, res) => {
-  // This endpoint demonstrates role-based restriction
   res.json({
     success: true,
     message: 'Admin-only endpoint accessed successfully',
@@ -469,7 +519,7 @@ function getUserPermissions(role) {
   return permissions[role] || []
 }
 
-// Route definitions
+// Route definitions (still available but deprecated)
 router.get('/me', authMiddleware, getUserProfile)
 router.get('/dashboard', authMiddleware, getDashboardData)
 router.get('/admin-only', authMiddleware, roleMiddleware(['ADMIN']), adminOnlyEndpoint)
