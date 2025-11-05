@@ -105,10 +105,48 @@ const searchLimiter = rateLimit({
   skip: (req) => process.env.NODE_ENV === 'test'
 })
 
+/**
+ * Dashboard rate limiter - For dashboard data retrieval
+ * Why: Dashboard queries aggregate multiple data sources but users access frequently
+ * Limits: 200 requests per 15 minutes per IP (generous for frequent dashboard refreshes)
+ */
+const dashboardLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Limit each IP to 200 dashboard requests per windowMs
+  message: {
+    success: false,
+    message: 'Too many dashboard requests. Please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'test'
+})
+
+/**
+ * Preferences rate limiter - For student preference updates
+ * Why: Prevent spam and abuse of preference modifications, but allow reasonable updates
+ * Limits: 100 requests per 15 minutes per IP (aligned with general API limiter)
+ */
+const preferencesLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 preference updates per windowMs
+  message: {
+    success: false,
+    message: 'Too many preference update requests. Please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => process.env.NODE_ENV === 'test'
+})
+
 module.exports = {
   generalLimiter,
   strictLimiter,
   authLimiter,
   writeLimiter,
-  searchLimiter
+  searchLimiter,
+  dashboardLimiter,
+  preferencesLimiter
 }
