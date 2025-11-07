@@ -40,5 +40,6 @@ module.exports = {
   forceExit: false,
 
   // Help detect any remaining async handles during local debug
-  detectOpenHandles: true
+  // Disabled in CI to prevent false failures
+  detectOpenHandles: process.env.CI !== 'true'
 }
