@@ -105,8 +105,13 @@ async function getRecommendedJobsForStudent(userId, limit = 10) {
     id: job.id,
     title: job.title,
     location: job.location,
+    jobType: job.jobType,
+    workArrangement: job.workArrangement,
+    minSalary: job.minSalary,
+    maxSalary: job.maxSalary,
     application_deadline: job.application_deadline,
-    hr: job.hr
+    companyName: job.hr.companyName,
+    industry: job.hr.industry
   }))
 }
 

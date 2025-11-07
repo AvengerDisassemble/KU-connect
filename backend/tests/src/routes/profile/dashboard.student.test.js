@@ -481,8 +481,7 @@ describe('Student Dashboard - Integration Tests', () => {
         expect(job).toHaveProperty('id')
         expect(job).toHaveProperty('title')
         expect(job).toHaveProperty('location')
-        expect(job).toHaveProperty('hr')
-        expect(job.hr).toHaveProperty('companyName')
+        expect(job).toHaveProperty('companyName')
       })
     })
 
