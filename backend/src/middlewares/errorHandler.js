@@ -17,7 +17,9 @@ function errorHandler (err, req, res, next) {
     })
   } else {
     // Full error details in development for debugging
-    console.error('Error:', err.message, '\nStack:', err.stack)
+    // Limit stack trace depth to avoid exposing too much information
+    const stack = err.stack ? err.stack.split('\n').slice(0, 5).join('\n') : ''
+    console.error('Error:', err.message, '\nStack:', stack)
   }
 
   // Default error
@@ -41,24 +43,51 @@ function errorHandler (err, req, res, next) {
 
   // Custom application errors
   if (err.message) {
+    // Authentication errors (401)
     if (err.message.includes('Invalid credentials')) {
       error.message = 'Invalid credentials'
       error.statusCode = 401
     } else if (err.message.includes('refresh token') || err.message.includes('Refresh token')) {
       error.message = err.message
       error.statusCode = 401
-    } else if (err.message.includes('already registered') || err.message.includes('already exists')) {
+    }
+    
+    // Forbidden errors (403)
+    else if (err.message.includes('Account suspended')) {
+      // Only for authentication middleware blocking suspended users
       error.message = err.message
-      error.statusCode = 409
-    } else if (err.message.includes('not found')) {
-      error.message = err.message
-      error.statusCode = 404
+      error.statusCode = 403
     } else if (err.message.includes('Access denied') || err.message.includes('Forbidden')) {
       error.message = err.message
       error.statusCode = 403
+    }
+    
+    // Not found errors (404) - Check before "Invalid" to avoid conflicts
+    else if (err.message.includes('not found')) {
+      error.message = err.message
+      error.statusCode = 404
+    }
+    
+    // Bad request errors (400)
+    else if (err.message.includes('Cannot suspend your own account')) {
+      error.message = err.message
+      error.statusCode = 400
+    } else if (err.message.includes('Cannot reject an already-approved user')) {
+      error.message = err.message
+      error.statusCode = 400
+    } else if (err.message.includes('User is already')) {
+      // "User is already pending approval", "User is already approved", etc.
+      error.message = err.message
+      error.statusCode = 400
     } else if (err.message.includes('required') || err.message.includes('Invalid')) {
       error.message = err.message
       error.statusCode = 400
+    }
+    
+    // Conflict errors (409)
+    else if (err.message.includes('already registered') || err.message.includes('already exists')) {
+      error.message = err.message
+      error.statusCode = 409
     }
   }
 

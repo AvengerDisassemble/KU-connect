@@ -34,11 +34,11 @@ module.exports = {
   maxWorkers: 1,
   
   // Increase timeout for slow database operations
-  testTimeout: 10000,
+  testTimeout: 60000,
 
-  // Force exit to prevent hanging
-  forceExit: true,
+  // Let Jest exit naturally; fix open handles instead of forcing exit
+  forceExit: false,
 
-  // Detect open handles to help debug
-  detectOpenHandles: false
+  // Help detect any remaining async handles during local debug
+  detectOpenHandles: true
 }
