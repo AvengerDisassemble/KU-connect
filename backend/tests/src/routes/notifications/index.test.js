@@ -216,15 +216,15 @@ describe('Notification Routes (Integration)', () => {
     })
 
     it('should require verified user', async () => {
-      // Create unverified user
-      const unverifiedUser = await prisma.user.create({
+      // Create pending user (not approved yet)
+      const pendingUser = await prisma.user.create({
         data: {
-          name: 'Unverified',
+          name: 'Pending',
           surname: 'User',
-          email: 'unverified-notif@test.com',
+          email: 'pending-notif@test.com',
           password: 'Pass',
           role: 'STUDENT',
-          status: 'APPROVED',
+          status: 'PENDING', // Not approved yet
           verified: false,
           student: {
             create: {
@@ -235,11 +235,11 @@ describe('Notification Routes (Integration)', () => {
         }
       })
 
-      const unverifiedToken = createTestToken({ id: unverifiedUser.id, role: 'STUDENT' })
+      const pendingToken = createTestToken({ id: pendingUser.id, role: 'STUDENT' })
 
       await request(app)
         .get('/api/notifications')
-        .set('Authorization', unverifiedToken)
+        .set('Authorization', pendingToken)
         .expect(403)
     })
   })
@@ -414,7 +414,7 @@ describe('Notification Routes (Integration)', () => {
     it('should reject non-admin users', async () => {
       await request(app)
         .post('/api/notifications/student/approval')
-        .set('Authorization', studentToken)
+        .set('Authorization', student1Token)
         .send({
           employerUserId: employer.id,
           studentUserId: student1.id,

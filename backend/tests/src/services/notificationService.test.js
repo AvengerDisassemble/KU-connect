@@ -339,7 +339,12 @@ describe('NotificationService', () => {
   })
 
   describe('getUnreadCount', () => {
+    let countBefore
+
     beforeAll(async () => {
+      // Get current count before adding test notifications
+      countBefore = await notificationService.getUnreadCount(employer.id)
+      
       // Create mix of read and unread notifications
       await prisma.userNotification.createMany({
         data: [
@@ -373,7 +378,7 @@ describe('NotificationService', () => {
 
     it('should return correct unread count', async () => {
       const count = await notificationService.getUnreadCount(employer.id)
-      expect(count).toBe(2)
+      expect(count).toBe(countBefore + 2) // 2 unread notifications added in beforeAll
     })
 
     it('should return 0 for user with no unread notifications', async () => {
