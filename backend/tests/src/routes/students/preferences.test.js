@@ -4,9 +4,9 @@
  */
 
 const request = require('supertest')
-const prisma = require('../../src/models/prisma')
-const app = require('../../src/app')
-const { cleanupDatabase, createTestToken, TEST_DEGREE_TYPES } = require('../src/utils/testHelpers')
+const prisma = require('../../../../src/models/prisma')
+const app = require('../../../../src/app')
+const { cleanupDatabase, createTestToken, TEST_DEGREE_TYPES } = require('../../utils/testHelpers')
 
 jest.setTimeout(30000)
 

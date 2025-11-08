@@ -416,7 +416,7 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
     }
 
     // Parallel queries for employer dashboard data
-    const [myJobPostings, recentApplications, totalApplications, applicationsByStatus] = await Promise.all([
+    const [myJobPostings, recentApplications, totalJobs, activeJobsCount, totalApplications, applicationsByStatus] = await Promise.all([
       // My job postings (last 5)
       prisma.job.findMany({
         where: { hrId: hr.id },
@@ -425,6 +425,7 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
         select: {
           id: true,
           title: true,
+          companyName: true,
           location: true,
           jobType: true,
           application_deadline: true,
@@ -453,7 +454,8 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
           job: {
             select: {
               id: true,
-              title: true
+              title: true,
+              companyName: true
             }
           },
           student: {
@@ -472,6 +474,21 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
                 }
               }
             }
+          }
+        }
+      }),
+
+      // Total jobs count
+      prisma.job.count({
+        where: { hrId: hr.id }
+      }),
+
+      // Active jobs count (deadline > now)
+      prisma.job.count({
+        where: {
+          hrId: hr.id,
+          application_deadline: {
+            gt: new Date()
           }
         }
       }),
@@ -499,10 +516,8 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
       })
     ])
 
-    // Count active vs expired jobs
-    const now = new Date()
-    const activeJobs = myJobPostings.filter(job => new Date(job.application_deadline) > now).length
-    const expiredJobs = myJobPostings.filter(job => new Date(job.application_deadline) <= now).length
+    // Calculate expired jobs
+    const expiredJobs = totalJobs - activeJobsCount
 
     // Transform application stats
     const applicationStats = {
@@ -532,11 +547,12 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
         userRole: 'EMPLOYER',
         dashboard: {
           companyInfo: {
+            hrId: hr.id,
             companyName: hr.companyName
           },
           totals: {
-            jobPostings: myJobPostings.length,
-            activeJobs,
+            jobPostings: totalJobs,
+            activeJobs: activeJobsCount,
             expiredJobs,
             totalApplications
           },
