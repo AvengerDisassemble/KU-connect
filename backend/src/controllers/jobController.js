@@ -5,6 +5,7 @@
 
 const prisma = require('../models/prisma')
 const jobService = require('../services/jobService')
+const notificationService = require('../services/notificationService')
 
 /**
  * List jobs with pagination (public)
@@ -196,6 +197,17 @@ async function applyToJob(req, res) {
 
     const application = await jobService.applyToJob(jobId, student.id, resumeLink)
 
+    // Send notification to employer (don't fail if notification fails)
+    try {
+      await notificationService.notifyEmployerOfApplication({
+        studentUserId: userId,
+        jobId
+      })
+    } catch (notificationError) {
+      console.error('Failed to send employer notification:', notificationError.message)
+      // Continue - application was successful even if notification failed
+    }
+
     res.status(201).json({
       success: true,
       message: 'Job application submitted successfully',
@@ -286,6 +298,32 @@ async function manageApplication(req, res) {
         success: false,
         message: 'Application not found or unauthorized'
       })
+    }
+
+    // Send notification to student (don't fail if notification fails)
+    try {
+      // Resolve student user ID from application
+      const application = await prisma.application.findUnique({
+        where: { id: applicationId },
+        include: {
+          student: {
+            select: { userId: true }
+          }
+        }
+      })
+
+      if (application && application.student) {
+        await notificationService.notifyStudentOfApproval({
+          employerUserId: userId,
+          studentUserId: application.student.userId,
+          jobId,
+          status,
+          applicationId
+        })
+      }
+    } catch (notificationError) {
+      console.error('Failed to send student notification:', notificationError.message)
+      // Continue - application status was updated successfully
     }
 
     res.status(200).json({

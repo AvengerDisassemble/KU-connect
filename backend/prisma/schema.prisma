@@ -86,28 +86,30 @@ enum NotificationPriority {
 // ------------------------------
 
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  surname       String
-  password      String?
-  email         String         @unique
-  username      String?        @unique
-  role          Role
-  status        UserStatus     @default(PENDING)
-  verified      Boolean        @default(false)
-  avatarKey     String?        // Storage key for user avatar image
-  phoneNumber   String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  professor     Professor?
-  admin         Admin?
-  student       Student?
-  hr            HR?
-  refreshTokens RefreshToken[]
-  accounts      Account[]
-  reports       JobReport[]
-  announcements Announcement[]
-  notifications Notification[]
+  id                      String             @id @default(cuid())
+  name                    String
+  surname                 String
+  password                String?
+  email                   String             @unique
+  username                String?            @unique
+  role                    Role
+  status                  UserStatus         @default(PENDING)
+  verified                Boolean            @default(false)
+  avatarKey               String?            // Storage key for user avatar image
+  phoneNumber             String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  professor               Professor?
+  admin                   Admin?
+  student                 Student?
+  hr                      HR?
+  refreshTokens           RefreshToken[]
+  accounts                Account[]
+  reports                 JobReport[]
+  announcements           Announcement[]
+  notifications           Notification[]
+  sentNotifications       UserNotification[] @relation("NotificationSender")
+  receivedNotifications   UserNotification[] @relation("NotificationRecipient")
 }
 
 model RefreshToken {
@@ -343,4 +345,28 @@ model Notification {
   createdAt      DateTime     @default(now())
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------
+//  USER-TO-USER NOTIFICATION MODEL
+// ------------------------------
+
+model UserNotification {
+  id            String   @id @default(cuid())
+  recipientId   String
+  senderId      String?
+  type          String   // e.g. 'EMPLOYER_APPLICATION', 'APPLICATION_STATUS'
+  title         String
+  message       String
+  read          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  // Optional linking for future deep queries
+  jobId         String?
+  applicationId String?
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, read])
 }
