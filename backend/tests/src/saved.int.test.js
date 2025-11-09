@@ -1,7 +1,7 @@
 // Integration tests for Saved Jobs
 
 // Ensure test DB is used before any imports that load Prisma
-process.env.DATABASE_URL = process.env.DATABASE_URL || "file:./test.db";
+process.env.TEST_DATABASE_URL = process.env.TEST_DATABASE_URL || "file:./test.db";
 process.env.ACCESS_TOKEN_SECRET =
   process.env.ACCESS_TOKEN_SECRET || "testsecret";
 
@@ -172,19 +172,26 @@ describe("Saved Jobs (integration)", () => {
   });
 
   test("GET empty returns empty list", async () => {
-    const res = await request(app).get(`/api/${user.id}/saved`).expect(200);
+    const res = await request(app)
+      .get(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
+      .expect(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.items).toEqual([]);
   });
 
   test("POST create then GET shows item", async () => {
     const post = await request(app)
-      .post(`/api/${user.id}/saved`)
+      .post(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
       .send({ jobId: job1.id })
       .expect(201);
     expect(post.body.success).toBe(true);
 
-    const get = await request(app).get(`/api/${user.id}/saved`).expect(200);
+    const get = await request(app)
+      .get(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
+      .expect(200);
     expect(get.body.success).toBe(true);
     expect(get.body.data.items.length).toBe(1);
     expect(get.body.data.items[0].job.id).toBe(job1.id);
@@ -193,7 +200,8 @@ describe("Saved Jobs (integration)", () => {
   test("POST duplicate returns 409", async () => {
     await prisma.savedJob.create({ data: { userId: user.id, jobId: job2.id } });
     const res = await request(app)
-      .post(`/api/${user.id}/saved`)
+      .post(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
       .send({ jobId: job2.id })
       .expect(409);
     expect(res.body.success).toBe(false);
@@ -203,17 +211,22 @@ describe("Saved Jobs (integration)", () => {
   test("DELETE existing then GET not listed", async () => {
     await prisma.savedJob.create({ data: { userId: user.id, jobId: job1.id } });
     await request(app)
-      .delete(`/api/${user.id}/saved`)
+      .delete(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
       .send({ jobId: job1.id })
       .expect(204);
 
-    const get = await request(app).get(`/api/${user.id}/saved`).expect(200);
+    const get = await request(app)
+      .get(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
+      .expect(200);
     expect(get.body.data.items).toEqual([]);
   });
 
   test("DELETE non-existing returns 404", async () => {
     const res = await request(app)
-      .delete(`/api/${user.id}/saved`)
+      .delete(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
       .send({ jobId: job2.id })
       .expect(404);
     expect(res.body.success).toBe(false);
@@ -222,7 +235,8 @@ describe("Saved Jobs (integration)", () => {
 
   test("Validation errors for missing jobId", async () => {
     const res = await request(app)
-      .post(`/api/${user.id}/saved`)
+      .post(`/api/save-jobs/${user.id}/saved`)
+      .set("Authorization", userToken)
       .send({ jobId: "" })
       .expect(400);
     expect(res.body.success).toBe(false);

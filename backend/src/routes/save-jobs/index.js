@@ -1,18 +1,17 @@
 const express = require("express");
 const router = express.Router();
 
+const { authMiddleware } = require("../../middlewares/authMiddleware");
 const {
   validateUserId,
   validateJobIdInBody,
   handleValidationResult,
-} = require("../validators/savedValidators");
+} = require("../../validators/savedValidators");
 const {
   getSaved,
   postSaved,
   deleteSaved,
-} = require("../controllers/savedController");
-
-// Enforce that req.user.id === Number(req.params.user_id) (JWT auth) — Admin override later
+} = require("../../controllers/savedController");
 
 // Authorization middleware to ensure user can only access their own saved jobs
 function authorizeUserIdParam(req, res, next) {
@@ -26,21 +25,25 @@ function authorizeUserIdParam(req, res, next) {
   next();
 }
 
+// Routes are mounted at /save-jobs by routes registrar
+// Define the :user_id parameter here
+
 /**
- * GET /api/:user_id/saved
+ * GET /save-jobs/:user_id/saved
  */
 router.get(
   "/:user_id/saved",
-  [validateUserId, handleValidationResult, authorizeUserIdParam],
+  [authMiddleware, validateUserId, handleValidationResult, authorizeUserIdParam],
   getSaved,
 );
 
 /**
- * POST /api/:user_id/saved
+ * POST /save-jobs/:user_id/saved
  */
 router.post(
   "/:user_id/saved",
   [
+    authMiddleware,
     validateUserId,
     validateJobIdInBody,
     handleValidationResult,
@@ -50,11 +53,12 @@ router.post(
 );
 
 /**
- * DELETE /api/:user_id/saved
+ * DELETE /save-jobs/:user_id/saved
  */
 router.delete(
   "/:user_id/saved",
   [
+    authMiddleware,
     validateUserId,
     validateJobIdInBody,
     handleValidationResult,
