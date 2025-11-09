@@ -13,7 +13,7 @@ const {
   generateJwtId,
   getRefreshTokenExpiry,
 } = require("../utils/tokenUtils");
-const { PrismaClient } = require("../generated/prisma");
+const prisma = require("../models/prisma");
 
 const DEFAULT_FRONTEND_URL =
   process.env.DEFAULT_FRONTEND_URL || "http://localhost:5173";
@@ -87,7 +87,6 @@ if (!envFrontendConfig && defaultFrontendConfig) {
 const frontendConfig = envFrontendConfig || defaultFrontendConfig;
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 /**
  * @route GET /auth/google

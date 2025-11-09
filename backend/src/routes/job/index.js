@@ -3,23 +3,15 @@
  * @description Job Posting feature routes with authentication and role-based access
  */
 
-const express = require("express");
-const router = express.Router();
-const jobController = require("../../controllers/jobController");
-const {
-  createJobSchema,
-  updateJobSchema,
-  applyJobSchema,
-  manageApplicationSchema,
-} = require("../../validators/jobValidator");
-const { authMiddleware } = require("../../middlewares/authMiddleware");
-const { roleMiddleware } = require("../../middlewares/roleMiddleware");
-const { validate } = require("../../middlewares/validate");
-const {
-  strictLimiter,
-  writeLimiter,
-} = require("../../middlewares/rateLimitMiddleware");
-const reportRouter = require("./report");
+const express = require('express')
+const router = express.Router()
+const jobController = require('../../controllers/jobController')
+const { createJobSchema, updateJobSchema, applyJobSchema, manageApplicationSchema } = require('../../validators/jobValidator')
+const { authMiddleware, verifiedUserMiddleware } = require('../../middlewares/authMiddleware')
+const { roleMiddleware } = require('../../middlewares/roleMiddleware')
+const { validate } = require('../../middlewares/validate')
+const { strictLimiter, writeLimiter } = require('../../middlewares/rateLimitMiddleware')
+const reportRouter = require('./report')
 
 // ===================== AUTH REQUIRED FOR ALL JOB ROUTES =====================
 router.use(authMiddleware);
@@ -29,12 +21,14 @@ router.use(authMiddleware);
 // GET /api/job/my-applications → Student checks their application statuses
 // MUST COME BEFORE /:id route
 // Rate limited: Expensive query with multiple joins
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.get(
   "/my-applications",
   strictLimiter,
-  roleMiddleware(["STUDENT"]),
-  jobController.getMyApplications,
-);
+  verifiedUserMiddleware,
+  roleMiddleware(['STUDENT']),
+  jobController.getMyApplications
+)
 
 // POST /api/job/list - List jobs with filters (accepts sensitive data in body)
 // SECURITY: Changed from GET to POST to prevent sensitive filter data (minSalary, maxSalary)
@@ -49,60 +43,73 @@ router.get("/:id", jobController.getJobById);
 
 // POST /api/job → HR creates job
 // Rate limited: Write operation
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.post(
   "/",
   writeLimiter,
-  roleMiddleware(["EMPLOYER"]),
+  verifiedUserMiddleware,
+  roleMiddleware(['EMPLOYER']),
   validate(createJobSchema),
   jobController.createJob,
 );
 
 // PATCH /api/job/:id → HR updates their own job
 // Rate limited: Write operation with complex transaction
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.patch(
   "/:id",
   writeLimiter,
-  roleMiddleware(["EMPLOYER"]),
+  verifiedUserMiddleware,
+  roleMiddleware(['EMPLOYER']),
   validate(updateJobSchema),
   jobController.updateJob,
 );
 
 // GET /api/job/:id/applyer → HR views applicants
 // Rate limited: Expensive query with multiple joins
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.get(
   "/:id/applyer",
   strictLimiter,
-  roleMiddleware(["EMPLOYER"]),
-  jobController.getApplicants,
-);
+  verifiedUserMiddleware,
+  roleMiddleware(['EMPLOYER']),
+  jobController.getApplicants
+)
 
 // POST /api/job/:id/applyer → HR accepts/rejects an applicant
 // Rate limited: Write operation
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.post(
   "/:id/applyer",
   writeLimiter,
-  roleMiddleware(["EMPLOYER"]),
+  verifiedUserMiddleware,
+  roleMiddleware(['EMPLOYER']),
   validate(manageApplicationSchema),
   jobController.manageApplication,
 );
 
 // DELETE /api/job/:id → Delete a job (Admin or HR owner)
 // Rate limited: Write operation with cascading deletes
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.delete(
   "/:id",
   writeLimiter,
-  roleMiddleware(["ADMIN", "EMPLOYER"]),
-  jobController.deleteJob,
-);
+  verifiedUserMiddleware,
+  roleMiddleware(['ADMIN', 'EMPLOYER']), 
+  jobController.deleteJob
+)
+
 
 // ===================== STUDENT ACCESS =====================
 
 // POST /api/job/:id → Student applies for a job
 // Rate limited: Write operation with resume creation
+// REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.post(
   "/:id",
   writeLimiter,
-  roleMiddleware(["STUDENT"]),
+  verifiedUserMiddleware,
+  roleMiddleware(['STUDENT']),
   validate(applyJobSchema),
   jobController.applyToJob,
 );

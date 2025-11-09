@@ -166,4 +166,4 @@ class CustomReporter {
   }
 }
 
-module.exports = CustomReporter;
+module.exports = CustomReporter

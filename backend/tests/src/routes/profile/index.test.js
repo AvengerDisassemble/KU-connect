@@ -33,6 +33,7 @@ beforeAll(async () => {
   // Create test users with auth tokens
   adminUser = await prisma.user.create({
     data: {
+<<<<<<< HEAD
       name: "Admin",
       surname: "User",
       email: "admin@test.com",
@@ -50,6 +51,27 @@ beforeAll(async () => {
       email: "student@test.com",
       password: "Pass",
       role: "STUDENT",
+=======
+      name: 'Admin',
+      surname: 'User',
+      email: 'admin@test.com',
+      password: 'Pass',
+      role: 'ADMIN',
+      status: 'APPROVED',
+      admin: { create: {} }
+    }
+  })
+  adminToken = createTestToken({ id: adminUser.id, role: 'ADMIN' })
+
+  studentUser = await prisma.user.create({
+    data: {
+      name: 'Student',
+      surname: 'User',
+      email: 'student@test.com',
+      password: 'Pass',
+      role: 'STUDENT',
+      status: 'APPROVED',
+>>>>>>> dev
       student: {
         create: {
           degreeTypeId: degreeType.id,
@@ -64,11 +86,20 @@ beforeAll(async () => {
 
   hrUser = await prisma.user.create({
     data: {
+<<<<<<< HEAD
       name: "HR",
       surname: "User",
       email: "hr@test.com",
       password: "Pass",
       role: "EMPLOYER",
+=======
+      name: 'HR',
+      surname: 'User',
+      email: 'hr@test.com',
+      password: 'Pass',
+      role: 'EMPLOYER',
+      status: 'APPROVED',
+>>>>>>> dev
       hr: {
         create: {
           companyName: "TestCorp",

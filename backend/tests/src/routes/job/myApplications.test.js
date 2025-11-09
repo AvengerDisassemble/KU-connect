@@ -50,13 +50,19 @@ describe("Student Applications (UC-S09: Check Application Status)", () => {
     // Create students (using unique emails to avoid conflicts with other test files)
     student = await prisma.user.upsert({
       where: { email: TEST_EMAILS.STUDENT_MYAPP },
-      update: {},
+      update: { status: 'APPROVED' },
       create: {
         name: "Student",
         surname: "MyApp",
         email: TEST_EMAILS.STUDENT_MYAPP,
+<<<<<<< HEAD
         password: "Pass",
         role: "STUDENT",
+=======
+        password: 'Pass',
+        role: 'STUDENT',
+        status: 'APPROVED',
+>>>>>>> dev
         student: {
           create: {
             degreeTypeId: degreeType.id,
@@ -71,13 +77,19 @@ describe("Student Applications (UC-S09: Check Application Status)", () => {
 
     student2 = await prisma.user.upsert({
       where: { email: TEST_EMAILS.STUDENT2_MYAPP },
-      update: {},
+      update: { status: 'APPROVED' },
       create: {
         name: "Student2",
         surname: "MyApp",
         email: TEST_EMAILS.STUDENT2_MYAPP,
+<<<<<<< HEAD
         password: "Pass",
         role: "STUDENT",
+=======
+        password: 'Pass',
+        role: 'STUDENT',
+        status: 'APPROVED',
+>>>>>>> dev
         student: {
           create: {
             degreeTypeId: degreeType.id,
@@ -93,13 +105,19 @@ describe("Student Applications (UC-S09: Check Application Status)", () => {
     // Create HR (using unique email to avoid conflicts with other test files)
     hr = await prisma.user.upsert({
       where: { email: TEST_EMAILS.HR_MYAPP },
-      update: {},
+      update: { status: 'APPROVED' },
       create: {
         name: "HR",
         surname: "MyApp",
         email: TEST_EMAILS.HR_MYAPP,
+<<<<<<< HEAD
         password: "Pass",
         role: "EMPLOYER",
+=======
+        password: 'Pass',
+        role: 'EMPLOYER',
+        status: 'APPROVED',
+>>>>>>> dev
         hr: {
           create: {
             companyName: TEST_COMPANY_INFO.NAME + " MyApp",

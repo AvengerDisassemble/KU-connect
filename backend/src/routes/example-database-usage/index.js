@@ -2,9 +2,7 @@
  * Example subroute for database usage demonstration purposes
  * @module routes/example-database-usage/index
  */
-const { PrismaClient } = require("../../generated/prisma");
-
-const prisma = new PrismaClient();
+const prisma = require('../../models/prisma')
 
 const express = require("express");
 const router = express.Router();

@@ -78,5 +78,5 @@ afterAll(async () => {
   cleanupRateLimit();
 
   // Disconnect Prisma to close database connections
-  await prisma.$disconnect();
-});
+  await prisma.$disconnect()
+})

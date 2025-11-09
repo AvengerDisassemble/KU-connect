@@ -6,15 +6,14 @@
  * and add a Deprecation/Warning header to all responses. Do not add new logic here.
  */
 
-const express = require("express");
-const { authMiddleware } = require("../middlewares/authMiddleware");
-const { roleMiddleware } = require("../middlewares/roleMiddleware");
-const { asyncErrorHandler } = require("../middlewares/errorHandler");
-const { strictLimiter } = require("../middlewares/rateLimitMiddleware");
-const { PrismaClient } = require("../generated/prisma");
+const express = require('express')
+const { authMiddleware } = require('../middlewares/authMiddleware')
+const { roleMiddleware } = require('../middlewares/roleMiddleware')
+const { asyncErrorHandler } = require('../middlewares/errorHandler')
+const { strictLimiter } = require('../middlewares/rateLimitMiddleware')
+const prisma = require('../models/prisma')
 
-const router = express.Router();
-const prisma = new PrismaClient();
+const router = express.Router()
 
 // Emit a single-process warning when this module is required
 if (!global.__deprecated_user_profile_warned) {
@@ -110,18 +109,33 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
               },
             },
           },
-          applications: {
-            include: {
-              job: {
-                select: {
-                  id: true,
-                  title: true,
-                },
-              },
-            },
-          },
-        },
-      });
+          // Use 'applications' if it exists, otherwise fallback to 'resumes' for backward compatibility
+          applications: prisma.student.fields.applications
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
+                }
+              }
+            : undefined,
+          resumes: !prisma.student.fields.applications && prisma.student.fields.resumes
+            ? {
+                include: {
+                  job: {
+                    select: {
+                      id: true,
+                      title: true
+                    }
+                  }
+                }
+              }
+            : undefined
+        }
+      })
 
       roleSpecificData = {
         studentId: studentData?.id,
@@ -130,8 +144,8 @@ const getUserProfile = asyncErrorHandler(async (req, res) => {
         expectedGraduationYear: studentData?.expectedGraduationYear,
         degreeType: studentData?.degreeType?.name,
         totalInterests: studentData?.interests?.length || 0,
-        totalApplications: studentData?.applications?.length || 0,
-      };
+        totalApplications: (studentData?.applications?.length ?? studentData?.resumes?.length) || 0
+      }
 
       userCapabilities = [
         "view_jobs",
