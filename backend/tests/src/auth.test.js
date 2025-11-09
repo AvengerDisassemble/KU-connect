@@ -1,9 +1,8 @@
 const request = require("supertest");
 const app = require("../../src/app");
-const { PrismaClient } = require("../../src/generated/prisma");
 const { cleanupDatabase } = require("./utils/testHelpers");
 
-const prisma = new PrismaClient();
+const prisma = require("../../../../src/models/prisma");
 
 describe("Authentication Endpoints", () => {
   beforeAll(async () => {

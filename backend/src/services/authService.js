@@ -1,21 +1,7 @@
-<<<<<<< HEAD
-const { PrismaClient } = require("../generated/prisma");
-const { hashPassword, comparePassword } = require("../utils/passwordUtils");
-const {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-  generateJwtId,
-  getRefreshTokenExpiry,
-} = require("../utils/tokenUtils");
-
-const prisma = new PrismaClient();
-=======
 const prisma = require('../models/prisma')
 const { hashPassword, comparePassword } = require('../utils/passwordUtils')
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateJwtId, getRefreshTokenExpiry } = require('../utils/tokenUtils')
 
->>>>>>> dev
 
 /**
  * Register a new user
@@ -50,12 +36,8 @@ async function registerUser(userData, roleSpecificData = {}) {
         email: userData.email,
         password: hashedPassword,
         role: userData.role,
-<<<<<<< HEAD
-        verified: userData.role === "ADMIN", // Admins are pre-verified
-=======
         status: userData.role === 'ADMIN' ? 'APPROVED' : 'PENDING', // Admins auto-approved, others pending
         verified: userData.role === 'ADMIN' // Admins are pre-verified
->>>>>>> dev
       },
       select: {
         id: true,
@@ -140,16 +122,10 @@ async function loginUser(email, password) {
       email: true,
       password: true,
       role: true,
-<<<<<<< HEAD
-      verified: true,
-    },
-  });
-=======
       status: true,
       verified: true
     }
   })
->>>>>>> dev
 
   if (!user) {
     throw new Error("Invalid credentials");

@@ -1,5 +1,4 @@
-const { PrismaClient } = require("../../../src/generated/prisma");
-const {
+const prisma = require("../../../../src/models/prisma");const {
   registerUser,
   loginUser,
   refreshAccessToken,
@@ -14,7 +13,6 @@ const {
   getRefreshTokenExpiry,
 } = require("../../../src/utils/tokenUtils");
 
-const prisma = new PrismaClient();
 
 // Mock the password and token utilities
 jest.mock("../../../src/utils/passwordUtils");

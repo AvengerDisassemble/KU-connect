@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-const bcrypt = require("bcrypt");
-=======
 const bcrypt = require('bcrypt')
 const crypto = require('crypto')
->>>>>>> dev
 
 /**
  * Hash a password using bcrypt
@@ -70,9 +66,5 @@ async function comparePassword(password, hashedPassword) {
 module.exports = {
   hashPassword,
   comparePassword,
-<<<<<<< HEAD
-};
-=======
   generateSecurePassword
 }
->>>>>>> dev

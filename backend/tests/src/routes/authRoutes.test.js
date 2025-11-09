@@ -1,7 +1,5 @@
 const request = require("supertest");
-const { PrismaClient } = require("../../../src/generated/prisma");
-
-const prisma = new PrismaClient();
+const prisma = require("../../../../src/models/prisma");
 
 // Set up environment variables for tests FIRST
 process.env.GOOGLE_CLIENT_ID = "test-client-id";
