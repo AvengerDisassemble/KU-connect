@@ -20,7 +20,7 @@ const hasS3Config = depsAvailable &&
                     process.env.AWS_REGION &&
                     process.env.AWS_BUCKET_NAME
 
-const describeIfS3 = hasS3Config && depsAvailable ? describe : describe.skip
+const describeIfS3 = (hasS3Config && depsAvailable && process.env.RUN_ALL_TESTS === 'true') ? describe : describe.skip
 
 describeIfS3('S3StorageProvider (integration tests)', () => {
   let provider

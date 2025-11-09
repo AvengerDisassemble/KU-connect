@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken')
 
 const prisma = new PrismaClient()
 
-describe.skip('User Profile Authorization Example (DEPRECATED)', () => {
+describe('User Profile Authorization Example (DEPRECATED)', () => {
   let studentUser, professorUser, employerUser, adminUser
   let studentToken, professorToken, employerToken, adminToken
   let degreeTypeId

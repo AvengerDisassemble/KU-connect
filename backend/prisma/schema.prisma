@@ -10,9 +10,12 @@ generator client {
 
 // Test SQLite datasource for local/test usage
 // Use SQLite for test/dev
-datasource test_db {
+// Single datasource: use DATABASE_URL by default. When running tests set
+// DATABASE_URL to a test database (e.g. file:./test.db). This avoids schema
+// validation errors when TEST_DATABASE_URL is not exported in the environment.
+datasource db {
   provider = "sqlite"
-  url      = env("TEST_DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
 // Uncomment for production PostgreSQL
@@ -108,6 +111,8 @@ model User {
   reports       JobReport[]
   announcements Announcement[]
   notifications Notification[]
+  // Why: Track jobs this user has saved for quick access and UI counts
+  savedJobs     SavedJob[]
 }
 
 model RefreshToken {
@@ -229,6 +234,8 @@ model Job {
   applications              Application[]
   resumes                   Resume[]
   reports                   JobReport[]
+  // Why: Back relation to users who have saved this job
+  savedBy                   SavedJob[]
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
 }
@@ -343,4 +350,21 @@ model Notification {
   createdAt      DateTime     @default(now())
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------
+//  SAVED JOBS JOIN MODEL
+// ------------------------------
+
+model SavedJob {
+  userId    String
+  jobId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@id([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
 }

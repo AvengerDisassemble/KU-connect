@@ -1,3 +1,14 @@
+// Ensure a default test database URL is set so Prisma validation passes in local environments
+if (!process.env.DATABASE_URL && !process.env.TEST_DATABASE_URL) {
+  // Use a local sqlite file by default for tests
+  process.env.DATABASE_URL = 'file:./test.db'
+  process.env.TEST_DATABASE_URL = process.env.DATABASE_URL
+} else if (!process.env.DATABASE_URL && process.env.TEST_DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.TEST_DATABASE_URL
+} else if (!process.env.TEST_DATABASE_URL && process.env.DATABASE_URL) {
+  process.env.TEST_DATABASE_URL = process.env.DATABASE_URL
+}
+
 /**
  * Jest setup file to suppress console logs during tests
  */
