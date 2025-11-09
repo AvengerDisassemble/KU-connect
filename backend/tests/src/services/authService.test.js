@@ -185,7 +185,6 @@ describeIfOAuth('AuthService - OAuth Integration', () => {
       await prisma.application.deleteMany().catch(() => {})
       await prisma.studentInterest.deleteMany().catch(() => {})
       await prisma.savedJob.deleteMany().catch(() => {})
-      await prisma.account.deleteMany().catch(() => {})
       await prisma.user.deleteMany().catch(() => {})
     })
 
