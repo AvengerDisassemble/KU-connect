@@ -1,6 +1,15 @@
 /**
  * @module validators/savedValidators
  * @description Request validators for Saved Jobs endpoints using express-validator.
+ * 
+ * ⚠️ IMPORTANT: This module includes fallback validators when express-validator is not installed.
+ * The fallbacks match production validation logic but lack advanced features like sanitization
+ * and complex validation chains. Always install express-validator in production environments.
+ * 
+ * Fallback behavior:
+ * - validateUserId: Validates user_id is a non-empty string (strict matching)
+ * - validateJobIdInBody: Validates jobId in request body is a non-empty string
+ * - handleValidationResult: No-op in fallback mode
  */
 
 let param, body, validationResult;
@@ -15,16 +24,27 @@ try {
 }
 
 if (!validatorsAvailable) {
-  // Minimal validators for test environments where express-validator isn't installed
+  // ⚠️ UNSAFE FALLBACK VALIDATORS
+  // These are minimal validators for test environments where express-validator isn't installed.
+  // ⚠️ WARNING: Tests should install express-validator to ensure proper validation coverage.
+  // These fallbacks match production validation logic to prevent masking validation errors.
+  
   function validateUserId(req, res, next) {
-    // Be permissive: accept any non-empty param value under common names to avoid false negatives in tests
+    // Validate that user_id (or userId, id) is a non-empty string, matching production logic
     const val =
       (req.params &&
         (req.params.user_id || req.params.userId || req.params.id)) ||
       "";
-    if (!val || typeof val === "object") {
-      // fallback to permissive behavior — allow through to route handlers
-      return next();
+    if (typeof val !== "string" || val.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          details: [
+            { msg: "user_id must be a non-empty string", param: "user_id" },
+          ],
+        },
+      });
     }
     return next();
   }
@@ -51,6 +71,7 @@ if (!validatorsAvailable) {
     return next();
   }
 
+  // ⚠️ Exporting fallback validators - these should NOT be used in production
   module.exports = {
     validateUserId,
     validateJobIdInBody,

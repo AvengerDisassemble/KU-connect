@@ -4,6 +4,7 @@ const {
   refreshAccessToken,
   logoutUser,
 } = require("../services/authService");
+const { encryptToken, decryptToken } = require("../utils/tokenUtils");
 const { asyncErrorHandler } = require("../middlewares/errorHandler");
 
 /**
@@ -24,15 +25,19 @@ const login = asyncErrorHandler(async (req, res) => {
   // Authenticate user
   const result = await loginUser(email, password);
 
-  // Set tokens in HTTP-only cookies
-  res.cookie("accessToken", result.accessToken, {
+  // Encrypt tokens before storing in cookies for security
+  const encryptedAccessToken = encryptToken(result.accessToken);
+  const encryptedRefreshToken = encryptToken(result.refreshToken);
+
+  // Set encrypted tokens in HTTP-only cookies
+  res.cookie("accessToken", encryptedAccessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     maxAge: 15 * 60 * 1000, // 15 minutes
   });
 
-  res.cookie("refreshToken", result.refreshToken, {
+  res.cookie("refreshToken", encryptedRefreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -199,7 +204,18 @@ const registerAdmin = asyncErrorHandler(async (req, res) => {
  */
 const refreshToken = asyncErrorHandler(async (req, res) => {
   // Accept refresh token from either cookies or request body
-  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+  let refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  // If token is from cookie, it's encrypted - decrypt it
+  if (req.cookies?.refreshToken) {
+    refreshToken = decryptToken(req.cookies.refreshToken);
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid refresh token",
+      });
+    }
+  }
 
   if (!refreshToken) {
     return res.status(401).json({
@@ -210,8 +226,11 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
 
   const result = await refreshAccessToken(refreshToken);
 
+  // Encrypt new access token before storing in cookie
+  const encryptedAccessToken = encryptToken(result.accessToken);
+
   // Set new access token in cookie
-  res.cookie("accessToken", result.accessToken, {
+  res.cookie("accessToken", encryptedAccessToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -223,7 +242,8 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
     message: "Token refreshed successfully",
     data: {
       user: result.user,
-      accessToken: result.accessToken, // Include token in response for clients that can't use cookies
+      // Note: Access token is set in HTTP-only cookie for security
+      // Clients that can't use cookies should use the login endpoint with Authorization header
     },
   });
 });
@@ -234,7 +254,12 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
  */
 const logout = asyncErrorHandler(async (req, res) => {
   // Accept refresh token from either cookies or request body
-  const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+  let refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+  // If token is from cookie, it's encrypted - decrypt it
+  if (req.cookies?.refreshToken) {
+    refreshToken = decryptToken(req.cookies.refreshToken);
+  }
 
   if (refreshToken) {
     await logoutUser(refreshToken);

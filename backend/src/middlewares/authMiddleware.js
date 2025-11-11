@@ -1,4 +1,4 @@
-const { verifyAccessToken } = require("../utils/tokenUtils");
+const { verifyAccessToken, decryptToken } = require("../utils/tokenUtils");
 const { getUserById } = require("../services/authService");
 
 /**
@@ -12,7 +12,19 @@ async function authMiddleware(req, res, next) {
   try {
     // Get token from cookies or Authorization header
     let token = req.cookies?.accessToken;
+    
+    // If token is from cookie, it's encrypted - decrypt it
+    if (token) {
+      token = decryptToken(token);
+      if (!token) {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid access token",
+        });
+      }
+    }
 
+    // If no token from cookie, check Authorization header (Bearer token)
     if (!token) {
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -78,7 +90,13 @@ async function optionalAuthMiddleware(req, res, next) {
   try {
     // Get token from cookies or Authorization header
     let token = req.cookies?.accessToken;
+    
+    // If token is from cookie, it's encrypted - decrypt it
+    if (token) {
+      token = decryptToken(token);
+    }
 
+    // If no token from cookie, check Authorization header (Bearer token)
     if (!token) {
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith("Bearer ")) {
