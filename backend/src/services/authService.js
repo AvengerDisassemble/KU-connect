@@ -14,18 +14,18 @@ const { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateJ
  * @param {Object} [roleSpecificData] - Additional data specific to the role
  * @returns {Promise<Object>} The created user (without password)
  */
-async function registerUser (userData, roleSpecificData = {}) {
+async function registerUser(userData, roleSpecificData = {}) {
   // Check if email already exists
   const existingUser = await prisma.user.findUnique({
-    where: { email: userData.email }
-  })
+    where: { email: userData.email },
+  });
 
   if (existingUser) {
-    throw new Error('Email already registered')
+    throw new Error("Email already registered");
   }
 
   // Hash password
-  const hashedPassword = await hashPassword(userData.password)
+  const hashedPassword = await hashPassword(userData.password);
 
   // Create user with transaction to ensure consistency
   const user = await prisma.$transaction(async (tx) => {
@@ -47,53 +47,62 @@ async function registerUser (userData, roleSpecificData = {}) {
         role: true,
         status: true,
         verified: true,
-        createdAt: true
-      }
-    })
+        createdAt: true,
+      },
+    });
 
     // Create role-specific data
-    if (userData.role === 'STUDENT' && roleSpecificData.degreeTypeId && roleSpecificData.address) {
+    if (
+      userData.role === "STUDENT" &&
+      roleSpecificData.degreeTypeId &&
+      roleSpecificData.address
+    ) {
       await tx.student.create({
         data: {
           userId: newUser.id,
           degreeTypeId: roleSpecificData.degreeTypeId,
           address: roleSpecificData.address,
           gpa: roleSpecificData.gpa || null,
-          expectedGraduationYear: roleSpecificData.expectedGraduationYear || null
-        }
-      })
-    } else if (userData.role === 'PROFESSOR' && roleSpecificData.department) {
+          expectedGraduationYear:
+            roleSpecificData.expectedGraduationYear || null,
+        },
+      });
+    } else if (userData.role === "PROFESSOR" && roleSpecificData.department) {
       await tx.professor.create({
         data: {
           userId: newUser.id,
-          department: roleSpecificData.department
-        }
-      })
-    } else if (userData.role === 'EMPLOYER' && roleSpecificData.companyName && roleSpecificData.address) {
+          department: roleSpecificData.department,
+        },
+      });
+    } else if (
+      userData.role === "EMPLOYER" &&
+      roleSpecificData.companyName &&
+      roleSpecificData.address
+    ) {
       await tx.hR.create({
         data: {
           userId: newUser.id,
           companyName: roleSpecificData.companyName,
           address: roleSpecificData.address,
-          industry: roleSpecificData.industry || 'OTHER',
-          companySize: roleSpecificData.companySize || 'ONE_TO_TEN',
+          industry: roleSpecificData.industry || "OTHER",
+          companySize: roleSpecificData.companySize || "ONE_TO_TEN",
           website: roleSpecificData.website || null,
           phoneNumber: roleSpecificData.phoneNumber,
-          description: roleSpecificData.description || null
-        }
-      })
-    } else if (userData.role === 'ADMIN') {
+          description: roleSpecificData.description || null,
+        },
+      });
+    } else if (userData.role === "ADMIN") {
       await tx.admin.create({
         data: {
-          userId: newUser.id
-        }
-      })
+          userId: newUser.id,
+        },
+      });
     }
 
-    return newUser
-  })
+    return newUser;
+  });
 
-  return user
+  return user;
 }
 
 /**
@@ -102,7 +111,7 @@ async function registerUser (userData, roleSpecificData = {}) {
  * @param {string} password - User's password
  * @returns {Promise<Object>} User data and tokens
  */
-async function loginUser (email, password) {
+async function loginUser(email, password) {
   // Find user by email
   const user = await prisma.user.findUnique({
     where: { email },
@@ -119,7 +128,7 @@ async function loginUser (email, password) {
   })
 
   if (!user) {
-    throw new Error('Invalid credentials')
+    throw new Error("Invalid credentials");
   }
 
   // Block SUSPENDED users from logging in
@@ -129,43 +138,45 @@ async function loginUser (email, password) {
 
   // Check if user has a password (local auth)
   if (!user.password) {
-    throw new Error('This account uses OAuth authentication. Please sign in with Google.')
+    throw new Error(
+      "This account uses OAuth authentication. Please sign in with Google.",
+    );
   }
 
   // Verify password
-  const isPasswordValid = await comparePassword(password, user.password)
+  const isPasswordValid = await comparePassword(password, user.password);
   if (!isPasswordValid) {
-    throw new Error('Invalid credentials')
+    throw new Error("Invalid credentials");
   }
 
   // Generate tokens
-  const jwtId = generateJwtId()
+  const jwtId = generateJwtId();
   const accessToken = generateAccessToken({
     id: user.id,
-    role: user.role
-  })
+    role: user.role,
+  });
   const refreshToken = generateRefreshToken({
     id: user.id,
-    jti: jwtId
-  })
+    jti: jwtId,
+  });
 
   // Store refresh token in database
   await prisma.refreshToken.create({
     data: {
       userId: user.id,
       token: refreshToken,
-      expiresAt: getRefreshTokenExpiry()
-    }
-  })
+      expiresAt: getRefreshTokenExpiry(),
+    },
+  });
 
   // Remove password from response
-  const { password: _, ...userWithoutPassword } = user
+  const { password: _, ...userWithoutPassword } = user;
 
   return {
     user: userWithoutPassword,
     accessToken,
-    refreshToken
-  }
+    refreshToken,
+  };
 }
 
 /**
@@ -173,27 +184,27 @@ async function loginUser (email, password) {
  * @param {string} refreshToken - The refresh token
  * @returns {Promise<Object>} New access token and optionally new refresh token
  */
-async function refreshAccessToken (refreshToken) {
+async function refreshAccessToken(refreshToken) {
   // Verify refresh token
-  const decoded = verifyRefreshToken(refreshToken)
+  const decoded = verifyRefreshToken(refreshToken);
   if (!decoded) {
-    throw new Error('Invalid refresh token')
+    throw new Error("Invalid refresh token");
   }
 
   // Check if refresh token exists in database
   const storedToken = await prisma.refreshToken.findUnique({
     where: { token: refreshToken },
-    include: { user: true }
-  })
+    include: { user: true },
+  });
 
   if (!storedToken || storedToken.expiresAt < new Date()) {
-    throw new Error('Refresh token expired or invalid')
+    throw new Error("Refresh token expired or invalid");
   }
   // Generate new access token
   const newAccessToken = generateAccessToken({
     id: storedToken.user.id,
-    role: storedToken.user.role
-  })
+    role: storedToken.user.role,
+  });
 
   return {
     accessToken: newAccessToken,
@@ -203,9 +214,9 @@ async function refreshAccessToken (refreshToken) {
       surname: storedToken.user.surname,
       email: storedToken.user.email,
       role: storedToken.user.role,
-      verified: storedToken.user.verified
-    }
-  }
+      verified: storedToken.user.verified,
+    },
+  };
 }
 
 /**
@@ -213,10 +224,10 @@ async function refreshAccessToken (refreshToken) {
  * @param {string} refreshToken - The refresh token to revoke
  * @returns {Promise<void>}
  */
-async function logoutUser (refreshToken) {
+async function logoutUser(refreshToken) {
   await prisma.refreshToken.deleteMany({
-    where: { token: refreshToken }
-  })
+    where: { token: refreshToken },
+  });
 }
 
 /**
@@ -224,7 +235,7 @@ async function logoutUser (refreshToken) {
  * @param {string} userId - User ID
  * @returns {Promise<Object|null>} User data without password
  */
-async function getUserById (userId) {
+async function getUserById(userId) {
   return await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -237,12 +248,12 @@ async function getUserById (userId) {
       verified: true,
       createdAt: true,
       updatedAt: true,
-      student: true, 
+      student: true,
       professor: true,
       hr: true,
-      admin: true
-    }
-  })
+      admin: true,
+    },
+  });
 }
 
 /**
@@ -257,16 +268,24 @@ async function getUserById (userId) {
  * @param {string} [googleProfile.refreshToken] - Google refresh token
  * @returns {Promise<Object>} The user object
  */
-async function findOrCreateGoogleUser (googleProfile) {
-  const { providerAccountId, email, name, surname, accessToken, refreshToken, profile } = googleProfile
+async function findOrCreateGoogleUser(googleProfile) {
+  const {
+    providerAccountId,
+    email,
+    name,
+    surname,
+    accessToken,
+    refreshToken,
+    profile,
+  } = googleProfile;
 
   // Try to find existing account by provider and providerAccountId
   const existingAccount = await prisma.account.findUnique({
     where: {
       provider_providerAccountId: {
-        provider: 'google',
-        providerAccountId
-      }
+        provider: "google",
+        providerAccountId,
+      },
     },
     include: {
       user: {
@@ -278,21 +297,21 @@ async function findOrCreateGoogleUser (googleProfile) {
           role: true,
           verified: true,
           createdAt: true,
-          updatedAt: true
-        }
-      }
-    }
-  })
+          updatedAt: true,
+        },
+      },
+    },
+  });
 
   if (existingAccount) {
     // User already exists with this Google account
-    return existingAccount.user
+    return existingAccount.user;
   }
 
   // Check if a user with this email already exists
   const existingUser = await prisma.user.findUnique({
-    where: { email }
-  })
+    where: { email },
+  });
 
   if (existingUser) {
     // User exists but hasn't linked Google account yet
@@ -300,15 +319,15 @@ async function findOrCreateGoogleUser (googleProfile) {
     await prisma.account.create({
       data: {
         userId: existingUser.id,
-        type: 'oauth',
-        provider: 'google',
+        type: "oauth",
+        provider: "google",
         providerAccountId,
         access_token: accessToken,
         refresh_token: refreshToken,
-        token_type: 'Bearer',
-        scope: 'profile email'
-      }
-    })
+        token_type: "Bearer",
+        scope: "profile email",
+      },
+    });
 
     return {
       id: existingUser.id,
@@ -318,20 +337,20 @@ async function findOrCreateGoogleUser (googleProfile) {
       role: existingUser.role,
       verified: existingUser.verified,
       createdAt: existingUser.createdAt,
-      updatedAt: existingUser.updatedAt
-    }
+      updatedAt: existingUser.updatedAt,
+    };
   }
 
   // Create new user, account, and student record in a transaction
   const newUser = await prisma.$transaction(async (tx) => {
     // Ensure at least one degree type exists, or create a default one
-    let degreeType = await tx.degreeType.findFirst()
+    let degreeType = await tx.degreeType.findFirst();
     if (!degreeType) {
       degreeType = await tx.degreeType.create({
         data: {
-          name: 'Bachelor of Science'
-        }
-      })
+          name: "Bachelor of Science",
+        },
+      });
     }
 
     // Create new user (no password for OAuth users)
@@ -341,8 +360,8 @@ async function findOrCreateGoogleUser (googleProfile) {
         surname,
         email,
         password: null, // OAuth users don't have passwords
-        role: 'STUDENT', // Default role
-        verified: true // OAuth users are pre-verified
+        role: "STUDENT", // Default role
+        verified: true, // OAuth users are pre-verified
       },
       select: {
         id: true,
@@ -352,39 +371,39 @@ async function findOrCreateGoogleUser (googleProfile) {
         role: true,
         verified: true,
         createdAt: true,
-        updatedAt: true
-      }
-    })
+        updatedAt: true,
+      },
+    });
 
     // Create associated Account
     await tx.account.create({
       data: {
         userId: user.id,
-        type: 'oauth',
-        provider: 'google',
+        type: "oauth",
+        provider: "google",
         providerAccountId,
         access_token: accessToken,
         refresh_token: refreshToken,
-        token_type: 'Bearer',
-        scope: 'profile email'
-      }
-    })
+        token_type: "Bearer",
+        scope: "profile email",
+      },
+    });
 
     // Create associated Student record with placeholder data
     await tx.student.create({
       data: {
         userId: user.id,
         degreeTypeId: degreeType.id, // Use existing or newly created degree type
-        address: 'To be updated', // Placeholder address
+        address: "To be updated", // Placeholder address
         gpa: null,
-        expectedGraduationYear: null
-      }
-    })
+        expectedGraduationYear: null,
+      },
+    });
 
-    return user
-  })
+    return user;
+  });
 
-  return newUser
+  return newUser;
 }
 
 module.exports = {
@@ -393,5 +412,5 @@ module.exports = {
   refreshAccessToken,
   logoutUser,
   getUserById,
-  findOrCreateGoogleUser
-}
+  findOrCreateGoogleUser,
+};

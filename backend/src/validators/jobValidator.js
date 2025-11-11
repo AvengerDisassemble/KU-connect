@@ -79,7 +79,7 @@ const updateJobSchema = Joi.object({
     "internship",
     "part-time",
     "full-time",
-    "contract"
+    "contract",
   ),
   workArrangement: Joi.string().valid("on-site", "remote", "hybrid"),
   duration: Joi.string().trim().min(1).max(100),

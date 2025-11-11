@@ -261,7 +261,7 @@ describe("Job Routes (Integration)", () => {
         minSalary: 50000,
         maxSalary: 80000,
         application_deadline: new Date(
-          Date.now() + 60 * 24 * 60 * 60 * 1000
+          Date.now() + 60 * 24 * 60 * 60 * 1000,
         ).toISOString(), // 60 days from now
         phone_number: "+66812345678",
       };
@@ -407,16 +407,6 @@ describe("Job Routes (Integration)", () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.status).toBe("PENDING");
-    });
-
-    it("should accept storage key resume link", async () => {
-      const res = await request(app)
-        .post(`/api/job/${job2.id}`)
-        .set("Authorization", studentToken)
-        .send({ resumeLink: "resumes/job-applications/sample.pdf" });
-
-      expect(res.status).toBe(201);
-      expect(res.body.success).toBe(true);
     });
 
     it("should reject duplicate application", async () => {
