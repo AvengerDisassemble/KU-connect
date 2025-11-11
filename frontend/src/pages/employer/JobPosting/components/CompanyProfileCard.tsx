@@ -12,6 +12,7 @@ import {
   getEmployerProfile,
   type EmployerProfileResponse,
 } from "@/services/employerProfile";
+import { INDUSTRY_LABEL_BY_API } from "@/lib/domain/industries";
 
 const initialsOf = (name?: string | null) =>
   (name ?? "")
@@ -21,16 +22,6 @@ const initialsOf = (name?: string | null) =>
     .slice(0, 2)
     .map((s) => s[0]?.toUpperCase() ?? "")
     .join("") || "CO";
-
-const INDUSTRY_LABEL: Record<string, string> = {
-  IT_HARDWARE_AND_DEVICES: "IT Hardware & Devices",
-  IT_SOFTWARE: "IT Software",
-  IT_SERVICES: "IT Services",
-  NETWORK_SERVICES: "Network Services",
-  EMERGING_TECH: "Emerging Tech",
-  E_COMMERCE: "E-commerce",
-  OTHER: "Other",
-};
 
 const COMPANY_SIZE_LABEL: Record<string, string> = {
   ONE_TO_TEN: "1-10",
@@ -188,7 +179,7 @@ const CompanyProfileCard: React.FC<Props> = ({
 
   const companyName = profile?.hr?.companyName ?? "Your Company";
   const industryRaw = profile?.hr?.industry ?? "";
-  const industry = INDUSTRY_LABEL[industryRaw] || industryRaw || "—";
+  const industry = INDUSTRY_LABEL_BY_API[industryRaw] || industryRaw || "—";
   const sizeRaw = profile?.hr?.companySize ?? "";
   const companySize = COMPANY_SIZE_LABEL[sizeRaw] || sizeRaw || "";
   const address = profile?.hr?.address ?? "";
