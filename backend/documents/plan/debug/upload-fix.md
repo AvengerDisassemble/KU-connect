@@ -9,6 +9,7 @@
 ## Executive Summary
 
 The backend test suite has **19 failing tests** across 2 test files:
+
 1. **Job Document Controller Tests** (17 failures) - `tests/controllers/jobDocumentController.test.js`
 2. **Job Routes Integration Tests** (2 failures) - `tests/src/routes/job/job.routes.test.js`
 
@@ -25,7 +26,7 @@ All failures stem from **schema validation errors** related to the `Job` and `Re
 ### Error Details
 
 ```
-PrismaClientValidationError: 
+PrismaClientValidationError:
 Invalid `prisma.job.create()` invocation
 Argument `companyName` is missing.
 ```
@@ -33,6 +34,7 @@ Argument `companyName` is missing.
 ### Affected Tests
 
 All 17 tests in `tests/controllers/jobDocumentController.test.js` that create Job records:
+
 - GET /api/jobs/:jobId/resume/:studentUserId/download - Download job resume
   - "should return 404 when no resume exists"
   - "should return 404 when student has no resume for this job"
@@ -50,17 +52,17 @@ All 17 tests in `tests/controllers/jobDocumentController.test.js` that create Jo
 const job = await prisma.job.create({
   data: {
     hrId: hr.hr.id,
-    title: 'Software Engineer',
-    description: 'Test job description',
-    location: 'Remote',
-    application_deadline: new Date('2025-12-31'),
-    email: 'jobs@test.com',
-    phone_number: '123-456-7890',
-    other_contact_information: 'LinkedIn',
-    requirements: 'Bachelor degree'
+    title: "Software Engineer",
+    description: "Test job description",
+    location: "Remote",
+    application_deadline: new Date("2025-12-31"),
+    email: "jobs@test.com",
+    phone_number: "123-456-7890",
+    other_contact_information: "LinkedIn",
+    requirements: "Bachelor degree",
     // ❌ Missing: companyName
-  }
-})
+  },
+});
 ```
 
 ### Schema Definition (schema.prisma lines 174-178)
@@ -87,15 +89,15 @@ model Job {
 **Cascading Schema Issues**: The `applyToJob` service function creates a `Resume` record, but the Resume model has a `@@unique([studentId, jobId])` constraint and **requires `jobId`** to be provided. However, the current implementation in `jobService.js` (line 320-326) creates the Resume **without** the `jobId`:
 
 ```javascript
-async function applyToJob (jobId, studentId, resumeLink) {
+async function applyToJob(jobId, studentId, resumeLink) {
   // create a Resume record for traceability (optional in your schema)
   const resume = await prisma.resume.create({
     data: {
       studentId,
-      link: resumeLink
+      link: resumeLink,
       // ❌ Missing: jobId (required for unique constraint)
-    }
-  })
+    },
+  });
   // ...
 }
 ```
@@ -143,6 +145,7 @@ model Resume {
 ### Schema Evolution Issue
 
 The failures indicate a **schema migration mismatch** between:
+
 1. **Database schema** (Prisma schema.prisma) - Updated with required fields
 2. **Test fixtures and service code** - Not updated to match new schema requirements
 
@@ -159,6 +162,7 @@ The failures indicate a **schema migration mismatch** between:
 ### Phase 1: Fix Job Document Controller Tests (Priority: HIGH)
 
 #### Step 1.1: Update Test Fixtures
+
 **File**: `tests/controllers/jobDocumentController.test.js`  
 **Lines**: ~189-200
 
@@ -168,17 +172,17 @@ The failures indicate a **schema migration mismatch** between:
 const job = await prisma.job.create({
   data: {
     hrId: hr.hr.id,
-    title: 'Software Engineer',
-    companyName: 'Test Company Inc.',  // ✅ ADD THIS
-    description: 'Test job description',
-    location: 'Remote',
-    application_deadline: new Date('2025-12-31'),
-    email: 'jobs@test.com',
-    phone_number: '123-456-7890',
-    other_contact_information: 'LinkedIn',
-    requirements: 'Bachelor degree'
-  }
-})
+    title: "Software Engineer",
+    companyName: "Test Company Inc.", // ✅ ADD THIS
+    description: "Test job description",
+    location: "Remote",
+    application_deadline: new Date("2025-12-31"),
+    email: "jobs@test.com",
+    phone_number: "123-456-7890",
+    other_contact_information: "LinkedIn",
+    requirements: "Bachelor degree",
+  },
+});
 ```
 
 **Estimated Impact**: Fixes all 17 failing tests in this file
@@ -188,37 +192,38 @@ const job = await prisma.job.create({
 ### Phase 2: Fix Job Application Service (Priority: HIGH)
 
 #### Step 2.1: Update `applyToJob` Service Function
+
 **File**: `src/services/jobService.js`  
 **Lines**: ~319-326
 
 **Action**: Add `jobId` to Resume creation
 
 ```javascript
-async function applyToJob (jobId, studentId, resumeLink) {
+async function applyToJob(jobId, studentId, resumeLink) {
   // create a Resume record for traceability (optional in your schema)
   const resume = await prisma.resume.create({
     data: {
       studentId,
-      jobId,              // ✅ ADD THIS
-      link: resumeLink
-    }
-  })
+      jobId, // ✅ ADD THIS
+      link: resumeLink,
+    },
+  });
 
   try {
     return await prisma.application.create({
       data: {
         jobId,
         studentId,
-        resumeId: resume.id
-      }
-    })
+        resumeId: resume.id,
+      },
+    });
   } catch (error) {
-    if (error.code === 'P2002') {
-      const err = new Error('Already applied to this job')
-      err.status = 409
-      throw err
+    if (error.code === "P2002") {
+      const err = new Error("Already applied to this job");
+      err.status = 409;
+      throw err;
     }
-    throw error
+    throw error;
   }
 }
 ```
@@ -230,7 +235,9 @@ async function applyToJob (jobId, studentId, resumeLink) {
 ### Phase 3: Comprehensive Testing Strategy
 
 #### Step 3.1: Search for All Job Creation Instances
-**Command**: 
+
+**Command**:
+
 ```bash
 grep -r "prisma.job.create" tests/
 ```
@@ -238,7 +245,9 @@ grep -r "prisma.job.create" tests/
 **Action**: Verify all test files creating Job records include `companyName`
 
 #### Step 3.2: Search for All Resume Creation Instances
+
 **Command**:
+
 ```bash
 grep -r "prisma.resume.create" src/ tests/
 ```
@@ -246,6 +255,7 @@ grep -r "prisma.resume.create" src/ tests/
 **Action**: Verify all Resume creation includes `jobId`
 
 #### Step 3.3: Run Full Test Suite
+
 ```bash
 npm test
 ```
@@ -257,9 +267,11 @@ npm test
 ### Phase 4: Prevention Measures (Recommended)
 
 #### Step 4.1: Add Schema Validation Hook
+
 **File**: `package.json` (scripts section)
 
 **Action**: Add pre-test schema validation:
+
 ```json
 {
   "scripts": {
@@ -270,36 +282,41 @@ npm test
 ```
 
 #### Step 4.2: Create Test Factories
+
 **New File**: `tests/factories/jobFactory.js`
 
 **Action**: Centralize test data creation with default values:
+
 ```javascript
 async function createTestJob(prisma, overrides = {}) {
   return await prisma.job.create({
     data: {
-      title: 'Test Job',
-      companyName: 'Test Company',
-      description: 'Test description',
-      location: 'Remote',
-      application_deadline: new Date('2025-12-31'),
-      email: 'test@test.com',
-      phone_number: '123-456-7890',
-      requirements: 'Test requirements',
-      ...overrides  // Allow customization
-    }
-  })
+      title: "Test Job",
+      companyName: "Test Company",
+      description: "Test description",
+      location: "Remote",
+      application_deadline: new Date("2025-12-31"),
+      email: "test@test.com",
+      phone_number: "123-456-7890",
+      requirements: "Test requirements",
+      ...overrides, // Allow customization
+    },
+  });
 }
 ```
 
 **Benefits**:
+
 - Single source of truth for test data
 - Automatically includes all required fields
 - Easy to update when schema changes
 
 #### Step 4.3: Update Development Documentation
+
 **File**: `backend/TESTING_GUIDE.md` (create if doesn't exist)
 
 **Action**: Document the requirement to:
+
 1. Run tests after schema migrations
 2. Update test fixtures when adding required fields
 3. Use test factories for consistent test data
@@ -331,12 +348,12 @@ async function createTestJob(prisma, overrides = {}) {
 
 ## Risk Assessment
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Breaking existing functionality | Medium | Run full test suite after each change |
-| Database constraint violations | High | Verify unique constraints in Resume model |
-| Missing other required fields | Medium | Perform comprehensive grep search |
-| Production data migration issues | Low | This affects tests only, not production data |
+| Risk                             | Impact | Mitigation                                   |
+| -------------------------------- | ------ | -------------------------------------------- |
+| Breaking existing functionality  | Medium | Run full test suite after each change        |
+| Database constraint violations   | High   | Verify unique constraints in Resume model    |
+| Missing other required fields    | Medium | Perform comprehensive grep search            |
+| Production data migration issues | Low    | This affects tests only, not production data |
 
 ---
 

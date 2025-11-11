@@ -2,7 +2,7 @@
  * Shared test utilities and helper functions
  */
 
-const jwt = require('jsonwebtoken')
+const jwt = require("jsonwebtoken");
 
 /**
  * Test Constants - Shared across all test files
@@ -11,70 +11,70 @@ const jwt = require('jsonwebtoken')
 
 // Degree types
 const TEST_DEGREE_TYPES = {
-  BACHELOR: 'Bachelor',
-  MASTER: 'Master',
-  DIPLOMA: 'Diploma'
-}
+  BACHELOR: "Bachelor",
+  MASTER: "Master",
+  DIPLOMA: "Diploma",
+};
 
 // User roles
 const TEST_ROLES = {
-  STUDENT: 'STUDENT',
-  ADMIN: 'ADMIN',
-  EMPLOYER: 'EMPLOYER',
-  PROFESSOR: 'PROFESSOR'
-}
+  STUDENT: "STUDENT",
+  ADMIN: "ADMIN",
+  EMPLOYER: "EMPLOYER",
+  PROFESSOR: "PROFESSOR",
+};
 
 // Job statuses
 const JOB_STATUSES = {
-  PENDING: 'PENDING',
-  QUALIFIED: 'QUALIFIED',
-  REJECTED: 'REJECTED'
-}
+  PENDING: "PENDING",
+  QUALIFIED: "QUALIFIED",
+  REJECTED: "REJECTED",
+};
 
 // Application statuses
 const APPLICATION_STATUSES = {
-  PENDING: 'PENDING',
-  QUALIFIED: 'QUALIFIED',
-  REJECTED: 'REJECTED'
-}
+  PENDING: "PENDING",
+  QUALIFIED: "QUALIFIED",
+  REJECTED: "REJECTED",
+};
 
 // Job types
 const JOB_TYPES = {
-  FULL_TIME: 'full-time',
-  PART_TIME: 'part-time',
-  INTERNSHIP: 'internship',
-  CONTRACT: 'contract'
-}
+  FULL_TIME: "full-time",
+  PART_TIME: "part-time",
+  INTERNSHIP: "internship",
+  CONTRACT: "contract",
+};
 
 // Work arrangements
 const WORK_ARRANGEMENTS = {
-  ON_SITE: 'on-site',
-  REMOTE: 'remote',
-  HYBRID: 'hybrid'
-}
+  ON_SITE: "on-site",
+  REMOTE: "remote",
+  HYBRID: "hybrid",
+};
 
 // Test user emails (with unique prefixes to avoid conflicts)
 const TEST_EMAILS = {
-  ADMIN: 'admin@test.com',
-  STUDENT: 'student@test.com',
-  STUDENT_2: 'student2@test.com',
-  STUDENT_3: 'student3@test.com',
-  STUDENT_PROFILE: 'student-profile@test.com',
-  STUDENT_MYAPP: 'student-myapp@test.com',
-  STUDENT2_MYAPP: 'student2-myapp@test.com',
-  PROFESSOR: 'professor@test.com',
-  HR: 'hr@test.com',
-  HR_MYAPP: 'hr-myapp@test.com',
-  HR_2: 'hr2@test.com'
-}
+  ADMIN: "admin@test.com",
+  STUDENT: "student@test.com",
+  STUDENT_2: "student2@test.com",
+  STUDENT_3: "student3@test.com",
+  STUDENT_PROFILE: "student-profile@test.com",
+  STUDENT_MYAPP: "student-myapp@test.com",
+  STUDENT2_MYAPP: "student2-myapp@test.com",
+  PROFESSOR: "professor@test.com",
+  HR: "hr@test.com",
+  HR_MYAPP: "hr-myapp@test.com",
+  HR_2: "hr2@test.com",
+};
 
 // Test company info
 const TEST_COMPANY_INFO = {
-  NAME: 'TestCorp',
-  ADDRESS: 'Bangkok',
-  INDUSTRY: 'IT_SOFTWARE',
-  SIZE: 'ELEVEN_TO_FIFTY'
-}
+  NAME: "TestCorp",
+  ADDRESS: "Bangkok",
+  INDUSTRY: "IT_SOFTWARE",
+  SIZE: "ELEVEN_TO_FIFTY",
+};
 
 /**
  * Create a JWT token for testing
@@ -107,14 +107,14 @@ const TEST_COMPANY_INFO = {
  */
 function createTestToken(payload, options = {}) {
   const {
-    secret = process.env.ACCESS_TOKEN_SECRET || 'testsecret',
+    secret = process.env.ACCESS_TOKEN_SECRET || "testsecret",
     includeBearer = true,
-    algorithm = 'HS256'
-  } = options
+    algorithm = "HS256",
+  } = options;
 
-  const token = jwt.sign(payload, secret, { algorithm })
+  const token = jwt.sign(payload, secret, { algorithm });
 
-  return includeBearer ? `Bearer ${token}` : token
+  return includeBearer ? `Bearer ${token}` : token;
 }
 
 /**
@@ -134,17 +134,17 @@ function createTestToken(payload, options = {}) {
  * // Returns: { ADMIN: 'Bearer ...', STUDENT: 'Bearer ...', EMPLOYER: 'Bearer ...' }
  */
 function createTestTokens(users, options = {}) {
-  const tokens = {}
+  const tokens = {};
 
   for (const [role, userData] of Object.entries(users)) {
     const payload = {
       ...userData,
-      role
-    }
-    tokens[role] = createTestToken(payload, options)
+      role,
+    };
+    tokens[role] = createTestToken(payload, options);
   }
 
-  return tokens
+  return tokens;
 }
 
 /**
@@ -168,28 +168,28 @@ function createTestTokens(users, options = {}) {
  * @throws {Error} If cleanup fails
  */
 async function cleanupDatabase(prisma, options = {}) {
-  const { logSuccess = true } = options
+  const { logSuccess = true } = options;
 
   try {
     // 1. Delete applications first (they depend on jobs and students)
-    await prisma.application.deleteMany()
+    await prisma.application.deleteMany();
 
     // 2. Delete job-related records (they depend on jobs)
-    await prisma.studentInterest.deleteMany()
-    await prisma.jobReport.deleteMany()
-    await prisma.requirement.deleteMany()
-    await prisma.qualification.deleteMany()
-    await prisma.responsibility.deleteMany()
-    await prisma.benefit.deleteMany()
+    await prisma.studentInterest.deleteMany();
+    await prisma.jobReport.deleteMany();
+    await prisma.requirement.deleteMany();
+    await prisma.qualification.deleteMany();
+    await prisma.responsibility.deleteMany();
+    await prisma.benefit.deleteMany();
 
     // 3. Delete jobs (they depend on HR)
-    await prisma.job.deleteMany()
+    await prisma.job.deleteMany();
 
     // 4. Delete resume records (they depend on students)
-    await prisma.resume.deleteMany()
+    await prisma.resume.deleteMany();
 
     // 5. Delete refresh tokens (they depend on users)
-    await prisma.refreshToken.deleteMany()
+    await prisma.refreshToken.deleteMany();
 
     // 6. Delete notifications (they depend on announcements and users)
     await prisma.notification.deleteMany()
@@ -207,23 +207,23 @@ async function cleanupDatabase(prisma, options = {}) {
     await prisma.user.deleteMany({
       where: {
         email: {
-          contains: 'test'
-        }
-      }
-    })
+          contains: "test",
+        },
+      },
+    });
 
     // 8. Delete tags
-    await prisma.tag.deleteMany()
+    await prisma.tag.deleteMany();
 
     // 9. Delete degree types
-    await prisma.degreeType.deleteMany()
+    await prisma.degreeType.deleteMany();
 
     if (logSuccess) {
-      console.log('Complete database cleanup completed successfully')
+      console.log("Complete database cleanup completed successfully");
     }
   } catch (error) {
-    console.log('Database cleanup error:', error.message)
-    throw error
+    console.log("Database cleanup error:", error.message);
+    throw error;
   }
 }
 
@@ -240,5 +240,5 @@ module.exports = {
   // Functions
   createTestToken,
   createTestTokens,
-  cleanupDatabase
-}
+  cleanupDatabase,
+};

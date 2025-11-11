@@ -3,7 +3,7 @@
  * @description Centralized authorization checks for document access
  */
 
-const prisma = require('../models/prisma')
+const prisma = require("../models/prisma");
 
 /**
  * Check if user can view a student's document (resume/transcript)
@@ -14,15 +14,15 @@ const prisma = require('../models/prisma')
 function canViewStudentDocument(requester, targetUserId) {
   // Owner can view their own documents
   if (requester.id === targetUserId) {
-    return true
+    return true;
   }
-  
+
   // Admins can view any document
-  if (requester.role === 'ADMIN') {
-    return true
+  if (requester.role === "ADMIN") {
+    return true;
   }
-  
-  return false
+
+  return false;
 }
 
 /**
@@ -34,15 +34,15 @@ function canViewStudentDocument(requester, targetUserId) {
 function canViewHRDocument(requester, targetUserId) {
   // Owner can view their own documents
   if (requester.id === targetUserId) {
-    return true
+    return true;
   }
-  
+
   // Admins can view any document
-  if (requester.role === 'ADMIN') {
-    return true
+  if (requester.role === "ADMIN") {
+    return true;
   }
-  
-  return false
+
+  return false;
 }
 
 /**
@@ -55,35 +55,35 @@ function canViewHRDocument(requester, targetUserId) {
 async function canViewJobResume(requester, jobId, studentUserId) {
   // Owner student can view their own resume
   if (requester.id === studentUserId) {
-    return true
+    return true;
   }
-  
+
   // Admins can view any resume
-  if (requester.role === 'ADMIN') {
-    return true
+  if (requester.role === "ADMIN") {
+    return true;
   }
-  
+
   // HR who owns the job can view resumes for that job
-  if (requester.role === 'EMPLOYER') {
+  if (requester.role === "EMPLOYER") {
     const job = await prisma.job.findUnique({
       where: { id: jobId },
-      select: { 
+      select: {
         hr: {
-          select: { userId: true }
-        }
-      }
-    })
-    
+          select: { userId: true },
+        },
+      },
+    });
+
     if (job && job.hr && job.hr.userId === requester.id) {
-      return true
+      return true;
     }
   }
-  
-  return false
+
+  return false;
 }
 
 module.exports = {
   canViewStudentDocument,
   canViewHRDocument,
-  canViewJobResume
-}
+  canViewJobResume,
+};
