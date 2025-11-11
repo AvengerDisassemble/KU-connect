@@ -12,17 +12,39 @@ const REFRESH_TOKEN_EXPIRY = "7d";
 // Cookie encryption key - MUST be 32 bytes for AES-256
 // In production, this MUST be set in environment variables
 // For tests/development, use a deterministic fallback to avoid breaking on restarts
-const COOKIE_ENCRYPTION_KEY = process.env.COOKIE_ENCRYPTION_KEY 
-  ? Buffer.from(process.env.COOKIE_ENCRYPTION_KEY, 'hex')
-  : process.env.NODE_ENV === 'test' 
-    ? Buffer.from('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 'hex') // Deterministic test key
-    : crypto.randomBytes(32); // Random key for development
-
-// Warn if using fallback key (but not in test mode to avoid noise)
-if (!process.env.COOKIE_ENCRYPTION_KEY && process.env.NODE_ENV !== 'test') {
-  console.warn('⚠️  WARNING: COOKIE_ENCRYPTION_KEY not set in environment. Using random key (will break on server restart).');
-  console.warn('⚠️  Generate a key with: node -e "console.log(crypto.randomBytes(32).toString(\'hex\'))"');
+function initializeEncryptionKey() {
+  // Deterministic test key (valid 64-char hex string = 32 bytes)
+  const TEST_KEY = '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+  
+  try {
+    if (process.env.COOKIE_ENCRYPTION_KEY) {
+      // Validate that the key is a valid 64-character hex string (32 bytes)
+      const keyStr = process.env.COOKIE_ENCRYPTION_KEY.trim();
+      if (!/^[0-9a-fA-F]{64}$/.test(keyStr)) {
+        console.warn('⚠️  WARNING: COOKIE_ENCRYPTION_KEY is not a valid 64-character hex string.');
+        console.warn('⚠️  Using test key for now. In production, generate with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+        return Buffer.from(TEST_KEY, 'hex');
+      }
+      return Buffer.from(keyStr, 'hex');
+    }
+    
+    // Use test key if NODE_ENV is 'test'
+    if (process.env.NODE_ENV === 'test') {
+      return Buffer.from(TEST_KEY, 'hex');
+    }
+    
+    // Use random key for development (with warning)
+    console.warn('⚠️  WARNING: COOKIE_ENCRYPTION_KEY not set in environment. Using random key (will break on server restart).');
+    console.warn('⚠️  Generate a key with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    return crypto.randomBytes(32);
+  } catch (error) {
+    console.error('⚠️  ERROR initializing encryption key:', error.message);
+    console.error('⚠️  Falling back to test key');
+    return Buffer.from(TEST_KEY, 'hex');
+  }
 }
+
+const COOKIE_ENCRYPTION_KEY = initializeEncryptionKey();
 
 /**
  * Generate an access token
