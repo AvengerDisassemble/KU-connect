@@ -27,9 +27,14 @@ jest.setTimeout(30000);
 describe("Saved Jobs (integration)", () => {
   let user;
   let hr;
+  let admin;
+  let professor;
   let job1;
   let job2;
   let userToken;
+  let hrToken;
+  let adminToken;
+  let professorToken;
 
   beforeAll(async () => {
     // Seed minimal data: degreeType needed for student creation
@@ -160,7 +165,64 @@ describe("Saved Jobs (integration)", () => {
       },
     });
 
+    // Create admin user
+    try {
+      admin = await prisma.user.create({
+        data: {
+          name: "Admin",
+          surname: "User",
+          email: "saved-admin@test.com",
+          password: "Pass",
+          role: "ADMIN",
+          admin: {
+            create: {},
+          },
+        },
+        include: { admin: true },
+      });
+    } catch (err) {
+      if (err && err.code === "P2002") {
+        admin = await prisma.user.findUnique({
+          where: { email: "saved-admin@test.com" },
+          include: { admin: true },
+        });
+      } else {
+        throw err;
+      }
+    }
+
+    // Create professor user
+    try {
+      professor = await prisma.user.create({
+        data: {
+          name: "Professor",
+          surname: "User",
+          email: "saved-professor@test.com",
+          password: "Pass",
+          role: "PROFESSOR",
+          professor: {
+            create: {
+              department: "Computer Science",
+            },
+          },
+        },
+        include: { professor: true },
+      });
+    } catch (err) {
+      if (err && err.code === "P2002") {
+        professor = await prisma.user.findUnique({
+          where: { email: "saved-professor@test.com" },
+          include: { professor: true },
+        });
+      } else {
+        throw err;
+      }
+    }
+
     userToken = createTestToken({ id: user.id, role: "STUDENT" });
+    hrToken = createTestToken({ id: hr.id, role: "EMPLOYER" });
+    adminToken = createTestToken({ id: admin.id, role: "ADMIN" });
+    professorToken = createTestToken({ id: professor.id, role: "PROFESSOR" });
   });
 
   beforeEach(async () => {
@@ -241,5 +303,141 @@ describe("Saved Jobs (integration)", () => {
       .expect(400);
     expect(res.body.success).toBe(false);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+
+  // ===================== ROLE-BASED ACCESS CONTROL TESTS =====================
+  
+  describe("Role-Based Access Control", () => {
+    test("GET: EMPLOYER role should be denied access", async () => {
+      const res = await request(app)
+        .get(`/api/save-jobs/${hr.id}/saved`)
+        .set("Authorization", hrToken)
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("GET: ADMIN role should be denied access", async () => {
+      const res = await request(app)
+        .get(`/api/save-jobs/${admin.id}/saved`)
+        .set("Authorization", adminToken)
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("GET: PROFESSOR role should be denied access", async () => {
+      const res = await request(app)
+        .get(`/api/save-jobs/${professor.id}/saved`)
+        .set("Authorization", professorToken)
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("POST: EMPLOYER role should be denied access", async () => {
+      const res = await request(app)
+        .post(`/api/save-jobs/${hr.id}/saved`)
+        .set("Authorization", hrToken)
+        .send({ jobId: job1.id })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("POST: ADMIN role should be denied access", async () => {
+      const res = await request(app)
+        .post(`/api/save-jobs/${admin.id}/saved`)
+        .set("Authorization", adminToken)
+        .send({ jobId: job1.id })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("POST: PROFESSOR role should be denied access", async () => {
+      const res = await request(app)
+        .post(`/api/save-jobs/${professor.id}/saved`)
+        .set("Authorization", professorToken)
+        .send({ jobId: job1.id })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("DELETE: EMPLOYER role should be denied access", async () => {
+      const res = await request(app)
+        .delete(`/api/save-jobs/${hr.id}/saved`)
+        .set("Authorization", hrToken)
+        .send({ jobId: job1.id })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("DELETE: ADMIN role should be denied access", async () => {
+      const res = await request(app)
+        .delete(`/api/save-jobs/${admin.id}/saved`)
+        .set("Authorization", adminToken)
+        .send({ jobId: job1.id })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("DELETE: PROFESSOR role should be denied access", async () => {
+      const res = await request(app)
+        .delete(`/api/save-jobs/${professor.id}/saved`)
+        .set("Authorization", professorToken)
+        .send({ jobId: job1.id })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain("Required role(s): STUDENT");
+    });
+
+    test("GET: STUDENT role should have access", async () => {
+      const res = await request(app)
+        .get(`/api/save-jobs/${user.id}/saved`)
+        .set("Authorization", userToken)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    test("POST: STUDENT role should have access", async () => {
+      const res = await request(app)
+        .post(`/api/save-jobs/${user.id}/saved`)
+        .set("Authorization", userToken)
+        .send({ jobId: job1.id })
+        .expect(201);
+      expect(res.body.success).toBe(true);
+    });
+
+    test("DELETE: STUDENT role should have access", async () => {
+      // First create a saved job
+      await prisma.savedJob.create({ 
+        data: { userId: user.id, jobId: job1.id } 
+      });
+      
+      const res = await request(app)
+        .delete(`/api/save-jobs/${user.id}/saved`)
+        .set("Authorization", userToken)
+        .send({ jobId: job1.id })
+        .expect(204);
+    });
+
+    test("No authentication token should return 401", async () => {
+      const res = await request(app)
+        .get(`/api/save-jobs/${user.id}/saved`)
+        .expect(401);
+      expect(res.body.success).toBe(false);
+    });
+
+    test("Invalid token should return 401", async () => {
+      const res = await request(app)
+        .get(`/api/save-jobs/${user.id}/saved`)
+        .set("Authorization", "Bearer invalid-token-here")
+        .expect(401);
+      expect(res.body.success).toBe(false);
+    });
   });
 });
