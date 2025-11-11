@@ -5,21 +5,17 @@
 
 const savedService = require("../services/savedService");
 
+/**
+ * Extracts user ID from request params
+ * @param {Express.Request} req - Express request object
+ * @returns {string|undefined} The user_id from route params
+ * 
+ * Note: Routes explicitly define :user_id parameter, so we directly access it.
+ * No fallback logic needed - if this returns undefined, it indicates a routing
+ * configuration error that should be fixed at the route level.
+ */
 function extractUserIdFromReq(req) {
-  // Common param locations
-  const candidates = [
-    req.params && req.params.user_id,
-    req.params && req.params.userId,
-    req.params && req.params.id,
-  ];
-  for (const c of candidates) {
-    if (c && typeof c === "string" && c.trim() !== "") return c;
-  }
-  // Try to parse from baseUrl or originalUrl: /api/:userId/saved
-  const url = req.baseUrl || req.originalUrl || "";
-  const m = url.match(/\/api\/([^/]+)\/saved/) || url.match(/\/([^/]+)\/saved/);
-  if (m && m[1]) return m[1];
-  return undefined;
+  return req.params && req.params.user_id;
 }
 
 /**
