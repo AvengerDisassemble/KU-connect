@@ -1,4 +1,5 @@
-const prisma = require("../../../../src/models/prisma");const {
+const prisma = require("../../../src/models/prisma");
+const {
   registerUser,
   loginUser,
   refreshAccessToken,

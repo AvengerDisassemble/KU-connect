@@ -51,13 +51,8 @@ describe("Job Routes (Integration)", () => {
 
     // Use upsert for atomic user creation to avoid race conditions
     admin = await prisma.user.upsert({
-<<<<<<< HEAD
-      where: { email: "admin@test.com" },
-      update: {},
-=======
       where: { email: 'admin@test.com' },
       update: { status: 'APPROVED' },
->>>>>>> dev
       create: {
         name: "Admin",
         surname: "User",
@@ -72,16 +67,6 @@ describe("Job Routes (Integration)", () => {
     });
 
     hr = await prisma.user.upsert({
-<<<<<<< HEAD
-      where: { email: "hr@test.com" },
-      update: {},
-      create: {
-        name: "HR",
-        surname: "User",
-        email: "hr@test.com",
-        password: "Pass",
-        role: "EMPLOYER",
-=======
       where: { email: 'hr@test.com' },
       update: { status: 'APPROVED' },
       create: {
@@ -91,7 +76,6 @@ describe("Job Routes (Integration)", () => {
         password: 'Pass',
         role: 'EMPLOYER',
         status: 'APPROVED',
->>>>>>> dev
         hr: {
           create: {
             companyName: "TestCorp",
@@ -106,16 +90,6 @@ describe("Job Routes (Integration)", () => {
     });
 
     hr2 = await prisma.user.upsert({
-<<<<<<< HEAD
-      where: { email: "hr2@test.com" },
-      update: {},
-      create: {
-        name: "HR2",
-        surname: "User",
-        email: "hr2@test.com",
-        password: "Pass",
-        role: "EMPLOYER",
-=======
       where: { email: 'hr2@test.com' },
       update: { status: 'APPROVED' },
       create: {
@@ -125,7 +99,6 @@ describe("Job Routes (Integration)", () => {
         password: 'Pass',
         role: 'EMPLOYER',
         status: 'APPROVED',
->>>>>>> dev
         hr: {
           create: {
             companyName: "OtherCorp",
@@ -140,16 +113,6 @@ describe("Job Routes (Integration)", () => {
     });
 
     student = await prisma.user.upsert({
-<<<<<<< HEAD
-      where: { email: "student@test.com" },
-      update: {},
-      create: {
-        name: "Student",
-        surname: "User",
-        email: "student@test.com",
-        password: "Pass",
-        role: "STUDENT",
-=======
       where: { email: 'student@test.com' },
       update: { status: 'APPROVED' },
       create: {
@@ -159,7 +122,6 @@ describe("Job Routes (Integration)", () => {
         password: 'Pass',
         role: 'STUDENT',
         status: 'APPROVED',
->>>>>>> dev
         student: {
           create: {
             degreeTypeId: degreeType.id,
