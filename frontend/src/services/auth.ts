@@ -71,6 +71,9 @@ export interface RegisterEmployerData {
   password: string;
   companyName: string;
   address: string;
+  phoneNumber: string;
+  contactEmail?: string;
+  industry?: string;
 }
 
 /**
