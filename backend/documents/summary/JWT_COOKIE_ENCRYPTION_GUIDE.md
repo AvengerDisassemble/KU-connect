@@ -146,7 +146,17 @@ COOKIE_ENCRYPTION_KEY=your_generated_key_here
 - Store production keys in secure secret management systems (AWS Secrets Manager, Azure Key Vault, etc.)
 - Rotating this key will invalidate all existing cookie-based sessions
 
-### 3. No Code Changes Required
+### 3. Test Environment Configuration
+
+**For CI/CD (GitHub Actions, etc.)**:
+- The system automatically uses a deterministic test key when `NODE_ENV=test`
+- No need to set `COOKIE_ENCRYPTION_KEY` in CI environments
+- Jest automatically sets `NODE_ENV=test` via `tests/setup.js`
+
+**For Local Development**:
+- Without `COOKIE_ENCRYPTION_KEY`: Uses a random key (will invalidate sessions on restart)
+- With `NODE_ENV=test`: Uses deterministic test key (consistent across restarts)
+- Recommended: Set a key in `.env` for stable development sessions
 The encryption/decryption is transparent to existing code:
 - Login/refresh flows work the same
 - Token validation works the same
@@ -227,8 +237,15 @@ npm test tests/src/saved.int.test.js  # 20/20 passing
 
 ### Warning: "COOKIE_ENCRYPTION_KEY not set"
 **Cause**: Environment variable missing  
-**Solution**: Generate and set key as described above  
-**Impact**: Server uses random key that changes on restart (dev only)
+**Solution**: 
+- **Production**: Generate and set key as described in setup instructions
+- **Tests/CI**: Automatically handled - `NODE_ENV=test` uses deterministic key
+- **Development**: Generate and set key, or accept random key (sessions lost on restart)
+
+**Impact**: 
+- Production without key: Server uses random key that changes on restart (breaks sessions)
+- Tests without key: Uses deterministic test key (0123456789abcdef...)
+- No security risk in test environments
 
 ### Users Logged Out After Key Rotation
 **Expected Behavior**: Changing encryption key invalidates all cookie-based sessions  
