@@ -15,6 +15,11 @@
     "test:verbose": "SHOW_LOGS=true jest --runInBand",
     "test:summary": "jest --verbose=false --runInBand",
     "test:failures": "jest --onlyFailures --verbose=false --runInBand",
+    "test:nfr": "jest --testPathPatterns=\"(security|performance|reliability)\" --runInBand --verbose",
+    "test:security": "jest --testPathPatterns=\"security\" --runInBand --verbose",
+    "test:performance": "jest --testPathPatterns=\"performance\" --runInBand --verbose",
+    "test:reliability": "jest --testPathPatterns=\"reliability\" --runInBand --verbose",
+    "test:coverage": "jest --coverage --runInBand",
     "start": "node server.js"
   },
   "dependencies": {

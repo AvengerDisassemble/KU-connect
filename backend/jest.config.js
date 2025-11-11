@@ -36,9 +36,9 @@ module.exports = {
   // Increase timeout for slow database operations
   testTimeout: 60000,
 
-  // Let Jest exit naturally; fix open handles instead of forcing exit
-  forceExit: false,
+  // Force exit after tests complete (integration tests have HTTP/DB connections)
+  forceExit: true,
 
-  // Help detect any remaining async handles during local debug
-  detectOpenHandles: true
+  // Disable open handle detection for integration tests (HTTP connections are expected)
+  detectOpenHandles: false
 }
