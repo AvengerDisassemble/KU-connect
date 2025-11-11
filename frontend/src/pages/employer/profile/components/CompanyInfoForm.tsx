@@ -37,35 +37,16 @@ import {
   type EmployerProfileResponse,
   type UpdateEmployerProfileRequest,
 } from "@/services/employerProfile";
+import {
+  API_TO_INDUSTRY_UI,
+  INDUSTRY_OPTIONS_BASE,
+  INDUSTRY_UI_TO_API,
+} from "@/lib/domain/industries";
 import { z, ZodError } from "zod";
 
 const PHONE_REGEX = /^[0-9+\-()\s]{8,15}$/;
 
 type Option = { value: string; label: string };
-
-const INDUSTRY_OPTIONS_BASE: Option[] = [
-  { value: "it-hardware-and-devices", label: "IT Hardware & Devices" },
-  { value: "it-software", label: "IT Software" },
-  { value: "it-services", label: "IT Services" },
-  { value: "network-services", label: "Network Services" },
-  { value: "emerging-tech", label: "Emerging Tech" },
-  { value: "e-commerce", label: "E-commerce" },
-  { value: "other", label: "Other" },
-];
-
-const INDUSTRY_UI_TO_API: Record<string, string> = {
-  "it-hardware-and-devices": "IT_HARDWARE_AND_DEVICES",
-  "it-software": "IT_SOFTWARE",
-  "it-services": "IT_SERVICES",
-  "network-services": "NETWORK_SERVICES",
-  "emerging-tech": "EMERGING_TECH",
-  "e-commerce": "E_COMMERCE",
-  other: "OTHER",
-};
-
-const API_TO_INDUSTRY_UI: Record<string, string> = Object.fromEntries(
-  Object.entries(INDUSTRY_UI_TO_API).map(([ui, api]) => [api, ui])
-);
 
 const COMPANY_SIZE_OPTIONS_BASE: Option[] = [
   { value: "1-10", label: "1-10" },
