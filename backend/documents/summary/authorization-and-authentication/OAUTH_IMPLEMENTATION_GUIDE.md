@@ -1,10 +1,13 @@
 # Google OAuth 2.0 Implementation Guide
 
 ## Overview
+
 This document provides instructions for configuring and using the Google OAuth 2.0 authentication system that has been integrated into the KU-Connect backend application.
 
 ## Architecture
+
 The implementation follows the **Identity/Account Segregation Pattern**:
+
 - **User Model**: Contains core user identity information
 - **Account Model**: Stores provider-specific OAuth data (Google, Facebook, etc.)
 - Users can have multiple accounts linked to different providers
@@ -58,18 +61,23 @@ INSERT INTO DegreeType (id, name) VALUES (1, 'Bachelor of Science');
 ## API Endpoints
 
 ### Initiate Google OAuth Flow
+
 ```
 GET /api/auth/google
 ```
+
 Redirects user to Google's OAuth consent screen.
 
 ### OAuth Callback
+
 ```
 GET /api/auth/google/callback
 ```
+
 Handles the OAuth callback from Google and returns JWT tokens.
 
 **Success Response:**
+
 ```json
 {
   "user": {
@@ -90,6 +98,7 @@ Handles the OAuth callback from Google and returns JWT tokens.
 ## Authentication Flow
 
 ### New User (First-time Google Sign-in)
+
 1. User clicks "Sign in with Google"
 2. Frontend redirects to `/api/auth/google`
 3. User authenticates with Google
@@ -101,18 +110,22 @@ Handles the OAuth callback from Google and returns JWT tokens.
 6. JWT tokens are issued and returned
 
 ### Existing User (Returning Google User)
+
 1. Same flow as above (steps 1-4)
 2. Backend finds existing `Account` by `providerAccountId`
 3. Returns existing user data with new JWT tokens
 
 ### Account Linking (User exists with email, new Google sign-in)
+
 1. Same flow as above (steps 1-4)
 2. Backend finds existing `User` by email
 3. Creates new `Account` record linked to existing User
 4. Returns existing user data with new JWT tokens
 
 ### Local Login Protection
+
 Users who signed up via OAuth cannot use local login (password authentication). The system will return:
+
 ```json
 {
   "error": "This account uses OAuth authentication. Please sign in with Google."
@@ -124,20 +137,20 @@ Users who signed up via OAuth cannot use local login (password authentication). 
 ```typescript
 // Redirect to Google OAuth
 const handleGoogleLogin = () => {
-  window.location.href = 'http://localhost:3000/api/auth/google'
-}
+  window.location.href = "http://localhost:3000/api/auth/google";
+};
 
 // Handle OAuth callback (if using client-side routing)
 useEffect(() => {
-  const urlParams = new URLSearchParams(window.location.search)
-  const token = urlParams.get('token')
-  
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+
   if (token) {
     // Store token and redirect to dashboard
-    localStorage.setItem('accessToken', token)
-    navigate('/dashboard')
+    localStorage.setItem("accessToken", token);
+    navigate("/dashboard");
   }
-}, [])
+}, []);
 ```
 
 ## Testing
@@ -156,6 +169,7 @@ npm test authRoutes.test.js
 ### Test Coverage
 
 **authService.test.js:**
+
 - ✅ Finding existing user by Google account
 - ✅ Linking Google account to existing email
 - ✅ Creating new user with Google OAuth
@@ -163,6 +177,7 @@ npm test authRoutes.test.js
 - ✅ Successful local login for password users
 
 **authRoutes.test.js:**
+
 - ✅ Google OAuth initiation
 - ✅ OAuth callback with token generation
 - ✅ OAuth callback failure handling
@@ -180,6 +195,7 @@ npm test authRoutes.test.js
 ## Database Schema Changes
 
 ### User Model
+
 ```prisma
 model User {
   id           String         @id @default(cuid())
@@ -195,6 +211,7 @@ model User {
 ```
 
 ### Account Model (New)
+
 ```prisma
 model Account {
   id                String   @id @default(cuid())
@@ -218,18 +235,22 @@ model Account {
 ## Troubleshooting
 
 ### "Invalid credentials" error
+
 - Verify Google Client ID and Secret in `.env`
 - Check that redirect URI matches exactly in Google Console
 
 ### "DegreeType not found" error
+
 - Ensure at least one DegreeType exists in database
 - Run seed script if available
 
 ### CORS errors
+
 - Verify `FRONTEND_URL` in `.env` matches your frontend origin
 - Check that credentials are enabled in CORS configuration
 
 ### Tests failing
+
 - Ensure test database is configured properly
 - Run migrations on test database
 - Check that all mocks are properly configured

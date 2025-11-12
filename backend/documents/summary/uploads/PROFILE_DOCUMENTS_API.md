@@ -5,6 +5,7 @@ This document provides a quick reference for all user document upload endpoints 
 ---
 
 ## Table of Contents
+
 - [Authentication](#authentication)
 - [Profile Picture (Avatar) API](#profile-picture-avatar-api)
 - [Resume API](#resume-api)
@@ -16,6 +17,7 @@ This document provides a quick reference for all user document upload endpoints 
 ## Authentication
 
 All endpoints require authentication via JWT token in the Authorization header:
+
 ```
 Authorization: Bearer <your_access_token>
 ```
@@ -33,12 +35,14 @@ Authorization: Bearer <your_access_token>
 **Content-Type:** `multipart/form-data`
 
 **File Requirements:**
+
 - Field name: `avatar`
 - Allowed types: Any image (JPEG, PNG, GIF, WebP, etc.)
 - Max size: 2 MB
 - Single file only
 
 **Request Example:**
+
 ```http
 POST /api/profile/avatar HTTP/1.1
 Host: localhost:3000
@@ -54,6 +58,7 @@ Content-Type: image/jpeg
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -66,7 +71,8 @@ Content-Type: image/jpeg
 
 **Error Responses:**
 
-*400 Bad Request - No file uploaded:*
+_400 Bad Request - No file uploaded:_
+
 ```json
 {
   "success": false,
@@ -74,7 +80,8 @@ Content-Type: image/jpeg
 }
 ```
 
-*400 Bad Request - Invalid file type:*
+_400 Bad Request - Invalid file type:_
+
 ```json
 {
   "success": false,
@@ -82,7 +89,8 @@ Content-Type: image/jpeg
 }
 ```
 
-*413 Payload Too Large:*
+_413 Payload Too Large:_
+
 ```json
 {
   "success": false,
@@ -99,9 +107,11 @@ Content-Type: image/jpeg
 **Authorization:** Required (Any authenticated user can view any avatar)
 
 **Path Parameters:**
+
 - `userId` (string, required): The ID of the user whose avatar to retrieve
 
 **Request Example:**
+
 ```http
 GET /api/profile/avatar/user-123e4567-e89b-12d3-a456-426614174000 HTTP/1.1
 Host: localhost:3000
@@ -109,6 +119,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -121,7 +132,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Error Responses:**
 
-*404 Not Found - User not found:*
+_404 Not Found - User not found:_
+
 ```json
 {
   "success": false,
@@ -129,7 +141,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-*404 Not Found - No avatar uploaded:*
+_404 Not Found - No avatar uploaded:_
+
 ```json
 {
   "success": false,
@@ -153,12 +166,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **Content-Type:** `multipart/form-data`
 
 **File Requirements:**
+
 - Field name: `resume`
 - Allowed types: PDF only
 - Max size: 10 MB
 - Single file only
 
 **Request Example:**
+
 ```http
 POST /api/documents/resume HTTP/1.1
 Host: localhost:3000
@@ -174,6 +189,7 @@ Content-Type: application/pdf
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -186,7 +202,8 @@ Content-Type: application/pdf
 
 **Error Responses:**
 
-*400 Bad Request - No file uploaded:*
+_400 Bad Request - No file uploaded:_
+
 ```json
 {
   "success": false,
@@ -194,7 +211,8 @@ Content-Type: application/pdf
 }
 ```
 
-*400 Bad Request - Invalid file type:*
+_400 Bad Request - Invalid file type:_
+
 ```json
 {
   "success": false,
@@ -202,7 +220,8 @@ Content-Type: application/pdf
 }
 ```
 
-*403 Forbidden - Not a student:*
+_403 Forbidden - Not a student:_
+
 ```json
 {
   "success": false,
@@ -210,7 +229,8 @@ Content-Type: application/pdf
 }
 ```
 
-*404 Not Found - Student profile not found:*
+_404 Not Found - Student profile not found:_
+
 ```json
 {
   "success": false,
@@ -227,13 +247,16 @@ Content-Type: application/pdf
 **Authorization:** Required (Owner or ADMIN only)
 
 **Access Control:**
+
 - Students can only view their own resume
 - Admins can view any student's resume
 
 **Path Parameters:**
+
 - `userId` (string, required): The ID of the user whose resume to retrieve
 
 **Request Example:**
+
 ```http
 GET /api/documents/resume/user-123e4567-e89b-12d3-a456-426614174000 HTTP/1.1
 Host: localhost:3000
@@ -241,6 +264,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -253,7 +277,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Error Responses:**
 
-*403 Forbidden - Access denied:*
+_403 Forbidden - Access denied:_
+
 ```json
 {
   "success": false,
@@ -261,7 +286,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-*404 Not Found - Student profile not found:*
+_404 Not Found - Student profile not found:_
+
 ```json
 {
   "success": false,
@@ -269,7 +295,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-*404 Not Found - No resume uploaded:*
+_404 Not Found - No resume uploaded:_
+
 ```json
 {
   "success": false,
@@ -293,12 +320,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **Content-Type:** `multipart/form-data`
 
 **File Requirements:**
+
 - Field name: `transcript`
 - Allowed types: PDF only
 - Max size: 10 MB
 - Single file only
 
 **Request Example:**
+
 ```http
 POST /api/documents/transcript HTTP/1.1
 Host: localhost:3000
@@ -314,6 +343,7 @@ Content-Type: application/pdf
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -326,7 +356,8 @@ Content-Type: application/pdf
 
 **Error Responses:**
 
-*400 Bad Request - No file uploaded:*
+_400 Bad Request - No file uploaded:_
+
 ```json
 {
   "success": false,
@@ -334,7 +365,8 @@ Content-Type: application/pdf
 }
 ```
 
-*400 Bad Request - Invalid file type:*
+_400 Bad Request - Invalid file type:_
+
 ```json
 {
   "success": false,
@@ -342,7 +374,8 @@ Content-Type: application/pdf
 }
 ```
 
-*403 Forbidden - Not a student:*
+_403 Forbidden - Not a student:_
+
 ```json
 {
   "success": false,
@@ -350,7 +383,8 @@ Content-Type: application/pdf
 }
 ```
 
-*404 Not Found - Student profile not found:*
+_404 Not Found - Student profile not found:_
+
 ```json
 {
   "success": false,
@@ -367,13 +401,16 @@ Content-Type: application/pdf
 **Authorization:** Required (Owner or ADMIN only)
 
 **Access Control:**
+
 - Students can only view their own transcript
 - Admins can view any student's transcript
 
 **Path Parameters:**
+
 - `userId` (string, required): The ID of the user whose transcript to retrieve
 
 **Request Example:**
+
 ```http
 GET /api/documents/transcript/user-123e4567-e89b-12d3-a456-426614174000 HTTP/1.1
 Host: localhost:3000
@@ -381,6 +418,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -393,7 +431,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Error Responses:**
 
-*403 Forbidden - Access denied:*
+_403 Forbidden - Access denied:_
+
 ```json
 {
   "success": false,
@@ -401,7 +440,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-*404 Not Found - Student profile not found:*
+_404 Not Found - Student profile not found:_
+
 ```json
 {
   "success": false,
@@ -409,7 +449,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-*404 Not Found - No transcript uploaded:*
+_404 Not Found - No transcript uploaded:_
+
 ```json
 {
   "success": false,
@@ -433,12 +474,14 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **Content-Type:** `multipart/form-data`
 
 **File Requirements:**
+
 - Field name: `verification`
 - Allowed types: JPEG, PNG, or PDF
 - Max size: 10 MB
 - Single file only
 
 **Request Example:**
+
 ```http
 POST /api/documents/employer-verification HTTP/1.1
 Host: localhost:3000
@@ -454,6 +497,7 @@ Content-Type: application/pdf
 ```
 
 **Alternative File Types Example:**
+
 ```http
 POST /api/documents/employer-verification HTTP/1.1
 Host: localhost:3000
@@ -469,6 +513,7 @@ Content-Type: image/jpeg
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -481,7 +526,8 @@ Content-Type: image/jpeg
 
 **Error Responses:**
 
-*400 Bad Request - No file uploaded:*
+_400 Bad Request - No file uploaded:_
+
 ```json
 {
   "success": false,
@@ -489,7 +535,8 @@ Content-Type: image/jpeg
 }
 ```
 
-*400 Bad Request - Invalid file type:*
+_400 Bad Request - Invalid file type:_
+
 ```json
 {
   "success": false,
@@ -497,7 +544,8 @@ Content-Type: image/jpeg
 }
 ```
 
-*403 Forbidden - Not an employer:*
+_403 Forbidden - Not an employer:_
+
 ```json
 {
   "success": false,
@@ -505,7 +553,8 @@ Content-Type: image/jpeg
 }
 ```
 
-*404 Not Found - HR profile not found:*
+_404 Not Found - HR profile not found:_
+
 ```json
 {
   "success": false,
@@ -522,13 +571,16 @@ Content-Type: image/jpeg
 **Authorization:** Required (Owner or ADMIN only)
 
 **Access Control:**
+
 - Employers can only view their own verification document
 - Admins can view any employer's verification document
 
 **Path Parameters:**
+
 - `userId` (string, required): The ID of the user whose verification document to retrieve
 
 **Request Example:**
+
 ```http
 GET /api/documents/employer-verification/user-123e4567-e89b-12d3-a456-426614174000 HTTP/1.1
 Host: localhost:3000
@@ -536,6 +588,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Success Response (200 OK):**
+
 ```json
 {
   "success": true,
@@ -548,7 +601,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **Error Responses:**
 
-*403 Forbidden - Access denied:*
+_403 Forbidden - Access denied:_
+
 ```json
 {
   "success": false,
@@ -556,7 +610,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-*404 Not Found - HR profile not found:*
+_404 Not Found - HR profile not found:_
+
 ```json
 {
   "success": false,
@@ -564,7 +619,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 }
 ```
 
-*404 Not Found - No verification document uploaded:*
+_404 Not Found - No verification document uploaded:_
+
 ```json
 {
   "success": false,
@@ -579,44 +635,50 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## Summary Table
 
-| Endpoint | Method | Role | File Field | File Types | Max Size |
-|----------|--------|------|------------|------------|----------|
-| `/api/profile/avatar` | POST | Any | `avatar` | Images (JPEG, PNG, GIF, etc.) | 2 MB |
-| `/api/profile/avatar/:userId` | GET | Any | - | - | - |
-| `/api/documents/resume` | POST | STUDENT | `resume` | PDF | 10 MB |
-| `/api/documents/resume/:userId` | GET | Owner/ADMIN | - | - | - |
-| `/api/documents/transcript` | POST | STUDENT | `transcript` | PDF | 10 MB |
-| `/api/documents/transcript/:userId` | GET | Owner/ADMIN | - | - | - |
-| `/api/documents/employer-verification` | POST | EMPLOYER | `verification` | JPEG, PNG, PDF | 10 MB |
-| `/api/documents/employer-verification/:userId` | GET | Owner/ADMIN | - | - | - |
+| Endpoint                                       | Method | Role        | File Field     | File Types                    | Max Size |
+| ---------------------------------------------- | ------ | ----------- | -------------- | ----------------------------- | -------- |
+| `/api/profile/avatar`                          | POST   | Any         | `avatar`       | Images (JPEG, PNG, GIF, etc.) | 2 MB     |
+| `/api/profile/avatar/:userId`                  | GET    | Any         | -              | -                             | -        |
+| `/api/documents/resume`                        | POST   | STUDENT     | `resume`       | PDF                           | 10 MB    |
+| `/api/documents/resume/:userId`                | GET    | Owner/ADMIN | -              | -                             | -        |
+| `/api/documents/transcript`                    | POST   | STUDENT     | `transcript`   | PDF                           | 10 MB    |
+| `/api/documents/transcript/:userId`            | GET    | Owner/ADMIN | -              | -                             | -        |
+| `/api/documents/employer-verification`         | POST   | EMPLOYER    | `verification` | JPEG, PNG, PDF                | 10 MB    |
+| `/api/documents/employer-verification/:userId` | GET    | Owner/ADMIN | -              | -                             | -        |
 
 ---
 
 ## Common Notes
 
 ### File Upload Behavior
+
 - **Replacement:** Uploading a new file automatically replaces the previous file
 - **Deletion:** Old files are deleted from storage when replaced (best-effort)
 - **Storage:** Files are stored with timestamps and organized by user ID
 
 ### Access Control Patterns
+
 1. **Public Read (Avatar):** Any authenticated user can view any user's avatar
 2. **Private Read (Documents):** Only the owner or ADMIN can view documents
 3. **Role-Based Write:** Upload permissions are restricted by role (STUDENT, EMPLOYER)
 
 ### File Key Format
+
 All file keys follow the pattern:
+
 ```
 <prefix>/<userId>/<timestamp>-<original-filename>
 ```
 
 Examples:
+
 - `avatars/user-123/1729506000000-profile.jpg`
 - `resumes/user-456/1729506100000-resume.pdf`
 - `transcripts/user-456/1729506200000-transcript.pdf`
 - `employer-docs/user-789/1729506300000-verification.pdf`
 
 ### Error Handling
+
 - All endpoints return JSON responses
 - Success responses have `success: true`
 - Error responses have `success: false` and descriptive `message`
@@ -627,23 +689,27 @@ Examples:
 ## Example Usage Workflows
 
 ### Student Onboarding Flow
+
 1. Register as STUDENT
 2. Upload avatar: `POST /api/profile/avatar`
 3. Upload resume: `POST /api/documents/resume`
 4. Upload transcript: `POST /api/documents/transcript`
 
 ### Employer Verification Flow
+
 1. Register as EMPLOYER
 2. Upload avatar: `POST /api/profile/avatar`
 3. Upload verification: `POST /api/documents/employer-verification`
 4. Wait for ADMIN approval
 
 ### Document Update Flow
+
 1. Retrieve current document: `GET /api/documents/{type}/:userId`
 2. Upload new version: `POST /api/documents/{type}`
 3. Old file is automatically replaced
 
 ### Admin Review Flow
+
 1. List all profiles: `GET /api/profile/` (ADMIN only)
 2. View user avatar: `GET /api/profile/avatar/:userId`
 3. Review documents: `GET /api/documents/{type}/:userId`
@@ -654,10 +720,12 @@ Examples:
 ## Storage Configuration
 
 The application supports two storage providers:
+
 - **Local Storage:** Files stored in `backend/uploads/` directory
 - **AWS S3:** Files stored in configured S3 bucket
 
 Storage provider is configured via environment variables:
+
 ```env
 STORAGE_PROVIDER=local  # or 's3'
 AWS_REGION=us-east-1
@@ -680,27 +748,32 @@ AWS_S3_BUCKET=your-bucket-name
 ## Troubleshooting
 
 ### "No file uploaded" Error
+
 - Ensure the file field name matches the endpoint requirement
 - Verify Content-Type is `multipart/form-data`
 - Check that file is properly attached to request
 
 ### "Only [TYPE] files are allowed" Error
+
 - Verify file MIME type matches allowed types
 - For avatars: any image type is allowed
 - For PDFs: ensure file is actually a PDF (not renamed)
 
 ### "File size exceeds limit" Error
+
 - Check file size before upload:
   - Avatars: max 2 MB
   - Documents: max 10 MB
 - Compress or optimize file if necessary
 
 ### "Profile not found" Error
+
 - Ensure user has completed profile setup
 - Students must have Student profile created
 - Employers must have HR profile created
 
 ### "Access denied" Error
+
 - Verify JWT token is valid and not expired
 - Check user has correct role for endpoint
 - For GET requests, ensure requesting own resource or have ADMIN role
@@ -710,6 +783,7 @@ AWS_S3_BUCKET=your-bucket-name
 ## Next Steps
 
 After implementing these endpoints in Postman:
+
 1. Test complete user registration and document upload flow
 2. Verify file replacement behavior
 3. Test access control (try accessing other users' private documents)

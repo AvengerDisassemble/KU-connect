@@ -13,9 +13,10 @@ const {
   generateJwtId,
   getRefreshTokenExpiry,
 } = require("../utils/tokenUtils");
-const { PrismaClient } = require("../generated/prisma");
+const prisma = require("../models/prisma");
 
-const DEFAULT_FRONTEND_URL = process.env.DEFAULT_FRONTEND_URL || "http://localhost:5173";
+const DEFAULT_FRONTEND_URL =
+  process.env.DEFAULT_FRONTEND_URL || "http://localhost:5173";
 
 function normalizeFrontendConfig(candidate) {
   if (typeof candidate !== "string" || candidate.trim().length === 0) {
@@ -35,7 +36,7 @@ function normalizeFrontendConfig(candidate) {
     console.warn(
       "Invalid frontend URL provided:",
       candidate,
-      error instanceof Error ? `(${error.message})` : ""
+      error instanceof Error ? `(${error.message})` : "",
     );
     return null;
   }
@@ -64,7 +65,7 @@ function decodeState(value) {
   } catch (error) {
     console.warn(
       "Failed to decode Google OAuth state payload",
-      error instanceof Error ? error.message : error
+      error instanceof Error ? error.message : error,
     );
   }
 
@@ -78,7 +79,7 @@ if (!envFrontendConfig && defaultFrontendConfig) {
   console.warn(
     "Falling back to default frontend URL",
     DEFAULT_FRONTEND_URL,
-    "because FRONTEND_URL is missing or invalid"
+    "because FRONTEND_URL is missing or invalid",
   );
   envFrontendConfig = defaultFrontendConfig;
 }
@@ -86,7 +87,6 @@ if (!envFrontendConfig && defaultFrontendConfig) {
 const frontendConfig = envFrontendConfig || defaultFrontendConfig;
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 /**
  * @route GET /auth/google
@@ -154,7 +154,7 @@ router.get(
           user,
           accessToken,
           refreshToken,
-        })
+        }),
       ).toString("base64");
 
       const stateData = decodeState(req.query.state);
@@ -167,7 +167,7 @@ router.get(
         } else {
           console.warn(
             "Ignoring invalid origin received from OAuth state:",
-            stateData.origin
+            stateData.origin,
           );
         }
       }
@@ -181,7 +181,7 @@ router.get(
         typeof stateData?.redirect === "string" &&
           stateData.redirect.startsWith("/")
           ? stateData.redirect
-          : "/oauth/callback"
+          : "/oauth/callback",
       );
 
       const fallbackUrl = new URL(runtimeFrontendConfig.url);
@@ -236,7 +236,7 @@ router.get(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /**

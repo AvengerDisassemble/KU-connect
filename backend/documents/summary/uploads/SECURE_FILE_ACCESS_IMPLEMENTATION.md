@@ -1,11 +1,13 @@
 # Secure File Access Implementation Summary
 
 ## Overview
+
 Replaced public static file serving with protected, authenticated download endpoints to ensure only authorized users can access uploaded documents.
 
 ## What Changed
 
 ### 1. Removed Public Access ✅
+
 - **Removed**: `app.use('/uploads', express.static(...))` from `src/app.js`
 - **Impact**: Files in `backend/uploads/` are no longer publicly accessible
 - **Security**: Documents cannot be accessed via direct URL without authentication
@@ -15,16 +17,19 @@ Replaced public static file serving with protected, authenticated download endpo
 Added two new methods to all storage providers:
 
 #### `getReadStream(fileKey)`
+
 - Returns a Node.js readable stream for the file
 - Includes MIME type and filename metadata
 - Implemented for both local and S3 storage
 
 #### `getSignedDownloadUrl(fileKey, expiresIn = 300)`
+
 - For S3: Returns pre-signed URL (default 5-minute expiry)
 - For local: Returns `null` (forces streaming)
 - Enables efficient S3 downloads via redirect
 
 **Files Modified:**
+
 - `src/services/storage/storageProvider.js` (base class)
 - `src/services/storage/localStorageProvider.js`
 - `src/services/storage/s3StorageProvider.js`
@@ -34,6 +39,7 @@ Added two new methods to all storage providers:
 **New file**: `src/utils/documentAuthz.js`
 
 Contains centralized authorization logic:
+
 - `canViewStudentDocument(requester, targetUserId)` - Owner or ADMIN
 - `canViewHRDocument(requester, targetUserId)` - Owner or ADMIN
 - `canViewJobResume(requester, jobId, studentUserId)` - Owner, Job HR, or ADMIN
@@ -43,6 +49,7 @@ Contains centralized authorization logic:
 **New file**: `src/utils/auditLogger.js`
 
 Logs all document access attempts with:
+
 - User ID
 - Document type and owner
 - Action (download, view, upload, delete)
@@ -51,8 +58,9 @@ Logs all document access attempts with:
 - Timestamp
 
 Example log output:
+
 ```
-[AUDIT] 2025-10-21T... | SUCCESS | User: user-123 | Action: download | 
+[AUDIT] 2025-10-21T... | SUCCESS | User: user-123 | Action: download |
 Document: resume (owner: user-456) | IP: 127.0.0.1
 ```
 
@@ -69,14 +77,15 @@ Document: resume (owner: user-456) | IP: 127.0.0.1
 
 Added `/download` routes for all documents:
 
-| Endpoint | Authorization | Rate Limited |
-|----------|--------------|--------------|
-| `GET /api/documents/resume/:userId/download` | Owner or ADMIN | ✅ |
-| `GET /api/documents/transcript/:userId/download` | Owner or ADMIN | ✅ |
-| `GET /api/documents/employer-verification/:userId/download` | Owner or ADMIN | ✅ |
-| `GET /api/jobs/:jobId/resume/:studentUserId/download` | Owner, Job HR, or ADMIN | ✅ |
+| Endpoint                                                    | Authorization           | Rate Limited |
+| ----------------------------------------------------------- | ----------------------- | ------------ |
+| `GET /api/documents/resume/:userId/download`                | Owner or ADMIN          | ✅           |
+| `GET /api/documents/transcript/:userId/download`            | Owner or ADMIN          | ✅           |
+| `GET /api/documents/employer-verification/:userId/download` | Owner or ADMIN          | ✅           |
+| `GET /api/jobs/:jobId/resume/:studentUserId/download`       | Owner, Job HR, or ADMIN | ✅           |
 
 **How it works:**
+
 1. Authenticate user (JWT)
 2. Check authorization (owner/HR/admin)
 3. Log access attempt
@@ -85,6 +94,7 @@ Added `/download` routes for all documents:
 6. For local: Stream file with proper headers
 
 **Response headers:**
+
 ```
 Content-Type: application/pdf
 Content-Disposition: inline; filename="resume.pdf"
@@ -97,52 +107,56 @@ X-RateLimit-Remaining: 59
 ### 7. Files Modified
 
 **Controllers:**
+
 - `src/controllers/documents-controller/documentsController.js`
   - Added: `downloadResume()`, `downloadTranscript()`, `downloadEmployerVerification()`
   - Integrated: Authorization checks, audit logging
-  
 - `src/controllers/documents-controller/jobDocumentController.js`
   - Added: `downloadJobResume()`
   - Integrated: Authorization checks, audit logging
 
 **Routes:**
+
 - `src/routes/documents/index.js` - Added 3 download routes with rate limiting
 - `src/routes/jobs/index.js` - Added 1 download route with rate limiting
 
 **New Files:**
+
 - `src/utils/documentAuthz.js` - Authorization logic
 - `src/utils/auditLogger.js` - Audit logging utility
 - `src/middlewares/downloadRateLimit.js` - Rate limiting middleware
 
 ## Access Control Matrix
 
-| Document Type | Owner Student | Other Student | Job HR (Owner) | Other HR | Admin |
-|--------------|---------------|---------------|----------------|----------|-------|
-| Profile Resume | ✅ Download | ❌ | ❌ | ❌ | ✅ Download |
-| Profile Transcript | ✅ Download | ❌ | ❌ | ❌ | ✅ Download |
-| Job Resume | ✅ Download | ❌ | ✅ Download | ❌ | ✅ Download |
-| HR Verification | ❌ | ❌ | ✅ Download | ❌ | ✅ Download |
+| Document Type      | Owner Student | Other Student | Job HR (Owner) | Other HR | Admin       |
+| ------------------ | ------------- | ------------- | -------------- | -------- | ----------- |
+| Profile Resume     | ✅ Download   | ❌            | ❌             | ❌       | ✅ Download |
+| Profile Transcript | ✅ Download   | ❌            | ❌             | ❌       | ✅ Download |
+| Job Resume         | ✅ Download   | ❌            | ✅ Download    | ❌       | ✅ Download |
+| HR Verification    | ❌            | ❌            | ✅ Download    | ❌       | ✅ Download |
 
 ## Migration Guide
 
 ### For Frontend Developers
 
 **Old (insecure):**
+
 ```javascript
 // ❌ This no longer works
-const url = await fetch('/api/documents/resume/user-123')
-  .then(r => r.json())
-  .then(data => data.url)
+const url = await fetch("/api/documents/resume/user-123")
+  .then((r) => r.json())
+  .then((data) => data.url);
 // url = "/uploads/resumes/file.pdf" - now returns 404
 
-window.open(url) // Fails!
+window.open(url); // Fails!
 ```
 
 **New (secure):**
+
 ```javascript
 // ✅ Use download endpoint directly
-const downloadUrl = '/api/documents/resume/user-123/download'
-window.open(downloadUrl, '_blank') // Opens in new tab
+const downloadUrl = "/api/documents/resume/user-123/download";
+window.open(downloadUrl, "_blank"); // Opens in new tab
 
 // For S3: Gets redirected to signed URL
 // For local: Streams the file
@@ -151,11 +165,12 @@ window.open(downloadUrl, '_blank') // Opens in new tab
 ### For API Clients (Postman, etc.)
 
 **Download a resume:**
+
 ```http
 GET /api/documents/resume/:userId/download
 Authorization: Bearer <token>
 
-Response: 
+Response:
 - S3: 302 redirect to signed URL
 - Local: File stream with proper headers
 ```
@@ -173,16 +188,19 @@ Response:
 ## Performance Considerations
 
 ### Local Storage
+
 - Files streamed directly from disk
 - Low memory footprint (uses Node streams)
 - Fast for small files (<10MB)
 
 ### S3 Storage
+
 - Redirects to pre-signed URLs
 - Minimal server load (just generates URL)
 - CloudFront can be added for CDN caching
 
 ### Rate Limiting
+
 - In-memory store (fast, but not shared across instances)
 - **Production**: Use Redis for distributed rate limiting
 
@@ -203,12 +221,14 @@ Response:
 ## Next Steps
 
 ### Immediate (Before Deployment)
+
 1. **Update Frontend**: Change all file access to use `/download` endpoints
 2. **Update Tests**: Add integration tests for download endpoints
 3. **Update Postman**: Document new download endpoints in collections
 4. **Decision: Avatar Policy**: Decide if avatars need same protection or can remain public
 
 ### Production Readiness
+
 1. **Redis Rate Limiting**: Replace in-memory store with Redis
 2. **Persistent Audit Logs**: Write to file/database instead of console
 3. **Monitoring**: Alert on high rate limit violations
@@ -220,6 +240,7 @@ Response:
 ⚠️ **API Breaking Change**: The `/uploads/*` static routes no longer work.
 
 **Old endpoints still work** (for backward compatibility):
+
 - `GET /api/documents/resume/:userId` - Returns URL (deprecated)
 - `GET /api/documents/transcript/:userId` - Returns URL (deprecated)
 - etc.
@@ -229,12 +250,14 @@ Response:
 ## Environment Variables
 
 No new environment variables required. Uses existing:
+
 - `STORAGE_PROVIDER` - 'local' or 's3'
 - `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BUCKET_NAME` (for S3)
 
 ## Backward Compatibility
 
 The old `get*Url()` controller functions **still exist** and return URLs via `getFileUrl()`:
+
 - For S3: Returns signed URL (works)
 - For local: Returns `/uploads/...` path (broken due to removed static serving)
 
