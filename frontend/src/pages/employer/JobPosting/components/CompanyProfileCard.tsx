@@ -13,6 +13,7 @@ import {
   type EmployerProfileResponse,
 } from "@/services/employerProfile";
 import { INDUSTRY_LABEL_BY_API } from "@/lib/domain/industries";
+import { COMPANY_SIZE_LABEL_BY_API } from "@/lib/domain/companySize";
 
 const initialsOf = (name?: string | null) =>
   (name ?? "")
@@ -22,14 +23,6 @@ const initialsOf = (name?: string | null) =>
     .slice(0, 2)
     .map((s) => s[0]?.toUpperCase() ?? "")
     .join("") || "CO";
-
-const COMPANY_SIZE_LABEL: Record<string, string> = {
-  ONE_TO_TEN: "1-10",
-  ELEVEN_TO_FIFTY: "11-50",
-  FIFTY_ONE_TO_TWO_HUNDRED: "51-200",
-  TWO_HUNDRED_ONE_TO_FIVE_HUNDRED: "201-500",
-  FIVE_HUNDRED_PLUS: "500+",
-};
 
 type Props = {
   userId: string;
@@ -181,7 +174,7 @@ const CompanyProfileCard: React.FC<Props> = ({
   const industryRaw = profile?.hr?.industry ?? "";
   const industry = INDUSTRY_LABEL_BY_API[industryRaw] || industryRaw || "—";
   const sizeRaw = profile?.hr?.companySize ?? "";
-  const companySize = COMPANY_SIZE_LABEL[sizeRaw] || sizeRaw || "";
+  const companySize = COMPANY_SIZE_LABEL_BY_API[sizeRaw] || sizeRaw || "";
   const address = profile?.hr?.address ?? "";
   const initials = initialsOf(companyName);
   const logoLoading = avatarLoading || avatarFetching;
@@ -223,7 +216,7 @@ const CompanyProfileCard: React.FC<Props> = ({
                 </p>
                 {!!companySize && (
                   <p className="text-muted-foreground text-sm">
-                    {companySize} employees
+                    {companySize}
                   </p>
                 )}
               </>
