@@ -14,16 +14,24 @@
  * @param {string} [params.reason] - Reason for failure if not successful
  * @param {string} [params.ip] - IP address of requester
  */
-function logDocumentAccess({ userId, documentType, documentOwner, action, success, reason, ip }) {
-  const timestamp = new Date().toISOString()
-  const status = success ? 'SUCCESS' : 'DENIED'
-  const reasonText = reason ? ` - ${reason}` : ''
-  
+function logDocumentAccess({
+  userId,
+  documentType,
+  documentOwner,
+  action,
+  success,
+  reason,
+  ip,
+}) {
+  const timestamp = new Date().toISOString();
+  const status = success ? "SUCCESS" : "DENIED";
+  const reasonText = reason ? ` - ${reason}` : "";
+
   console.log(
     `[AUDIT] ${timestamp} | ${status} | User: ${userId} | Action: ${action} | ` +
-    `Document: ${documentType} (owner: ${documentOwner}) | IP: ${ip || 'N/A'}${reasonText}`
-  )
-  
+      `Document: ${documentType} (owner: ${documentOwner}) | IP: ${ip || "N/A"}${reasonText}`,
+  );
+
   // In production, you would also:
   // 1. Write to a dedicated audit log file
   // 2. Send to a logging service (e.g., Winston, Bunyan, CloudWatch)
@@ -31,5 +39,5 @@ function logDocumentAccess({ userId, documentType, documentOwner, action, succes
 }
 
 module.exports = {
-  logDocumentAccess
-}
+  logDocumentAccess,
+};

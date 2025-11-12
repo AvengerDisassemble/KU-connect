@@ -6,9 +6,9 @@ This document describes how to implement secure authentication and role-based au
 
 ## 1. Password Storage
 
-* **Hashing Algorithm**: Use **bcrypt** (preferred) or **Argon2id** if available.
-* **Hashing Parameters**: Use bcrypt with a cost factor (salt rounds) between **10–12**.
-* **Storage**: Store **only the hash**, never the plain-text password.
+- **Hashing Algorithm**: Use **bcrypt** (preferred) or **Argon2id** if available.
+- **Hashing Parameters**: Use bcrypt with a cost factor (salt rounds) between **10–12**.
+- **Storage**: Store **only the hash**, never the plain-text password.
 
 ---
 
@@ -16,8 +16,8 @@ This document describes how to implement secure authentication and role-based au
 
 We will use **JWT (JSON Web Tokens)** for session management, split into two types of tokens:
 
-* **Access Token**: Short-lived (≈15 minutes), includes `{ id, role }`. Stored in HTTP-only, Secure cookies. Verified per request, no DB lookup required.
-* **Refresh Token**: Long-lived (≈7 days), includes `{ id, jti }`. Stored in cookie and DB. Used to issue new access tokens. Supports revocation.
+- **Access Token**: Short-lived (≈15 minutes), includes `{ id, role }`. Stored in HTTP-only, Secure cookies. Verified per request, no DB lookup required.
+- **Refresh Token**: Long-lived (≈7 days), includes `{ id, jti }`. Stored in cookie and DB. Used to issue new access tokens. Supports revocation.
 
 ---
 
@@ -49,9 +49,9 @@ CREATE TABLE refresh_tokens (
 
 ## 5. Middleware
 
-* **authMiddleware.js**: Verifies JWT, attaches `req.user`.
-* **roleMiddleware.js**: Ensures user role matches required permissions.
-* **errorHandler.js**: Centralized error formatting.
+- **authMiddleware.js**: Verifies JWT, attaches `req.user`.
+- **roleMiddleware.js**: Ensures user role matches required permissions.
+- **errorHandler.js**: Centralized error formatting.
 
 ---
 
@@ -61,28 +61,28 @@ Define which actions each role can perform. This will guide `roleMiddleware` and
 
 | Action / Resource              | STUDENT | PROFESSOR | EMPLOYER | ADMIN |
 | ------------------------------ | :-----: | :-------: | :------: | :---: |
-| Create account / Login         |    ✅    |     ✅     |     ✅    |   ✅   |
-| Manage own profile             |    ✅    |     ✅     |     ✅    |   ✅   |
-| View job postings              |    ✅    |     ✅     |     ✅    |   ✅   |
-| Apply to job postings          |    ✅    |     ❌     |     ❌    |   ❌   |
-| Manage own applications        |    ✅    |     ❌     |     ❌    |   ❌   |
-| Create job postings            |    ❌    |     ❌     |     ✅    |   ❌   |
-| Manage own job postings        |    ❌    |     ❌     |     ✅    |   ❌   |
-| View insights on students      |    ❌    |     ✅     |     ❌    |   ✅   |
-| Moderate content (jobs, users) |    ❌    |     ❌     |     ❌    |   ✅   |
-| Manage roles & permissions     |    ❌    |     ❌     |     ❌    |   ✅   |
+| Create account / Login         |   ✅    |    ✅     |    ✅    |  ✅   |
+| Manage own profile             |   ✅    |    ✅     |    ✅    |  ✅   |
+| View job postings              |   ✅    |    ✅     |    ✅    |  ✅   |
+| Apply to job postings          |   ✅    |    ❌     |    ❌    |  ❌   |
+| Manage own applications        |   ✅    |    ❌     |    ❌    |  ❌   |
+| Create job postings            |   ❌    |    ❌     |    ✅    |  ❌   |
+| Manage own job postings        |   ❌    |    ❌     |    ✅    |  ❌   |
+| View insights on students      |   ❌    |    ✅     |    ❌    |  ✅   |
+| Moderate content (jobs, users) |   ❌    |    ❌     |    ❌    |  ✅   |
+| Manage roles & permissions     |   ❌    |    ❌     |    ❌    |  ✅   |
 
-* ✅ = Allowed
-* ❌ = Forbidden
+- ✅ = Allowed
+- ❌ = Forbidden
 
 ---
 
 ## 7. Security Best Practices
 
-* Store tokens in `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
-* Keep access tokens short-lived.
-* Refresh tokens stored in DB allow revocation.
-* If scaling horizontally, use Redis to store refresh tokens for faster lookups.
+- Store tokens in `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
+- Keep access tokens short-lived.
+- Refresh tokens stored in DB allow revocation.
+- If scaling horizontally, use Redis to store refresh tokens for faster lookups.
 
 ---
 
@@ -112,14 +112,14 @@ Define which actions each role can perform. This will guide `roleMiddleware` and
 
 ### Unit Tests
 
-* Password hashing & comparison.
-* Token creation, expiration, and verification.
-* Role-based checks.
+- Password hashing & comparison.
+- Token creation, expiration, and verification.
+- Role-based checks.
 
 ### Integration Tests
 
-* Signup → login → access protected route → refresh → logout flow.
-* Verify STUDENT cannot create job postings.
-* Verify EMPLOYER cannot view insights.
-* Verify ADMIN has full access.
-* Test revoked refresh tokens cannot generate new access tokens.
+- Signup → login → access protected route → refresh → logout flow.
+- Verify STUDENT cannot create job postings.
+- Verify EMPLOYER cannot view insights.
+- Verify ADMIN has full access.
+- Test revoked refresh tokens cannot generate new access tokens.

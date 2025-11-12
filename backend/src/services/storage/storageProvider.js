@@ -18,7 +18,7 @@ class StorageProvider {
    * @returns {Promise<string>} File key (provider-specific identifier)
    */
   async uploadFile(buffer, filename, mimeType, options = {}) {
-    throw new Error('uploadFile must be implemented by subclass')
+    throw new Error("uploadFile must be implemented by subclass");
   }
 
   /**
@@ -27,7 +27,7 @@ class StorageProvider {
    * @returns {Promise<string>} Accessible URL (signed for S3, direct for local)
    */
   async getFileUrl(fileKey) {
-    throw new Error('getFileUrl must be implemented by subclass')
+    throw new Error("getFileUrl must be implemented by subclass");
   }
 
   /**
@@ -36,7 +36,7 @@ class StorageProvider {
    * @returns {Promise<{stream: ReadableStream, mimeType: string, filename: string}>} Stream and metadata
    */
   async getReadStream(fileKey) {
-    throw new Error('getReadStream must be implemented by subclass')
+    throw new Error("getReadStream must be implemented by subclass");
   }
 
   /**
@@ -47,7 +47,7 @@ class StorageProvider {
    */
   async getSignedDownloadUrl(fileKey, expiresIn = 300) {
     // Default: return null; local storage will stream instead
-    return null
+    return null;
   }
 
   /**
@@ -56,9 +56,8 @@ class StorageProvider {
    * @returns {Promise<void>}
    */
   async deleteFile(fileKey) {
-    throw new Error('deleteFile must be implemented by subclass')
+    throw new Error("deleteFile must be implemented by subclass");
   }
 }
 
-module.exports = StorageProvider
-
+module.exports = StorageProvider;

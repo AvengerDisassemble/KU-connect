@@ -3,7 +3,7 @@
  * @description Service layer for profile management operations
  */
 
-const prisma = require('../models/prisma') // Prisma client instance
+const prisma = require("../models/prisma"); // Prisma client instance
 
 /**
  * Extract user fields for update (avoids duplication)
@@ -11,12 +11,13 @@ const prisma = require('../models/prisma') // Prisma client instance
  * @returns {Object} filtered fields for update
  */
 function extractUserUpdateFields(fields) {
-  const updates = {}
-  if (fields.name !== undefined) updates.name = fields.name
-  if (fields.surname !== undefined) updates.surname = fields.surname
-  if (fields.email !== undefined) updates.email = fields.email
-  if (fields.phoneNumber !== undefined) updates.phoneNumber = fields.phoneNumber
-  return updates
+  const updates = {};
+  if (fields.name !== undefined) updates.name = fields.name;
+  if (fields.surname !== undefined) updates.surname = fields.surname;
+  if (fields.email !== undefined) updates.email = fields.email;
+  if (fields.phoneNumber !== undefined)
+    updates.phoneNumber = fields.phoneNumber;
+  return updates;
 }
 
 /**
@@ -30,26 +31,30 @@ function extractUserUpdateFields(fields) {
  * @returns {Promise<Object>} Updated user with student profile
  */
 async function updateStudentProfile(userId, data) {
-  const { address, degreeTypeId, gpa, expectedGraduationYear, ...userFields } = data
+  const { address, degreeTypeId, gpa, expectedGraduationYear, ...userFields } =
+    data;
 
-  const studentUpdate = {}
-  if (address !== undefined) studentUpdate.address = address
-  if (degreeTypeId !== undefined) studentUpdate.degreeTypeId = degreeTypeId
-  if (gpa !== undefined) studentUpdate.gpa = gpa
-  if (expectedGraduationYear !== undefined) studentUpdate.expectedGraduationYear = expectedGraduationYear
+  const studentUpdate = {};
+  if (address !== undefined) studentUpdate.address = address;
+  if (degreeTypeId !== undefined) studentUpdate.degreeTypeId = degreeTypeId;
+  if (gpa !== undefined) studentUpdate.gpa = gpa;
+  if (expectedGraduationYear !== undefined)
+    studentUpdate.expectedGraduationYear = expectedGraduationYear;
 
-  const userUpdate = extractUserUpdateFields(userFields)
+  const userUpdate = extractUserUpdateFields(userFields);
 
   return prisma.user.update({
     where: { id: userId },
     data: {
       ...userUpdate,
-      student: Object.keys(studentUpdate).length ? { update: studentUpdate } : undefined
+      student: Object.keys(studentUpdate).length
+        ? { update: studentUpdate }
+        : undefined,
     },
     include: {
-      student: { include: { degreeType: true } }
-    }
-  })
+      student: { include: { degreeType: true } },
+    },
+  });
 }
 
 /**
@@ -66,27 +71,36 @@ async function updateStudentProfile(userId, data) {
  * @returns {Promise<Object>} Updated user with HR profile
  */
 async function updateEmployerProfile(userId, data) {
-  const { companyName, address, industry, companySize, website, description, phoneNumber, ...userFields } = data
+  const {
+    companyName,
+    address,
+    industry,
+    companySize,
+    website,
+    description,
+    phoneNumber,
+    ...userFields
+  } = data;
 
-  const hrUpdate = {}
-  if (companyName !== undefined) hrUpdate.companyName = companyName
-  if (address !== undefined) hrUpdate.address = address
-  if (industry !== undefined) hrUpdate.industry = industry
-  if (companySize !== undefined) hrUpdate.companySize = companySize
-  if (website !== undefined) hrUpdate.website = website
-  if (description !== undefined) hrUpdate.description = description
-  if (phoneNumber !== undefined) hrUpdate.phoneNumber = phoneNumber
+  const hrUpdate = {};
+  if (companyName !== undefined) hrUpdate.companyName = companyName;
+  if (address !== undefined) hrUpdate.address = address;
+  if (industry !== undefined) hrUpdate.industry = industry;
+  if (companySize !== undefined) hrUpdate.companySize = companySize;
+  if (website !== undefined) hrUpdate.website = website;
+  if (description !== undefined) hrUpdate.description = description;
+  if (phoneNumber !== undefined) hrUpdate.phoneNumber = phoneNumber;
 
-  const userUpdate = extractUserUpdateFields(userFields)
+  const userUpdate = extractUserUpdateFields(userFields);
 
   return prisma.user.update({
     where: { id: userId },
     data: {
       ...userUpdate,
-      hr: Object.keys(hrUpdate).length ? { update: hrUpdate } : undefined
+      hr: Object.keys(hrUpdate).length ? { update: hrUpdate } : undefined,
     },
-    include: { hr: true }
-  })
+    include: { hr: true },
+  });
 }
 
 /**
@@ -101,18 +115,18 @@ async function getProfileById(userId) {
       student: { include: { degreeType: true } },
       hr: true,
       professor: true,
-      admin: true
-    }
-  })
+      admin: true,
+    },
+  });
 
-  if (!user) return null
+  if (!user) return null;
 
   // Remove null role objects for cleaner output
-  for (const key of ['student', 'hr', 'professor', 'admin']) {
-    if (!user[key]) delete user[key]
+  for (const key of ["student", "hr", "professor", "admin"]) {
+    if (!user[key]) delete user[key];
   }
 
-  return user
+  return user;
 }
 
 /**
@@ -125,23 +139,23 @@ async function listProfiles() {
       student: { include: { degreeType: true } },
       hr: true,
       professor: true,
-      admin: true
-    }
-  })
+      admin: true,
+    },
+  });
 
   // Remove null role objects from each profile
-  profiles.forEach(profile => {
-    for (const key of ['student', 'hr', 'professor', 'admin']) {
-      if (!profile[key]) delete profile[key]
+  profiles.forEach((profile) => {
+    for (const key of ["student", "hr", "professor", "admin"]) {
+      if (!profile[key]) delete profile[key];
     }
-  })
+  });
 
-  return profiles
+  return profiles;
 }
 
 module.exports = {
   updateStudentProfile,
   updateEmployerProfile,
   getProfileById,
-  listProfiles
-}
+  listProfiles,
+};

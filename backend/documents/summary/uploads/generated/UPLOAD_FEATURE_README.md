@@ -10,16 +10,16 @@ All upload feature tests are **passing** (10/10)!
 
 ### Endpoints Available
 
-| Endpoint | Method | Role | File Type | Size Limit |
-|----------|--------|------|-----------|------------|
-| `/api/profile/avatar` | POST | Any | Image (JPG/PNG) | 2MB |
-| `/api/profile/avatar/:userId` | GET | Any | - | - |
-| `/api/documents/resume` | POST | STUDENT | PDF | 10MB |
-| `/api/documents/resume/:userId` | GET | STUDENT/ADMIN | - | - |
-| `/api/documents/transcript` | POST | STUDENT | PDF | 10MB |
-| `/api/documents/transcript/:userId` | GET | STUDENT/ADMIN | - | - |
-| `/api/documents/employer-verification` | POST | EMPLOYER | JPG/PNG/PDF | 10MB |
-| `/api/documents/employer-verification/:userId` | GET | EMPLOYER/ADMIN | - | - |
+| Endpoint                                       | Method | Role           | File Type       | Size Limit |
+| ---------------------------------------------- | ------ | -------------- | --------------- | ---------- |
+| `/api/profile/avatar`                          | POST   | Any            | Image (JPG/PNG) | 2MB        |
+| `/api/profile/avatar/:userId`                  | GET    | Any            | -               | -          |
+| `/api/documents/resume`                        | POST   | STUDENT        | PDF             | 10MB       |
+| `/api/documents/resume/:userId`                | GET    | STUDENT/ADMIN  | -               | -          |
+| `/api/documents/transcript`                    | POST   | STUDENT        | PDF             | 10MB       |
+| `/api/documents/transcript/:userId`            | GET    | STUDENT/ADMIN  | -               | -          |
+| `/api/documents/employer-verification`         | POST   | EMPLOYER       | JPG/PNG/PDF     | 10MB       |
+| `/api/documents/employer-verification/:userId` | GET    | EMPLOYER/ADMIN | -               | -          |
 
 ### Storage Providers
 
@@ -27,6 +27,7 @@ All upload feature tests are **passing** (10/10)!
 - **AWS S3**: Cloud storage with signed URLs (requires AWS credentials)
 
 Switch providers in `.env`:
+
 ```bash
 STORAGE_PROVIDER=local  # or 's3'
 ```
@@ -38,6 +39,7 @@ STORAGE_PROVIDER=local  # or 's3'
 ### 1. Environment Setup
 
 Create/update `.env`:
+
 ```bash
 # Storage configuration
 STORAGE_PROVIDER=local
@@ -73,6 +75,7 @@ See `QUICKSTART_UPLOADS.md` for detailed API testing examples with curl/Thunder 
 ## 📁 Files Created/Modified
 
 ### Core Implementation
+
 - `src/services/storage/storageProvider.js` - Abstract interface
 - `src/services/storage/localStorageProvider.js` - Local file system
 - `src/services/storage/s3StorageProvider.js` - AWS S3 cloud storage
@@ -81,6 +84,7 @@ See `QUICKSTART_UPLOADS.md` for detailed API testing examples with curl/Thunder 
 - `src/routes/documents/index.js` - Document routes with validation
 
 ### Tests
+
 - `tests/controllers/documentsController.test.js` - Controller tests
 - `tests/services/storage/interface.test.js` - Interface compliance
 - `tests/services/storage/localStorageProvider.test.js` - Local storage tests
@@ -88,11 +92,13 @@ See `QUICKSTART_UPLOADS.md` for detailed API testing examples with curl/Thunder 
 - `tests/__mocks__/uuid.js` - UUID mock for Jest
 
 ### Configuration
+
 - `jest.config.js` - Jest configuration with module mocks
 - `prisma/schema.prisma` - Added document key fields
 - `.env.example` - Updated with storage configuration
 
 ### Documentation
+
 - `IMPLEMENTATION_SUMMARY.md` - Complete technical overview
 - `QUICKSTART_UPLOADS.md` - Step-by-step usage guide
 - `UPLOAD_FEATURE_FIXES.md` - Detailed fix documentation
@@ -139,6 +145,7 @@ Request → Route (with Multer) → Auth Middleware → Role Middleware
 ```
 
 ### Key Features
+
 - ✅ Abstract storage interface (easy to add new providers)
 - ✅ File validation (MIME type and size)
 - ✅ Role-based access control
@@ -160,11 +167,13 @@ Request → Route (with Multer) → Auth Middleware → Role Middleware
 ## 🎯 Next Steps
 
 ### For Development
+
 1. Test endpoints with Thunder Client/Postman (see QUICKSTART_UPLOADS.md)
 2. Integrate with frontend file upload components
 3. Configure AWS S3 for production (optional)
 
 ### For Production
+
 1. Set `NODE_ENV=production`
 2. Use S3 storage: `STORAGE_PROVIDER=s3`
 3. Configure proper AWS credentials

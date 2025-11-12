@@ -24,7 +24,7 @@ Existing schema (excerpt):
 
 Recommended adjustments:
 
-1) Add a composite unique constraint to ensure only one resume per (studentId, jobId):
+1. Add a composite unique constraint to ensure only one resume per (studentId, jobId):
 
 ```prisma
 model Resume {
@@ -39,7 +39,7 @@ model Resume {
 }
 ```
 
-2) Optional but helpful: track the source used for a job-specific resume.
+2. Optional but helpful: track the source used for a job-specific resume.
 
 ```prisma
 enum ResumeSource {
@@ -54,6 +54,7 @@ model Resume {
 ```
 
 Notes:
+
 - We’ll store the storage file key in `Resume.link` (same as other docs). For PROFILE mode, `link` points to `Student.resumeKey`.
 - If the optional `source` isn’t added, we can still infer source by comparing `Resume.link === Student.resumeKey` on reads; however, the explicit field simplifies maintenance.
 
@@ -68,7 +69,7 @@ Notes:
 
 Base: authenticated routes. Student role required for create/update; read permissions vary (see Access control).
 
-1) Create or replace job application resume (upsert)
+1. Create or replace job application resume (upsert)
 
 - Method/Path: `POST /api/jobs/:jobId/resume`
 - Auth: `STUDENT`
@@ -85,14 +86,14 @@ Base: authenticated routes. Student role required for create/update; read permis
   - 400: invalid mode or missing profile resume for PROFILE mode; invalid file (size/type)
   - 404: job not found or student profile missing
 
-2) Get job application resume URL
+2. Get job application resume URL
 
 - Method/Path: `GET /api/jobs/:jobId/resume/:studentUserId`
 - Auth: owner student OR job owner employer OR ADMIN
 - Behavior: resolve `(studentId, jobId)` to `Resume.link`; `storageProvider.getFileUrl(link)`; return signed or local URL.
 - Responses: 200 with URL, 404 if not found or not created yet.
 
-3) Remove job application resume (optional)
+3. Remove job application resume (optional)
 
 - Method/Path: `DELETE /api/jobs/:jobId/resume`
 - Auth: `STUDENT` (owner)
@@ -120,65 +121,97 @@ Convenience route (optional):
 
 ## Controller sketch
 
-Create a folder called `document-controler` and put the  `documentsController.js` in and create `jobDocumentController.js` to hold the code. Pseudocode for upsert:
+Create a folder called `document-controler` and put the `documentsController.js` in and create `jobDocumentController.js` to hold the code. Pseudocode for upsert:
 
 ```js
 async function upsertJobResume(req, res) {
-  const { jobId } = req.params
-  const userId = req.user.id // student
+  const { jobId } = req.params;
+  const userId = req.user.id; // student
 
   // Validate job and student
   const [job, student] = await Promise.all([
-    prisma.job.findUnique({ where: { id: Number(jobId) }, select: { id: true, hrId: true } }),
-    prisma.student.findUnique({ where: { userId }, select: { id: true, resumeKey: true } })
-  ])
-  if (!job) return 404
-  if (!student) return 404
+    prisma.job.findUnique({
+      where: { id: Number(jobId) },
+      select: { id: true, hrId: true },
+    }),
+    prisma.student.findUnique({
+      where: { userId },
+      select: { id: true, resumeKey: true },
+    }),
+  ]);
+  if (!job) return 404;
+  if (!student) return 404;
 
-  const mode = req.body?.mode || (req.file ? 'upload' : 'profile')
-  if (!['profile', 'upload'].includes(mode)) return 400
+  const mode = req.body?.mode || (req.file ? "upload" : "profile");
+  if (!["profile", "upload"].includes(mode)) return 400;
 
-  let fileKey
-  let source = 'UPLOADED'
+  let fileKey;
+  let source = "UPLOADED";
 
-  if (mode === 'profile') {
-    if (!student.resumeKey) return 400
-    fileKey = student.resumeKey
-    source = 'PROFILE'
+  if (mode === "profile") {
+    if (!student.resumeKey) return 400;
+    fileKey = student.resumeKey;
+    source = "PROFILE";
   } else {
-    if (!req.file) return 400
+    if (!req.file) return 400;
     // validate mimetype is application/pdf (multer layer)
     fileKey = await storageProvider.uploadFile(
       req.file.buffer,
       req.file.originalname,
       req.file.mimetype,
       userId,
-      { prefix: `resumes/job-applications/${job.id}` }
-    )
+      { prefix: `resumes/job-applications/${job.id}` },
+    );
   }
 
   // Check prior resume for cleanup
-  const existing = await prisma.resume.findUnique({
-    where: { studentId_jobId: { studentId: student.id, jobId: job.id } },
-    select: { link: true }
-  }).catch(() => null)
+  const existing = await prisma.resume
+    .findUnique({
+      where: { studentId_jobId: { studentId: student.id, jobId: job.id } },
+      select: { link: true },
+    })
+    .catch(() => null);
 
   // Upsert
   const saved = await prisma.resume.upsert({
     where: { studentId_jobId: { studentId: student.id, jobId: job.id } },
-    create: { studentId: student.id, jobId: job.id, link: fileKey, ...(prismaHasSource && { source }) },
-    update: { link: fileKey, ...(prismaHasSource && { source }) }
-  })
+    create: {
+      studentId: student.id,
+      jobId: job.id,
+      link: fileKey,
+      ...(prismaHasSource && { source }),
+    },
+    update: { link: fileKey, ...(prismaHasSource && { source }) },
+  });
 
   // Cleanup old uploaded file (if different from profile)
-  if (mode === 'upload' && existing?.link && existing.link !== student.resumeKey && existing.link !== fileKey) {
-    try { await storageProvider.deleteFile(existing.link) } catch (_) {}
+  if (
+    mode === "upload" &&
+    existing?.link &&
+    existing.link !== student.resumeKey &&
+    existing.link !== fileKey
+  ) {
+    try {
+      await storageProvider.deleteFile(existing.link);
+    } catch (_) {}
   }
-  if (mode === 'profile' && existing?.link && existing.link !== student.resumeKey) {
-    try { await storageProvider.deleteFile(existing.link) } catch (_) {}
+  if (
+    mode === "profile" &&
+    existing?.link &&
+    existing.link !== student.resumeKey
+  ) {
+    try {
+      await storageProvider.deleteFile(existing.link);
+    } catch (_) {}
   }
 
-  return res.status(200).json({ success: true, message: 'Job resume saved', data: { jobId: job.id, link: saved.link, source } })
+  return res
+    .status(200)
+    .json({
+      success: true,
+      message: "Job resume saved",
+      data: { jobId: job.id, link: saved.link, source },
+    });
 }
 ```
 
@@ -186,26 +219,39 @@ For GET (URL):
 
 ```js
 async function getJobResumeUrl(req, res) {
-  const { jobId, studentUserId } = req.params
-  const me = req.user
+  const { jobId, studentUserId } = req.params;
+  const me = req.user;
 
   const [job, student] = await Promise.all([
-    prisma.job.findUnique({ where: { id: Number(jobId) }, select: { id: true, hrId: true } }),
-    prisma.student.findUnique({ where: { userId: studentUserId }, select: { id: true, userId: true, user: { select: { id: true } } } })
-  ])
-  if (!job || !student) return 404
+    prisma.job.findUnique({
+      where: { id: Number(jobId) },
+      select: { id: true, hrId: true },
+    }),
+    prisma.student.findUnique({
+      where: { userId: studentUserId },
+      select: { id: true, userId: true, user: { select: { id: true } } },
+    }),
+  ]);
+  if (!job || !student) return 404;
 
   // Access: owner, ADMIN, or HR owner of job
-  if (!(me.id === student.userId || me.role === 'ADMIN' || await isHrOwnerOfJob(me, job))) return 403
+  if (
+    !(
+      me.id === student.userId ||
+      me.role === "ADMIN" ||
+      (await isHrOwnerOfJob(me, job))
+    )
+  )
+    return 403;
 
   const resume = await prisma.resume.findUnique({
     where: { studentId_jobId: { studentId: student.id, jobId: job.id } },
-    select: { link: true }
-  })
-  if (!resume) return 404
+    select: { link: true },
+  });
+  if (!resume) return 404;
 
-  const url = await storageProvider.getFileUrl(resume.link)
-  return res.status(200).json({ success: true, message: 'OK', data: { url } })
+  const url = await storageProvider.getFileUrl(resume.link);
+  return res.status(200).json({ success: true, message: "OK", data: { url } });
 }
 ```
 
@@ -235,8 +281,8 @@ Multer config can reuse the existing `pdfUpload` from documents routes (10 MB, P
 
 ## Migrations
 
-1) Add composite unique on `Resume (studentId, jobId)`.
-2) (Optional) Add `ResumeSource` enum and `Resume.source` field with default `UPLOADED`.
+1. Add composite unique on `Resume (studentId, jobId)`.
+2. (Optional) Add `ResumeSource` enum and `Resume.source` field with default `UPLOADED`.
 
 Migration name suggestion: `add_job_resume_unique_and_source`.
 
@@ -254,7 +300,7 @@ Migration name suggestion: `add_job_resume_unique_and_source`.
 
 ## Next steps
 
-1) Add Prisma migration(s) described above and regenerate client.
-2) Implement controller and routes as outlined; reuse existing multer PDF config.
-3) Add unit/integration tests.
-4) Update `documents/uploads/UPLOAD_SYSTEM_README.md` to document new endpoints and behavior.
+1. Add Prisma migration(s) described above and regenerate client.
+2. Implement controller and routes as outlined; reuse existing multer PDF config.
+3. Add unit/integration tests.
+4. Update `documents/uploads/UPLOAD_SYSTEM_README.md` to document new endpoints and behavior.

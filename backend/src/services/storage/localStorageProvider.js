@@ -3,11 +3,11 @@
  * @description Local file system storage provider implementation
  */
 
-const fs = require('fs-extra')
-const path = require('path')
-const { v4: uuidv4 } = require('uuid')
-const mime = require('mime-types')
-const StorageProvider = require('./storageProvider')
+const fs = require("fs-extra");
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
+const mime = require("mime-types");
+const StorageProvider = require("./storageProvider");
 
 /**
  * Local file system storage provider
@@ -15,8 +15,8 @@ const StorageProvider = require('./storageProvider')
  */
 class LocalStorageProvider extends StorageProvider {
   constructor() {
-    super()
-    this.baseDir = path.join(process.cwd(), 'uploads')
+    super();
+    this.baseDir = path.join(process.cwd(), "uploads");
   }
 
   /**
@@ -29,27 +29,27 @@ class LocalStorageProvider extends StorageProvider {
    * @returns {Promise<string>} File key (includes prefix)
    */
   async uploadFile(buffer, filename, mimeType, options = {}) {
-    const prefix = options.prefix || 'avatars'
-    
+    const prefix = options.prefix || "avatars";
+
     // Derive extension from mime type (more secure than trusting filename)
-    let ext = mime.extension(mimeType)
+    let ext = mime.extension(mimeType);
     if (!ext) {
       // Fallback to filename extension if mime lookup fails
-      ext = path.extname(filename).substring(1)
+      ext = path.extname(filename).substring(1);
     }
-    
+
     // Generate unique filename
-    const uniqueFilename = `${uuidv4()}.${ext}`
-    const fileKey = `${prefix}/${uniqueFilename}`
-    const fullPath = path.join(this.baseDir, fileKey)
-    
+    const uniqueFilename = `${uuidv4()}.${ext}`;
+    const fileKey = `${prefix}/${uniqueFilename}`;
+    const fullPath = path.join(this.baseDir, fileKey);
+
     // Ensure directory exists
-    await fs.ensureDir(path.dirname(fullPath))
-    
+    await fs.ensureDir(path.dirname(fullPath));
+
     // Write file
-    await fs.writeFile(fullPath, buffer)
-    
-    return fileKey
+    await fs.writeFile(fullPath, buffer);
+
+    return fileKey;
   }
 
   /**
@@ -58,7 +58,7 @@ class LocalStorageProvider extends StorageProvider {
    * @returns {Promise<string>} URL path
    */
   async getFileUrl(fileKey) {
-    return `/uploads/${fileKey}`
+    return `/uploads/${fileKey}`;
   }
 
   /**
@@ -67,24 +67,24 @@ class LocalStorageProvider extends StorageProvider {
    * @returns {Promise<{stream: ReadableStream, mimeType: string, filename: string}>}
    */
   async getReadStream(fileKey) {
-    const fullPath = path.join(this.baseDir, fileKey)
-    
+    const fullPath = path.join(this.baseDir, fileKey);
+
     // Check if file exists
-    const exists = await fs.pathExists(fullPath)
+    const exists = await fs.pathExists(fullPath);
     if (!exists) {
-      throw new Error(`File not found: ${fileKey}`)
+      throw new Error(`File not found: ${fileKey}`);
     }
 
     // Extract filename from path
-    const filename = path.basename(fileKey)
-    
+    const filename = path.basename(fileKey);
+
     // Detect MIME type from extension
-    const mimeType = mime.lookup(fullPath) || 'application/octet-stream'
-    
+    const mimeType = mime.lookup(fullPath) || "application/octet-stream";
+
     // Create read stream
-    const stream = fs.createReadStream(fullPath)
-    
-    return { stream, mimeType, filename }
+    const stream = fs.createReadStream(fullPath);
+
+    return { stream, mimeType, filename };
   }
 
   /**
@@ -93,7 +93,7 @@ class LocalStorageProvider extends StorageProvider {
    */
   async getSignedDownloadUrl(fileKey, expiresIn = 300) {
     // Local storage doesn't support signed URLs; files will be streamed
-    return null
+    return null;
   }
 
   /**
@@ -102,11 +102,10 @@ class LocalStorageProvider extends StorageProvider {
    * @returns {Promise<void>}
    */
   async deleteFile(fileKey) {
-    const fullPath = path.join(this.baseDir, fileKey)
+    const fullPath = path.join(this.baseDir, fileKey);
     // Don't throw if file doesn't exist
-    await fs.remove(fullPath)
+    await fs.remove(fullPath);
   }
 }
 
-module.exports = LocalStorageProvider
-
+module.exports = LocalStorageProvider;
