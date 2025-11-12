@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,6 +95,33 @@ const step2Schema = z.object({
     ),
 });
 
+const REQUIRED_FIELDS: (keyof FormData)[] = [
+  "name",
+  "surname",
+  "email",
+  "password",
+  "companyName",
+  "address",
+  "phoneNumber",
+];
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+const PHONE_REGEX = /^[0-9+\-()\s]{8,15}$/;
+
+const RequiredLabel = ({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: ReactNode;
+}) => (
+  <Label htmlFor={htmlFor} aria-required className="text-sm sm:text-base">
+    {children}
+    <span className="text-destructive"> *</span>
+  </Label>
+);
+
 const step3Schema = z.object({
   contactEmail: z
     .string()
@@ -137,6 +164,48 @@ const getPasswordStrength = (password: string) => {
   return { strength: 100, label: "Strong" };
 };
 
+const getFieldValidationMessage = (field: keyof FormData, value: string): string => {
+  const trimmed = value.trim();
+  switch (field) {
+    case "name":
+      if (!trimmed) return "First name is required";
+      if (trimmed.length < 2)
+        return "First name must be at least 2 characters";
+      return "";
+    case "surname":
+      if (!trimmed) return "Last name is required";
+      if (trimmed.length < 2)
+        return "Last name must be at least 2 characters";
+      return "";
+    case "email":
+      if (!trimmed) return "Email is required";
+      if (!EMAIL_REGEX.test(trimmed)) return "Invalid email address";
+      return "";
+    case "password": {
+      if (!trimmed) return "Password is required";
+      const failingRule = PASSWORD_RULES.find((rule) => !rule.test(trimmed));
+      return failingRule ? failingRule.message : "";
+    }
+    case "companyName":
+      if (!trimmed) return "Company name is required";
+      if (trimmed.length < 2)
+        return "Company name must be at least 2 characters";
+      return "";
+    case "address":
+      if (!trimmed) return "Address is required";
+      if (trimmed.length < 5)
+        return "Address must be at least 5 characters";
+      return "";
+    case "phoneNumber":
+      if (!trimmed) return "Phone number is required";
+      if (!PHONE_REGEX.test(trimmed))
+        return "Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces";
+      return "";
+    default:
+      return "";
+  }
+};
+
 const EmployerRegistration = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -166,8 +235,19 @@ const EmployerRegistration = () => {
     formData.password.length > 0
       ? PASSWORD_RULES.filter((rule) => !rule.test(formData.password))
       : [];
-  const isPasswordValid =
-    formData.password.length > 0 && passwordRuleViolations.length === 0;
+  const getFieldValue = (field: keyof FormData) => formData[field] ?? "";
+  const stepOneFields: (keyof FormData)[] = [
+    "name",
+    "surname",
+    "email",
+    "password",
+  ];
+  const isStepOneReady = stepOneFields.every(
+    (field) => !getFieldValidationMessage(field, getFieldValue(field))
+  );
+  const requiredFieldsValid = REQUIRED_FIELDS.every(
+    (field) => !getFieldValidationMessage(field, getFieldValue(field))
+  );
   const passwordAssistiveIds: string[] = [];
   if (formData.password) {
     passwordAssistiveIds.push("password-strength");
@@ -194,21 +274,24 @@ const EmployerRegistration = () => {
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => {
       const next = { ...prev, [field]: value };
-      if (
-        field === "email" &&
-        typeof value === "string" &&
-        !contactEmailTouched
-      ) {
+      if (field === "email" && !contactEmailTouched) {
         next.contactEmail = value;
       }
       return next;
     });
+
     if (field === "contactEmail") {
       setContactEmailTouched(true);
     }
-    setErrors((prev) => ({ ...prev, [field]: "" }));
+
+    const message = getFieldValidationMessage(field, value);
+    setErrors((prev) => ({ ...prev, [field]: message }));
     if (field === "email" && !contactEmailTouched) {
-      setErrors((prev) => ({ ...prev, contactEmail: "" }));
+      const contactMessage = getFieldValidationMessage(
+        "contactEmail",
+        value
+      );
+      setErrors((prev) => ({ ...prev, contactEmail: contactMessage }));
     }
   };
 
@@ -421,9 +504,7 @@ const EmployerRegistration = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm sm:text-base">
-                  First Name
-                </Label>
+            <RequiredLabel htmlFor="name">First Name</RequiredLabel>
                 <Input
                   id="name"
                   placeholder="Enter your first name"
@@ -448,9 +529,7 @@ const EmployerRegistration = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="surname" className="text-sm sm:text-base">
-                  Last Name
-                </Label>
+            <RequiredLabel htmlFor="surname">Last Name</RequiredLabel>
                 <Input
                   id="surname"
                   placeholder="Enter your last name"
@@ -478,9 +557,7 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm sm:text-base">
-                Work Email
-              </Label>
+            <RequiredLabel htmlFor="email">Work Email</RequiredLabel>
               <Input
                 id="email"
                 type="email"
@@ -506,9 +583,7 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm sm:text-base">
-                Password
-              </Label>
+            <RequiredLabel htmlFor="password">Password</RequiredLabel>
               <div className="relative">
                 <Input
                   id="password"
@@ -633,7 +708,7 @@ const EmployerRegistration = () => {
             <Button
               onClick={handleNext}
               className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation disabled:opacity-60 disabled:cursor-not-allowed"
-              disabled={!isPasswordValid}
+              disabled={!isStepOneReady}
             >
               Continue
             </Button>
@@ -649,9 +724,9 @@ const EmployerRegistration = () => {
             </p>
 
             <div className="space-y-2">
-              <Label htmlFor="companyName" className="text-sm sm:text-base">
+              <RequiredLabel htmlFor="companyName">
                 Company Name
-              </Label>
+              </RequiredLabel>
               <Input
                 id="companyName"
                 placeholder="Your company name"
@@ -680,9 +755,9 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-sm sm:text-base">
+              <RequiredLabel htmlFor="address">
                 Company Address
-              </Label>
+              </RequiredLabel>
               <Textarea
                 id="address"
                 placeholder="Registered business address"
@@ -823,9 +898,9 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
+              <RequiredLabel htmlFor="phoneNumber">
                 Phone Number
-              </Label>
+              </RequiredLabel>
               <Input
                 id="phoneNumber"
                 type="tel"
@@ -896,7 +971,7 @@ const EmployerRegistration = () => {
               <Button
                 onClick={handleSubmit}
                 className="flex-1 h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !requiredFieldsValid}
               >
                 {isSubmitting ? "Submitting..." : "Submit for Verification"}
               </Button>
