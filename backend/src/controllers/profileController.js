@@ -86,6 +86,8 @@ async function getProfile(req, res) {
     const { role: userRole, id: userId } = req.user
     const requestedUserId = req.params.userId || userId
 
+    console.log('✗ getProfile route matched with userId =', requestedUserId)
+
     // Roles allowed to view any profile
     const privilegedRoles = ["ADMIN", "HR", "PROFESSOR"];
 
@@ -584,6 +586,7 @@ module.exports = {
   getProfile,
   listProfiles,
   uploadAvatar,
-  downloadAvatar
+  downloadAvatar,
+  getDashboardData
 }
 
