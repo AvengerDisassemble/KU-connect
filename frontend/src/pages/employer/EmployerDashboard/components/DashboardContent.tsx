@@ -24,15 +24,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import { useAuth } from "@/hooks/useAuth";
 import {
+  getEmployerDashboard,
   getEmployerProfile,
+  type EmployerDashboardJobPosting,
   type EmployerProfileResponse,
 } from "@/services/employerProfile";
 import {
-  listJobs,
   getJobApplicants,
   manageApplication,
-  type JobListItem,
-  type JobListResponse,
   type JobApplication,
 } from "@/services/jobs";
 
@@ -180,48 +179,12 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
 };
 
 const JOBS_PAGE_SIZE = 5;
-const JOBS_FETCH_BATCH = 100;
 const APPLICANTS_PAGE_SIZE = 5;
 const PANEL_HEIGHT_CLASS = "h-[520px]";
 const PANEL_SCROLL_AREA_CLASS = "flex-1 overflow-y-auto";
 const EMPTY_APPLICANTS_MAP: Record<string, JobApplication[]> = Object.freeze(
   {},
 );
-
-const uniqueById = <T extends { id: string }>(items: T[]): T[] => {
-  const seen = new Set<string>();
-  return items.filter((item) => {
-    if (seen.has(item.id)) return false;
-    seen.add(item.id);
-    return true;
-  });
-};
-
-const fetchEmployerJobs = async (hrId: string): Promise<JobListItem[]> => {
-  // Replace client-side filtering with a backend hrId filter once /job/list supports it.
-  // Current approach fetches pages and filters on the client; optimize when server filter is available.
-  
-  const collected: JobListItem[] = [];
-  let page = 1;
-  let hasMore = true;
-
-  while (hasMore) {
-    const response = await listJobs({
-      page,
-      limit: JOBS_FETCH_BATCH,
-    });
-
-    const scoped = response.items.filter((job) => job.hrId === hrId);
-    collected.push(...scoped);
-
-    const reachedEnd =
-      page * response.limit >= response.total || response.items.length === 0;
-    hasMore = !reachedEnd;
-    page += 1;
-  }
-
-  return uniqueById(collected);
-};
 
 const EmployerDashboardContent = () => {
   const queryClient = useQueryClient();
@@ -248,24 +211,29 @@ const EmployerDashboardContent = () => {
     retry: false,
   });
 
+  const hasEmployerAccess =
+    user?.role === "employer" || user?.role === "admin";
   const hrId: string | undefined = profile?.hr?.id;
 
   const {
-    data: employerJobs = [],
-    isLoading: jobsLoading,
-    isError: jobsError,
-    refetch: refetchJobs,
-    isFetching: jobsFetching,
-  } = useQuery<JobListItem[]>({
-    queryKey: ["employer-jobs", hrId],
-    queryFn: () => fetchEmployerJobs(hrId!),
-    enabled: !!hrId,
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    isError: dashboardError,
+    refetch: refetchDashboard,
+    isFetching: dashboardFetching,
+  } = useQuery({
+    queryKey: ["employer-dashboard", user?.id],
+    queryFn: () => getEmployerDashboard(),
+    enabled: hasEmployerAccess,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: false,
   });
 
-  const loadedJobs = employerJobs;
+  const dashboardJobs: EmployerDashboardJobPosting[] =
+    dashboardData?.dashboard?.myJobPostings ?? [];
+
+  const loadedJobs = dashboardJobs;
 
   useEffect(() => {
     if (!loadedJobs.length) {
@@ -297,7 +265,7 @@ const EmployerDashboardContent = () => {
     setJobPage((prev) => Math.min(Math.max(prev, 1), totalJobPages));
   }, [totalJobPages]);
 
-  const jobPageItems = useMemo<JobListItem[]>(() => {
+  const jobPageItems = useMemo<EmployerDashboardJobPosting[]>(() => {
     if (!loadedJobs.length) {
       return [];
     }
@@ -311,11 +279,11 @@ const EmployerDashboardContent = () => {
       ? `${Math.min(jobPage, totalJobPages)} of ${totalJobPages}`
       : "0 of 0";
 
-  const loadingJobs = profileLoading || jobsLoading;
-  const showJobsError = !loadingJobs && (profileError || jobsError);
-  const jobsRefetching = jobsFetching && !loadingJobs;
+  const loadingJobs = profileLoading || dashboardLoading;
+  const showJobsError = !loadingJobs && (profileError || dashboardError);
+  const jobsRefetching = dashboardFetching && !loadingJobs;
 
-  const jobControlsDisabled = loadingJobs || jobsFetching;
+  const jobControlsDisabled = loadingJobs || dashboardFetching;
   const prevJobsDisabled = jobPage <= 1 || jobControlsDisabled;
   const nextJobsDisabled =
     jobControlsDisabled || totalJobPages === 0 || jobPage >= totalJobPages;
@@ -558,9 +526,9 @@ const EmployerDashboardContent = () => {
           <Button
             variant="outline"
             onClick={() => {
-              void refetchJobs();
+              void refetchDashboard();
             }}
-            disabled={jobsFetching}
+            disabled={dashboardFetching}
             className="inline-flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed"
           >
             <RefreshCw className="h-4 w-4" />

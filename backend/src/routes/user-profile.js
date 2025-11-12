@@ -354,7 +354,6 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
             userId,
           },
         },
-        take: 5,
         orderBy: { id: "desc" },
         select: {
           id: true,
