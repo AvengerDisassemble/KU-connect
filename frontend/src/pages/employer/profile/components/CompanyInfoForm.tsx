@@ -146,12 +146,12 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
     const raw = window.localStorage.getItem(EMPLOYER_PROFILE_DRAFT_KEY);
     if (!raw) return null;
     try {
-      return JSON.parse(raw) as Partial<CompanyForm>;
+      const parsed = JSON.parse(raw) as Partial<CompanyForm>;
+      window.localStorage.removeItem(EMPLOYER_PROFILE_DRAFT_KEY);
+      return parsed;
     } catch (error) {
       console.error("Failed to parse employer profile draft", error);
       return null;
-    } finally {
-      window.localStorage.removeItem(EMPLOYER_PROFILE_DRAFT_KEY);
     }
   });
   const isEmployer = user?.role === "employer";
