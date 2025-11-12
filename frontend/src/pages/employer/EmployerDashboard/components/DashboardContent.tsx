@@ -198,6 +198,9 @@ const uniqueById = <T extends { id: string }>(items: T[]): T[] => {
 };
 
 const fetchEmployerJobs = async (hrId: string): Promise<JobListItem[]> => {
+  // Replace client-side filtering with a backend hrId filter once /job/list supports it.
+  // Current approach fetches pages and filters on the client; optimize when server filter is available.
+  
   const collected: JobListItem[] = [];
   let page = 1;
   let hasMore = true;
