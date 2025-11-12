@@ -1,7 +1,7 @@
 /**
  * @module middlewares/rateLimitMiddleware
  * @description Rate limiting middleware to prevent DoS attacks on expensive database operations
- * 
+ *
  * Security: HTTP request handlers should not perform expensive operations without rate limiting
  * Otherwise, the application becomes vulnerable to denial-of-service attacks
  */
@@ -22,14 +22,14 @@ const generalLimiter = rateLimit({
   max: 500, // Limit each IP to 500 requests per windowMs (100 → 500 for 70+ users)
   message: {
     success: false,
-    message: 'Too many requests from this IP, please try again later.',
-    retryAfter: '15 minutes'
+    message: "Too many requests from this IP, please try again later.",
+    retryAfter: "15 minutes",
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   // Skip rate limiting for requests from test environment
-  skip: (req) => process.env.NODE_ENV === 'test'
-})
+  skip: (req) => process.env.NODE_ENV === "test",
+});
 
 /**
  * Strict rate limiter for expensive database operations
@@ -46,13 +46,13 @@ const strictLimiter = rateLimit({
   max: 150, // Limit each IP to 150 requests per windowMs (30 → 150 for 70+ users)
   message: {
     success: false,
-    message: 'Too many requests to this resource. Please try again later.',
-    retryAfter: '15 minutes'
+    message: "Too many requests to this resource. Please try again later.",
+    retryAfter: "15 minutes",
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'test'
-})
+  skip: (req) => process.env.NODE_ENV === "test",
+});
 
 /**
  * Authentication rate limiter - For login/register endpoints
@@ -64,14 +64,15 @@ const authLimiter = rateLimit({
   max: 20, // Limit each IP to 20 login attempts per windowMs (5 → 20 for 70+ users)
   message: {
     success: false,
-    message: 'Too many authentication attempts. Please try again after 15 minutes.',
-    retryAfter: '15 minutes'
+    message:
+      "Too many authentication attempts. Please try again after 15 minutes.",
+    retryAfter: "15 minutes",
   },
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
-  skip: (req) => process.env.NODE_ENV === 'test'
-})
+  skip: (req) => process.env.NODE_ENV === "test",
+});
 
 /**
  * Write operation rate limiter - For POST/PATCH/DELETE
@@ -83,13 +84,13 @@ const writeLimiter = rateLimit({
   max: 100, // Limit each IP to 100 write operations per windowMs (20 → 100 for 70+ users)
   message: {
     success: false,
-    message: 'Too many write operations. Please try again later.',
-    retryAfter: '15 minutes'
+    message: "Too many write operations. Please try again later.",
+    retryAfter: "15 minutes",
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => process.env.NODE_ENV === 'test'
-})
+  skip: (req) => process.env.NODE_ENV === "test",
+});
 
 /**
  * Search/Filter rate limiter - For search and filter operations
@@ -101,8 +102,8 @@ const searchLimiter = rateLimit({
   max: 250, // Limit each IP to 250 search requests per windowMs (50 → 250 for 70+ users)
   message: {
     success: false,
-    message: 'Too many search requests. Please try again later.',
-    retryAfter: '15 minutes'
+    message: "Too many search requests. Please try again later.",
+    retryAfter: "15 minutes",
   },
   standardHeaders: true,
   legacyHeaders: false,
