@@ -78,6 +78,6 @@ router.get("/:userId", strictLimiter, profileController.getProfile);
 // Authenticated users can update their own profile
 // Rate limited: Write operation
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
-router.patch('/', writeLimiter, verifiedUserMiddleware, validateUpdateProfile, profileController.updateProfile)
+router.patch('/', writeLimiter, validateUpdateProfile, profileController.updateProfile)
 
 module.exports = router;
