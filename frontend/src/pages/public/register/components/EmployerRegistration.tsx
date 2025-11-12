@@ -33,8 +33,8 @@ import { EMPLOYER_PROFILE_DRAFT_KEY } from "@/lib/constants/storageKeys";
 const PASSWORD_RULES = [
   {
     id: "length",
-    message: "Password must be more than 8 characters",
-    test: (value: string) => value.length > 8,
+    message: "Password must be at least 8 characters",
+    test: (value: string) => value.length >= 8,
   },
   {
     id: "lowercase",
