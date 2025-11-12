@@ -20,6 +20,15 @@ import {
   INDUSTRY_OPTIONS_BASE,
   INDUSTRY_UI_TO_API,
 } from "@/lib/domain/industries";
+import {
+  COMPANY_SIZE_OPTIONS,
+  COMPANY_SIZE_UI_TO_API,
+} from "@/lib/domain/companySize";
+import {
+  updateEmployerProfile,
+  type UpdateEmployerProfileRequest,
+} from "@/services/employerProfile";
+import { EMPLOYER_PROFILE_DRAFT_KEY } from "@/lib/constants/storageKeys";
 
 const PASSWORD_RULES = [
   {
@@ -76,6 +85,14 @@ const step2Schema = z.object({
     .max(500, "Description must be less than 500 characters")
     .optional(),
   industry: z.string().optional(),
+  companySize: z
+    .string()
+    .optional()
+    .refine(
+      (val) =>
+        !val || COMPANY_SIZE_OPTIONS.some((option) => option.value === val),
+      "Invalid company size"
+    ),
 });
 
 const step3Schema = z.object({
@@ -105,6 +122,7 @@ interface FormData {
   address: string;
   description: string;
   industry: string;
+  companySize: string;
   contactEmail: string;
   phoneNumber: string;
   website: string;
@@ -133,6 +151,7 @@ const EmployerRegistration = () => {
     address: "",
     description: "",
     industry: "",
+    companySize: "",
     contactEmail: "",
     phoneNumber: "",
     website: "",
@@ -209,6 +228,7 @@ const EmployerRegistration = () => {
           address: formData.address,
           description: formData.description,
           industry: formData.industry,
+          companySize: formData.companySize,
         });
       } else if (step === 3) {
         step3Schema.parse({
@@ -259,6 +279,11 @@ const EmployerRegistration = () => {
       const industryValue = formData.industry
         ? INDUSTRY_UI_TO_API[formData.industry]
         : undefined;
+      const companySizeValue = formData.companySize
+        ? COMPANY_SIZE_UI_TO_API[formData.companySize]
+        : undefined;
+      const websiteValue = formData.website.trim();
+      const descriptionValue = formData.description.trim();
 
       const payload = {
         name: formData.name.trim(),
@@ -281,6 +306,41 @@ const EmployerRegistration = () => {
         const loginResult = await login(payload.email, payload.password);
         const { user } = loginResult.data;
         const userId = user?.id;
+
+        const profilePayload: UpdateEmployerProfileRequest = {};
+        if (industryValue) profilePayload.industry = industryValue;
+        if (companySizeValue) profilePayload.companySize = companySizeValue;
+        if (websiteValue) profilePayload.website = websiteValue;
+        if (descriptionValue) profilePayload.description = descriptionValue;
+
+        let draftForPrefill: Partial<UpdateEmployerProfileRequest> | null =
+          null;
+        if (Object.keys(profilePayload).length > 0) {
+          try {
+            await updateEmployerProfile(profilePayload);
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem(EMPLOYER_PROFILE_DRAFT_KEY);
+            }
+          } catch (profileError) {
+            console.error("Failed to sync employer details:", profileError);
+            toast.error(
+              "Profile saved without extras. Update details from your profile."
+            );
+            draftForPrefill = {
+              industry: formData.industry,
+              companySize: formData.companySize,
+              website: formData.website,
+              description: formData.description,
+            };
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(
+                EMPLOYER_PROFILE_DRAFT_KEY,
+                JSON.stringify(draftForPrefill)
+              );
+            }
+          }
+        }
+
         navigate(
           userId ? `/employer/profile/${userId}` : "/employer",
           { replace: true }
@@ -639,11 +699,6 @@ const EmployerRegistration = () => {
               )}
             </div>
 
-            <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              You can upload your company logo after creating your account from
-              the employer profile page.
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="description" className="text-sm sm:text-base">
                 Company Description
@@ -694,6 +749,27 @@ const EmployerRegistration = () => {
               </Select>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="companySize" className="text-sm sm:text-base">
+                Company Size (Optional)
+              </Label>
+              <Select
+                value={formData.companySize}
+                onValueChange={(v) => handleInputChange("companySize", v)}
+              >
+                <SelectTrigger id="companySize" className="h-11 sm:h-12">
+                  <SelectValue placeholder="Select company size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMPANY_SIZE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant="outline"
@@ -715,11 +791,6 @@ const EmployerRegistration = () => {
         {/* Step 3: Verification */}
         {currentStep === 3 && (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Optional: Share contact details and supporting documents to speed
-              up verification.
-            </p>
-
             <div className="space-y-2">
               <Label htmlFor="contactEmail" className="text-sm sm:text-base">
                 Contact Email
@@ -808,7 +879,7 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              Business registration documents can be uploaded after you sign in
+              A company logo and a business registration document can be uploaded after you sign in
               to the employer profile.
             </div>
 
@@ -821,6 +892,7 @@ const EmployerRegistration = () => {
               >
                 Back
               </Button>
+              
               <Button
                 onClick={handleSubmit}
                 className="flex-1 h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"
