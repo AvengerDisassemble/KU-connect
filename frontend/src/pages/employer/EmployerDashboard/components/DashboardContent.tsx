@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -177,6 +177,7 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
 };
 
 const JOBS_PAGE_SIZE = 5;
+const JOBS_FETCH_BATCH = 100;
 const APPLICANTS_PAGE_SIZE = 5;
 const PANEL_HEIGHT_CLASS = "h-[520px]";
 const PANEL_SCROLL_AREA_CLASS = "flex-1 overflow-y-auto";
@@ -190,9 +191,27 @@ const uniqueById = <T extends { id: string }>(items: T[]): T[] => {
   });
 };
 
-const areJobListsEqual = (a: JobListItem[] = [], b: JobListItem[] = []) => {
-  if (a.length !== b.length) return false;
-  return a.every((item, index) => item.id === b[index]?.id);
+const fetchEmployerJobs = async (hrId: string): Promise<JobListItem[]> => {
+  const collected: JobListItem[] = [];
+  let page = 1;
+  let hasMore = true;
+
+  while (hasMore) {
+    const response = await listJobs({
+      page,
+      limit: JOBS_FETCH_BATCH,
+    });
+
+    const scoped = response.items.filter((job) => job.hrId === hrId);
+    collected.push(...scoped);
+
+    const reachedEnd =
+      page * response.limit >= response.total || response.items.length === 0;
+    hasMore = !reachedEnd;
+    page += 1;
+  }
+
+  return uniqueById(collected);
 };
 
 const EmployerDashboardContent = () => {
@@ -204,11 +223,6 @@ const EmployerDashboardContent = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
 
   const [jobPage, setJobPage] = useState(1);
-  const [jobsByPage, setJobsByPage] = useState<Map<number, JobListItem[]>>(
-    () => new Map()
-  );
-  const [jobsTotal, setJobsTotal] = useState(0);
-  const [jobsLimit, setJobsLimit] = useState(JOBS_PAGE_SIZE);
 
   const [applicantPage, setApplicantPage] = useState(1);
 
@@ -227,81 +241,22 @@ const EmployerDashboardContent = () => {
 
   const hrId: string | undefined = profile?.hr?.id;
 
-  useEffect(() => {
-    setJobsByPage(() => new Map());
-    setJobsTotal(0);
-    setJobsLimit(JOBS_PAGE_SIZE);
-    setJobPage(1);
-    setSelectedJobId(null);
-  }, [hrId]);
-
   const {
-    data: jobsPageData,
-    isLoading: jobsInitialLoading,
+    data: employerJobs = [],
+    isLoading: jobsLoading,
     isError: jobsError,
-    refetch: refetchJobsPage,
+    refetch: refetchJobs,
     isFetching: jobsFetching,
-  } = useQuery<JobListResponse>({
-    queryKey: ["employer-jobs", hrId, jobPage, jobsLimit || JOBS_PAGE_SIZE],
-    queryFn: () => {
-      const payload: Record<string, unknown> = {
-        page: jobPage,
-        limit: jobsLimit || JOBS_PAGE_SIZE,
-      };
-      if (hrId) {
-        payload.hrId = hrId;
-      }
-      return listJobs(payload);
-    },
+  } = useQuery<JobListItem[]>({
+    queryKey: ["employer-jobs", hrId],
+    queryFn: () => fetchEmployerJobs(hrId!),
     enabled: !!hrId,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: false,
-    placeholderData: (previousData) => previousData,
   });
 
-  useEffect(() => {
-    if (!jobsPageData) return;
-
-    const normalizedItems = uniqueById<JobListItem>(jobsPageData.items);
-
-    setJobsByPage((prev) => {
-      const next = new Map(prev);
-      const current = next.get(jobsPageData.page);
-      if (current && areJobListsEqual(current, normalizedItems)) {
-        return prev;
-      }
-
-      if (!current && normalizedItems.length === 0) {
-        return prev;
-      }
-
-      next.set(jobsPageData.page, normalizedItems);
-      return next;
-    });
-
-    if (typeof jobsPageData.total === "number") {
-      setJobsTotal(jobsPageData.total);
-    }
-
-    if (jobsPageData.limit && jobsPageData.limit > 0) {
-      setJobsLimit((prev) =>
-        prev === jobsPageData.limit ? prev : jobsPageData.limit
-      );
-    }
-  }, [jobsPageData]);
-
-  const loadedJobs = useMemo<JobListItem[]>(() => {
-    const map = new Map<string, JobListItem>();
-    jobsByPage.forEach((items) => {
-      items.forEach((job) => {
-        if (!map.has(job.id)) {
-          map.set(job.id, job);
-        }
-      });
-    });
-    return Array.from(map.values());
-  }, [jobsByPage]);
+  const loadedJobs = employerJobs;
 
   useEffect(() => {
     if (!loadedJobs.length) {
@@ -309,12 +264,9 @@ const EmployerDashboardContent = () => {
       return;
     }
 
-    setSelectedJobId((prev) => {
-      if (prev && loadedJobs.some((job) => job.id === prev)) {
-        return prev;
-      }
-      return null;
-    });
+    setSelectedJobId((prev) =>
+      prev && loadedJobs.some((job) => job.id === prev) ? prev : null
+    );
   }, [loadedJobs]);
 
   const jobIds = useMemo(
@@ -323,10 +275,9 @@ const EmployerDashboardContent = () => {
   );
 
   const totalJobPages = useMemo(() => {
-    if (!jobsLimit) return 0;
-    if (!jobsTotal) return 0;
-    return Math.ceil(jobsTotal / jobsLimit);
-  }, [jobsLimit, jobsTotal]);
+    if (!loadedJobs.length) return 0;
+    return Math.ceil(loadedJobs.length / JOBS_PAGE_SIZE);
+  }, [loadedJobs]);
 
   useEffect(() => {
     if (!totalJobPages) {
@@ -338,96 +289,20 @@ const EmployerDashboardContent = () => {
   }, [totalJobPages]);
 
   const jobPageItems = useMemo<JobListItem[]>(() => {
-    const cached = jobsByPage.get(jobPage);
-    if (cached) {
-      return cached;
+    if (!loadedJobs.length) {
+      return [];
     }
+    const start = (jobPage - 1) * JOBS_PAGE_SIZE;
+    return loadedJobs.slice(start, start + JOBS_PAGE_SIZE);
+  }, [jobPage, loadedJobs]);
 
-    if (jobsPageData && jobsPageData.page === jobPage) {
-      return uniqueById<JobListItem>(jobsPageData.items);
-    }
-
-    return [];
-  }, [jobPage, jobsByPage, jobsPageData]);
-
-  const jobCountBadge = jobsTotal;
+  const jobCountBadge = loadedJobs.length;
   const jobPageLabel =
     totalJobPages > 0
       ? `${Math.min(jobPage, totalJobPages)} of ${totalJobPages}`
       : "0 of 0";
 
-  const prefetchedJobPages = useRef<Set<number>>(new Set());
-
-  useEffect(() => {
-    prefetchedJobPages.current.clear();
-  }, [hrId]);
-
-  useEffect(() => {
-    if (!hrId || !jobsTotal || !jobsLimit) {
-      return;
-    }
-
-    const knownPages = jobsByPage;
-    const totalPages = Math.ceil(jobsTotal / jobsLimit);
-    const toFetch: number[] = [];
-
-    for (let page = 1; page <= totalPages; page += 1) {
-      if (knownPages.has(page)) continue;
-      if (prefetchedJobPages.current.has(page)) continue;
-      toFetch.push(page);
-      prefetchedJobPages.current.add(page);
-    }
-
-    if (!toFetch.length) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const preload = async () => {
-      await Promise.all(
-        toFetch.map(async (page) => {
-          try {
-            const payload: Record<string, unknown> = {
-              page,
-              limit: jobsLimit || JOBS_PAGE_SIZE,
-            };
-            if (hrId) {
-              payload.hrId = hrId;
-            }
-            const response = await listJobs(payload);
-            if (cancelled) return;
-            const normalizedItems = uniqueById<JobListItem>(response.items);
-            if (!normalizedItems.length) return;
-            setJobsByPage((prev) => {
-              if (prev.has(page)) {
-                return prev;
-              }
-              const next = new Map(prev);
-              next.set(page, normalizedItems);
-              return next;
-            });
-            if (
-              typeof response.total === "number" &&
-              response.total !== jobsTotal
-            ) {
-              setJobsTotal(response.total);
-            }
-          } catch (error) {
-            console.error("Failed to preload jobs page", page, error);
-          }
-        })
-      );
-    };
-
-    void preload();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hrId, jobsTotal, jobsLimit, jobsByPage]);
-
-  const loadingJobs = profileLoading || jobsInitialLoading;
+  const loadingJobs = profileLoading || jobsLoading;
   const showJobsError = !loadingJobs && (profileError || jobsError);
   const jobsRefetching = jobsFetching && !loadingJobs;
 
@@ -435,12 +310,10 @@ const EmployerDashboardContent = () => {
   const prevJobsDisabled = jobPage <= 1 || jobControlsDisabled;
   const nextJobsDisabled =
     jobControlsDisabled ||
-    jobsTotal === 0 ||
-    jobPage * jobsLimit >= jobsTotal;
+    totalJobPages === 0 ||
+    jobPage >= totalJobPages;
 
-  const showJobsSkeleton =
-    loadingJobs ||
-    (!jobsInitialLoading && !jobsByPage.has(jobPage) && jobsFetching);
+  const showJobsSkeleton = loadingJobs;
 
   const handleNextJobsPage = useCallback(() => {
     if (nextJobsDisabled) return;
@@ -684,7 +557,7 @@ const EmployerDashboardContent = () => {
           <Button
             variant="outline"
             onClick={() => {
-              void refetchJobsPage();
+              void refetchJobs();
             }}
             disabled={jobsFetching}
             className="inline-flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed"
