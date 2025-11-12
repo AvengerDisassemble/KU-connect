@@ -123,12 +123,6 @@ const RequiredLabel = ({
 );
 
 const step3Schema = z.object({
-  contactEmail: z
-    .string()
-    .email("Invalid email address")
-    .max(255)
-    .optional()
-    .or(z.literal("")),
   phoneNumber: z
     .string()
     .trim()
@@ -150,7 +144,6 @@ interface FormData {
   description: string;
   industry: string;
   companySize: string;
-  contactEmail: string;
   phoneNumber: string;
   website: string;
 }
@@ -206,6 +199,12 @@ const getFieldValidationMessage = (field: keyof FormData, value: string): string
   }
 };
 
+const getConfirmPasswordMessage = (password: string, confirmPassword: string) => {
+  if (!confirmPassword.trim()) return "Please confirm your password";
+  if (password !== confirmPassword) return "Passwords do not match";
+  return "";
+};
+
 const EmployerRegistration = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -221,14 +220,12 @@ const EmployerRegistration = () => {
     description: "",
     industry: "",
     companySize: "",
-    contactEmail: "",
     phoneNumber: "",
     website: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [contactEmailTouched, setContactEmailTouched] = useState(false);
   const stepContainerRef = useRef<HTMLDivElement>(null);
   const passwordStrength = getPasswordStrength(formData.password);
   const passwordRuleViolations =
@@ -241,6 +238,7 @@ const EmployerRegistration = () => {
     "surname",
     "email",
     "password",
+    "confirmPassword",
   ];
   const isStepOneReady = stepOneFields.every(
     (field) => !getFieldValidationMessage(field, getFieldValue(field))
@@ -272,26 +270,18 @@ const EmployerRegistration = () => {
   }, [currentStep]);
 
   const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData((prev) => {
-      const next = { ...prev, [field]: value };
-      if (field === "email" && !contactEmailTouched) {
-        next.contactEmail = value;
-      }
-      return next;
-    });
-
-    if (field === "contactEmail") {
-      setContactEmailTouched(true);
-    }
-
+    setFormData((prev) => ({ ...prev, [field]: value }));
     const message = getFieldValidationMessage(field, value);
     setErrors((prev) => ({ ...prev, [field]: message }));
-    if (field === "email" && !contactEmailTouched) {
-      const contactMessage = getFieldValidationMessage(
-        "contactEmail",
-        value
-      );
-      setErrors((prev) => ({ ...prev, contactEmail: contactMessage }));
+
+    if (field === "password" || field === "confirmPassword") {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: getConfirmPasswordMessage(
+          field === "password" ? value : formData.password,
+          field === "confirmPassword" ? value : formData.confirmPassword
+        ),
+      }));
     }
   };
 
@@ -317,7 +307,6 @@ const EmployerRegistration = () => {
         step3Schema.parse({
           phoneNumber: formData.phoneNumber,
           website: formData.website,
-          contactEmail: formData.contactEmail,
         });
       }
       setErrors({});
@@ -866,37 +855,6 @@ const EmployerRegistration = () => {
         {/* Step 3: Verification */}
         {currentStep === 3 && (
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="contactEmail" className="text-sm sm:text-base">
-                Contact Email
-              </Label>
-              <Input
-                id="contactEmail"
-                type="email"
-                placeholder="contact@company.com"
-                value={formData.contactEmail}
-                onChange={(e) =>
-                  handleInputChange("contactEmail", e.target.value)
-                }
-                className={`h-11 sm:h-12 ${
-                  errors.contactEmail ? "border-destructive" : ""
-                }`}
-                aria-invalid={!!errors.contactEmail}
-                aria-describedby={
-                  errors.contactEmail ? "contact-email-error" : undefined
-                }
-              />
-              {errors.contactEmail && (
-                <p
-                  id="contact-email-error"
-                  className="text-sm text-destructive"
-                  role="alert"
-                >
-                  {errors.contactEmail}
-                </p>
-              )}
-            </div>
-
             <div className="space-y-2">
               <RequiredLabel htmlFor="phoneNumber">
                 Phone Number
