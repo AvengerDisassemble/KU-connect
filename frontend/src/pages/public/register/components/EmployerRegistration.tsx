@@ -180,7 +180,7 @@ const getFieldValidationMessage = (
     case "password": {
       if (!trimmed) return "Password is required";
       const failingRule = PASSWORD_RULES.find((rule) => !rule.test(trimmed));
-      return failingRule ? failingRule.message : "";
+      return failingRule ? "Password does not meet all requirements" : "";
     }
     case "companyName":
       if (!trimmed) return "Company name is required";
@@ -346,7 +346,24 @@ const EmployerRegistration = () => {
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting || !validateStep(3)) {
+    if (isSubmitting) {
+      return;
+    }
+
+    const confirmPasswordMessage = getConfirmPasswordMessage(
+      formData.password,
+      formData.confirmPassword,
+    );
+    if (confirmPasswordMessage) {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: confirmPasswordMessage,
+      }));
+      toast.error(confirmPasswordMessage);
+      return;
+    }
+
+    if (!validateStep(3)) {
       return;
     }
 
