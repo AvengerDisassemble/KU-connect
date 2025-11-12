@@ -815,7 +815,7 @@ const EmployerRegistration = () => {
 
             <div className="space-y-2">
               <Label htmlFor="companySize" className="text-sm sm:text-base">
-                Company Size (Optional)
+                Company Size
               </Label>
               <Select
                 value={formData.companySize}
@@ -886,7 +886,7 @@ const EmployerRegistration = () => {
 
             <div className="space-y-2">
               <Label htmlFor="website" className="text-sm sm:text-base">
-                Website (Optional)
+                Website
               </Label>
               <Input
                 id="website"
