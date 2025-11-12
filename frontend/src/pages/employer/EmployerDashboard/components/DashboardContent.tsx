@@ -487,14 +487,6 @@ const EmployerDashboardContent = () => {
     [applicantsMap, jobPageItems]
   );
 
-  const selectedJob = useMemo(
-    () =>
-      selectedJobId
-        ? loadedJobs.find((job) => job.id === selectedJobId) ?? null
-        : null,
-    [loadedJobs, selectedJobId]
-  );
-
   const handleViewApplicants = (jobId: string): void => {
     setSelectedJobId((prev) => (prev === jobId ? null : jobId));
   };
@@ -649,15 +641,9 @@ const EmployerDashboardContent = () => {
             <div className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">
               <div>
                 <h2 className="text-xl font-bold">Applicants Inbox</h2>
-                {selectedJob ? (
-                  <p className="text-sm text-muted-foreground">
-                    {selectedJob.title}
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Showing applicants across all your jobs.
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  Showing applicants across all your jobs.
+                </p>
               </div>
               <div className="relative w-full max-w-xs">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
