@@ -194,7 +194,18 @@ async function refreshAccessToken(refreshToken) {
   // Check if refresh token exists in database
   const storedToken = await prisma.refreshToken.findUnique({
     where: { token: refreshToken },
-    include: { user: true },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          email: true,
+          role: true,
+          verified: true,
+        },
+      },
+    },
   });
 
   if (!storedToken || storedToken.expiresAt < new Date()) {
@@ -208,14 +219,7 @@ async function refreshAccessToken(refreshToken) {
 
   return {
     accessToken: newAccessToken,
-    user: {
-      id: storedToken.user.id,
-      name: storedToken.user.name,
-      surname: storedToken.user.surname,
-      email: storedToken.user.email,
-      role: storedToken.user.role,
-      verified: storedToken.user.verified,
-    },
+    user: storedToken.user,
   };
 }
 
