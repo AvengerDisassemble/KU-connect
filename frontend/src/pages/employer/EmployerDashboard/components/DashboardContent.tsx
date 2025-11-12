@@ -86,7 +86,7 @@ const isSameThaiDay = (isoDate: string, reference = new Date()): boolean => {
 
 const isThaiDateInCurrentWeek = (
   isoDate: string,
-  reference = new Date()
+  reference = new Date(),
 ): boolean => {
   const created = toBangkokDate(isoDate);
   const ref = toBangkokDate(reference);
@@ -131,7 +131,7 @@ const formatRelativeDate = (iso: string, now = new Date()): string => {
 
 const mapJobToViewModel = (
   job: JobListResponse["items"][number],
-  applicantsCache: JobApplication[] | undefined
+  applicantsCache: JobApplication[] | undefined,
 ): JobCardViewModel => {
   const total = applicantsCache?.length ?? 0;
   const shortlisted =
@@ -158,22 +158,25 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
     return { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 };
   }
 
-  return records.reduce<AggregateStats>((acc, record) => {
-    if (record.status === "QUALIFIED") {
-      acc.qualified += 1;
-    }
+  return records.reduce<AggregateStats>(
+    (acc, record) => {
+      if (record.status === "QUALIFIED") {
+        acc.qualified += 1;
+      }
 
-    if (isSameThaiDay(record.submittedAt)) {
-      acc.newToday += 1;
-    }
+      if (isSameThaiDay(record.submittedAt)) {
+        acc.newToday += 1;
+      }
 
-    if (isThaiDateInCurrentWeek(record.submittedAt)) {
-      acc.newThisWeek += 1;
-    }
+      if (isThaiDateInCurrentWeek(record.submittedAt)) {
+        acc.newThisWeek += 1;
+      }
 
-    acc.total += 1;
-    return acc;
-  }, { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 });
+      acc.total += 1;
+      return acc;
+    },
+    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 },
+  );
 };
 
 const JOBS_PAGE_SIZE = 5;
@@ -182,7 +185,7 @@ const APPLICANTS_PAGE_SIZE = 5;
 const PANEL_HEIGHT_CLASS = "h-[520px]";
 const PANEL_SCROLL_AREA_CLASS = "flex-1 overflow-y-auto";
 const EMPTY_APPLICANTS_MAP: Record<string, JobApplication[]> = Object.freeze(
-  {}
+  {},
 );
 
 const uniqueById = <T extends { id: string }>(items: T[]): T[] => {
@@ -268,13 +271,13 @@ const EmployerDashboardContent = () => {
     }
 
     setSelectedJobId((prev) =>
-      prev && loadedJobs.some((job) => job.id === prev) ? prev : null
+      prev && loadedJobs.some((job) => job.id === prev) ? prev : null,
     );
   }, [loadedJobs]);
 
   const jobIds = useMemo(
     () => loadedJobs.map((job) => job.id).sort(),
-    [loadedJobs]
+    [loadedJobs],
   );
 
   const totalJobPages = useMemo(() => {
@@ -312,16 +315,14 @@ const EmployerDashboardContent = () => {
   const jobControlsDisabled = loadingJobs || jobsFetching;
   const prevJobsDisabled = jobPage <= 1 || jobControlsDisabled;
   const nextJobsDisabled =
-    jobControlsDisabled ||
-    totalJobPages === 0 ||
-    jobPage >= totalJobPages;
+    jobControlsDisabled || totalJobPages === 0 || jobPage >= totalJobPages;
 
   const showJobsSkeleton = loadingJobs;
 
   const handleNextJobsPage = useCallback(() => {
     if (nextJobsDisabled) return;
     setJobPage((prev) =>
-      totalJobPages ? Math.min(prev + 1, totalJobPages) : prev + 1
+      totalJobPages ? Math.min(prev + 1, totalJobPages) : prev + 1,
     );
   }, [nextJobsDisabled, totalJobPages]);
 
@@ -358,7 +359,7 @@ const EmployerDashboardContent = () => {
 
   const applicantsMap = useMemo(
     () => applicantsByJob ?? EMPTY_APPLICANTS_MAP,
-    [applicantsByJob]
+    [applicantsByJob],
   );
 
   const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
@@ -393,7 +394,9 @@ const EmployerDashboardContent = () => {
       return allApplicantRecords;
     }
 
-    return allApplicantRecords.filter((record) => record.jobId === selectedJobId);
+    return allApplicantRecords.filter(
+      (record) => record.jobId === selectedJobId,
+    );
   }, [allApplicantRecords, selectedJobId]);
 
   const hasSearch = searchQuery.trim().length > 0;
@@ -434,7 +437,7 @@ const EmployerDashboardContent = () => {
     }
 
     setApplicantPage((prev) =>
-      Math.min(Math.max(prev, 1), totalApplicantPages)
+      Math.min(Math.max(prev, 1), totalApplicantPages),
     );
   }, [totalApplicantPages]);
 
@@ -442,14 +445,13 @@ const EmployerDashboardContent = () => {
     () =>
       filteredApplicants.slice(
         (applicantPage - 1) * APPLICANTS_PAGE_SIZE,
-        applicantPage * APPLICANTS_PAGE_SIZE
+        applicantPage * APPLICANTS_PAGE_SIZE,
       ),
-    [filteredApplicants, applicantPage]
+    [filteredApplicants, applicantPage],
   );
 
   const applicantControlsDisabled = applicantsFetching || applicantsLoadingAll;
-  const applicantPrevDisabled =
-    applicantControlsDisabled || applicantPage <= 1;
+  const applicantPrevDisabled = applicantControlsDisabled || applicantPage <= 1;
   const applicantNextDisabled =
     applicantControlsDisabled ||
     totalApplicantPages === 0 ||
@@ -462,15 +464,15 @@ const EmployerDashboardContent = () => {
 
   const aggregateStats = useMemo(
     () => computeAggregateStats(allApplicantRecords),
-    [allApplicantRecords]
+    [allApplicantRecords],
   );
 
   const openJobCount = useMemo(
     () =>
       loadedJobs.filter(
-        (job) => new Date(job.application_deadline).getTime() >= Date.now()
+        (job) => new Date(job.application_deadline).getTime() >= Date.now(),
       ).length,
-    [loadedJobs]
+    [loadedJobs],
   );
 
   const stats = {
@@ -481,10 +483,8 @@ const EmployerDashboardContent = () => {
 
   const jobCards: JobCardViewModel[] = useMemo(
     () =>
-      jobPageItems.map((job) =>
-        mapJobToViewModel(job, applicantsMap[job.id])
-      ),
-    [applicantsMap, jobPageItems]
+      jobPageItems.map((job) => mapJobToViewModel(job, applicantsMap[job.id])),
+    [applicantsMap, jobPageItems],
   );
 
   const handleViewApplicants = (jobId: string): void => {
@@ -498,7 +498,7 @@ const EmployerDashboardContent = () => {
   const handleNextApplicantPage = useCallback(() => {
     if (applicantNextDisabled) return;
     setApplicantPage((prev) =>
-      totalApplicantPages ? Math.min(prev + 1, totalApplicantPages) : prev + 1
+      totalApplicantPages ? Math.min(prev + 1, totalApplicantPages) : prev + 1,
     );
   }, [applicantNextDisabled, totalApplicantPages]);
 
@@ -610,7 +610,9 @@ const EmployerDashboardContent = () => {
 
             {totalJobPages > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
-                <span className="text-sm text-muted-foreground">Page {jobPageLabel}</span>
+                <span className="text-sm text-muted-foreground">
+                  Page {jobPageLabel}
+                </span>
                 <div className="flex gap-2">
                   <Button
                     variant="ghost"
@@ -695,8 +697,8 @@ const EmployerDashboardContent = () => {
                   {hasSearch
                     ? "No applicants match your current filters."
                     : selectedJobId
-                    ? "No applications for this job yet."
-                    : "No applications received yet."}
+                      ? "No applications for this job yet."
+                      : "No applications received yet."}
                 </div>
               ) : (
                 <div className="px-4 pb-6 sm:px-6">
@@ -754,7 +756,9 @@ const EmployerDashboardContent = () => {
 
             {applicantTotalCount > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
-                <span className="text-sm text-muted-foreground">Page {applicantPageLabel}</span>
+                <span className="text-sm text-muted-foreground">
+                  Page {applicantPageLabel}
+                </span>
                 <div className="flex gap-2">
                   <Button
                     variant="ghost"

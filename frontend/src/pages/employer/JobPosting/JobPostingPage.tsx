@@ -79,7 +79,8 @@ export default function JobPostingPage() {
           </h1>
 
           <p className="text-muted-foreground">
-            Connect with talented KU engineering students ready to join your team
+            Connect with talented KU engineering students ready to join your
+            team
           </p>
         </div>
 

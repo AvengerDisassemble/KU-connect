@@ -94,13 +94,13 @@ const formSchema = z.object({
     .string()
     .refine(
       (v) => isIn(INDUSTRY_OPTIONS_BASE, v),
-      "Industry must be selected from the list"
+      "Industry must be selected from the list",
     ),
   companySize: z
     .string()
     .refine(
       (v) => isIn(COMPANY_SIZE_OPTIONS as Option[], v),
-      "Company Size must be selected from the list"
+      "Company Size must be selected from the list",
     ),
   address: z.string().min(1, "Address is required"),
   contactEmail: z.string().email("Please enter a valid email address"),
@@ -124,7 +124,7 @@ const formSchema = z.object({
 
 const validateEmailInline = (
   value: string,
-  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>,
 ) => {
   const s = value.trim();
   if (s.length === 0) {
@@ -182,21 +182,21 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
 
   const avatarQueryKey = useMemo(
     () => ["employerAvatar", resolvedUserId],
-    [resolvedUserId]
+    [resolvedUserId],
   );
   const previewQueryKey = useMemo(
     () => ["employerAvatarPreview", resolvedUserId],
-    [resolvedUserId]
+    [resolvedUserId],
   );
 
   const {
     data: profile,
     isLoading: profileLoading,
   } = useQuery<EmployerProfileResponse>({
-    queryKey: ["employerProfile", resolvedUserId],
-    queryFn: () => getEmployerProfile(resolvedUserId!),
-    enabled: canLoadProfile,
-  });
+      queryKey: ["employerProfile", resolvedUserId],
+      queryFn: () => getEmployerProfile(resolvedUserId!),
+      enabled: canLoadProfile,
+    });
 
   const {
     data: avatarData,
@@ -277,7 +277,10 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
       description: draftProfile?.description ?? profile?.hr?.description ?? "",
       contactEmail: profile?.email ?? prev.contactEmail ?? "",
       phoneNumber:
-        profile?.hr?.phoneNumber ?? profile?.phoneNumber ?? prev.phoneNumber ?? "",
+        profile?.hr?.phoneNumber ??
+        profile?.phoneNumber ??
+        prev.phoneNumber ??
+        "",
     }));
   }, [profile, draftProfile]);
 
@@ -341,7 +344,7 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
   };
 
   const handleAvatarChange = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ): void => {
     const file = event.target.files?.[0] ?? null;
     event.target.value = "";

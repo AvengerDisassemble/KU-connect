@@ -17,14 +17,15 @@ export const COMPANY_SIZE_UI_TO_API: Record<string, string> = {
   "two-hundred-plus": "TWO_HUNDRED_PLUS",
 };
 
-export const API_TO_COMPANY_SIZE_UI: Record<string, string> = Object.fromEntries(
-  Object.entries(COMPANY_SIZE_UI_TO_API).map(([ui, api]) => [api, ui])
-);
+export const API_TO_COMPANY_SIZE_UI: Record<string, string> =
+  Object.fromEntries(
+    Object.entries(COMPANY_SIZE_UI_TO_API).map(([ui, api]) => [api, ui]),
+  );
 
-export const COMPANY_SIZE_LABEL_BY_API: Record<string, string> = Object.fromEntries(
-  COMPANY_SIZE_OPTIONS.map(({ value, label }) => [
-    COMPANY_SIZE_UI_TO_API[value],
-    label,
-  ])
-);
-
+export const COMPANY_SIZE_LABEL_BY_API: Record<string, string> =
+  Object.fromEntries(
+    COMPANY_SIZE_OPTIONS.map(({ value, label }) => [
+      COMPANY_SIZE_UI_TO_API[value],
+      label,
+    ]),
+  );

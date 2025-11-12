@@ -91,7 +91,7 @@ const step2Schema = z.object({
     .refine(
       (val) =>
         !val || COMPANY_SIZE_OPTIONS.some((option) => option.value === val),
-      "Invalid company size"
+      "Invalid company size",
     ),
 });
 
@@ -128,7 +128,7 @@ const step3Schema = z.object({
     .trim()
     .regex(
       /^[0-9+\-()\s]{8,15}$/,
-      "Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces"
+      "Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces",
     ),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
 });
@@ -157,7 +157,10 @@ const getPasswordStrength = (password: string) => {
   return { strength: 100, label: "Strong" };
 };
 
-const getFieldValidationMessage = (field: keyof FormData, value: string): string => {
+const getFieldValidationMessage = (
+  field: keyof FormData,
+  value: string,
+): string => {
   const trimmed = value.trim();
   switch (field) {
     case "name":
@@ -199,7 +202,10 @@ const getFieldValidationMessage = (field: keyof FormData, value: string): string
   }
 };
 
-const getConfirmPasswordMessage = (password: string, confirmPassword: string) => {
+const getConfirmPasswordMessage = (
+  password: string,
+  confirmPassword: string,
+) => {
   if (!confirmPassword.trim()) return "Please confirm your password";
   if (password !== confirmPassword) return "Passwords do not match";
   return "";
@@ -241,10 +247,10 @@ const EmployerRegistration = () => {
     "confirmPassword",
   ];
   const isStepOneReady = stepOneFields.every(
-    (field) => !getFieldValidationMessage(field, getFieldValue(field))
+    (field) => !getFieldValidationMessage(field, getFieldValue(field)),
   );
   const requiredFieldsValid = REQUIRED_FIELDS.every(
-    (field) => !getFieldValidationMessage(field, getFieldValue(field))
+    (field) => !getFieldValidationMessage(field, getFieldValue(field)),
   );
   const passwordAssistiveIds: string[] = [];
   if (formData.password) {
@@ -279,7 +285,7 @@ const EmployerRegistration = () => {
         ...prev,
         confirmPassword: getConfirmPasswordMessage(
           field === "password" ? value : formData.password,
-          field === "confirmPassword" ? value : formData.confirmPassword
+          field === "confirmPassword" ? value : formData.confirmPassword,
         ),
       }));
     }
@@ -396,7 +402,7 @@ const EmployerRegistration = () => {
           } catch (profileError) {
             console.error("Failed to sync employer details:", profileError);
             toast.error(
-              "Profile saved without extras. Update details from your profile."
+              "Profile saved without extras. Update details from your profile.",
             );
             draftForPrefill = {
               industry: formData.industry,
@@ -407,16 +413,15 @@ const EmployerRegistration = () => {
             if (typeof window !== "undefined") {
               window.localStorage.setItem(
                 EMPLOYER_PROFILE_DRAFT_KEY,
-                JSON.stringify(draftForPrefill)
+                JSON.stringify(draftForPrefill),
               );
             }
           }
         }
 
-        navigate(
-          userId ? `/employer/profile/${userId}` : "/employer",
-          { replace: true }
-        );
+        navigate(userId ? `/employer/profile/${userId}` : "/employer", {
+          replace: true,
+        });
       } catch (authError) {
         console.error("Auto-login failed after registration:", authError);
         toast.info("Registration complete. Please log in to continue.");
@@ -493,7 +498,7 @@ const EmployerRegistration = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-            <RequiredLabel htmlFor="name">First Name</RequiredLabel>
+                <RequiredLabel htmlFor="name">First Name</RequiredLabel>
                 <Input
                   id="name"
                   placeholder="Enter your first name"
@@ -518,7 +523,7 @@ const EmployerRegistration = () => {
               </div>
 
               <div className="space-y-2">
-            <RequiredLabel htmlFor="surname">Last Name</RequiredLabel>
+                <RequiredLabel htmlFor="surname">Last Name</RequiredLabel>
                 <Input
                   id="surname"
                   placeholder="Enter your last name"
@@ -546,7 +551,7 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-            <RequiredLabel htmlFor="email">Work Email</RequiredLabel>
+              <RequiredLabel htmlFor="email">Work Email</RequiredLabel>
               <Input
                 id="email"
                 type="email"
@@ -572,23 +577,23 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-            <RequiredLabel htmlFor="password">Password</RequiredLabel>
+              <RequiredLabel htmlFor="password">Password</RequiredLabel>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Create a strong password"
                   value={formData.password}
-                onChange={(e) =>
-                  handleInputChange("password", e.target.value)
-                }
-                className={`h-11 sm:h-12 ${
-                  errors.password ? "border-destructive pr-10" : "pr-10"
-                }`}
-                aria-invalid={!!errors.password}
-                aria-describedby={passwordAriaDescribedBy}
-                required
-              />
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
+                  className={`h-11 sm:h-12 ${
+                    errors.password ? "border-destructive pr-10" : "pr-10"
+                  }`}
+                  aria-invalid={!!errors.password}
+                  aria-describedby={passwordAriaDescribedBy}
+                  required
+                />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -616,8 +621,8 @@ const EmployerRegistration = () => {
                         passwordStrength.strength === 100
                           ? "bg-accent"
                           : passwordStrength.strength >= 50
-                          ? "bg-secondary"
-                          : "bg-destructive"
+                            ? "bg-secondary"
+                            : "bg-destructive"
                       }`}
                       style={{ width: `${passwordStrength.strength}%` }}
                     />
@@ -864,7 +869,9 @@ const EmployerRegistration = () => {
                 type="tel"
                 placeholder="+66 12 345 6789"
                 value={formData.phoneNumber}
-                onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("phoneNumber", e.target.value)
+                }
                 className={`h-11 sm:h-12 ${
                   errors.phoneNumber ? "border-destructive" : ""
                 }`}
@@ -912,8 +919,8 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-              A company logo and a business registration document can be uploaded after you sign in
-              to the employer profile.
+              A company logo and a business registration document can be
+              uploaded after you sign in to the employer profile.
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -925,7 +932,7 @@ const EmployerRegistration = () => {
               >
                 Back
               </Button>
-              
+
               <Button
                 onClick={handleSubmit}
                 className="flex-1 h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"

@@ -37,10 +37,10 @@ const CompanyProfileCard: React.FC<Props> = ({
 }: Props) => {
   const queryClient = useQueryClient();
   const [profile, setProfile] = useState<EmployerProfileResponse | null>(
-    prefetchedProfile ?? null
+    prefetchedProfile ?? null,
   );
   const [loading, setLoading] = useState<boolean>(
-    typeof loadingOverride === "boolean" ? loadingOverride : !prefetchedProfile
+    typeof loadingOverride === "boolean" ? loadingOverride : !prefetchedProfile,
   );
   const [err, setErr] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -52,7 +52,7 @@ const CompanyProfileCard: React.FC<Props> = ({
   );
   const previewQueryKey = useMemo(
     () => ["employerAvatarPreview", userId],
-    [userId]
+    [userId],
   );
 
   useEffect(() => {
@@ -82,8 +82,7 @@ const CompanyProfileCard: React.FC<Props> = ({
         if (cancelled) return;
         setProfile(data);
       } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error ? error.message : String(error);
         if (!cancelled) setErr(message || "Failed to load company profile");
       } finally {
         if (!cancelled) setLoading(false);
@@ -215,9 +214,7 @@ const CompanyProfileCard: React.FC<Props> = ({
                   {address ? `${address} • ${industry}` : industry}
                 </p>
                 {!!companySize && (
-                  <p className="text-muted-foreground text-sm">
-                    {companySize}
-                  </p>
+                  <p className="text-muted-foreground text-sm">{companySize}</p>
                 )}
               </>
             )}
@@ -229,9 +226,7 @@ const CompanyProfileCard: React.FC<Props> = ({
           variant="outline"
           className="w-full lg:w-auto lg:ml-auto lg:flex-none px-4 lg:px-8 border-primary text-primary hover:bg-primary hover:text-white"
         >
-          <Link to={`/employer/profile/${userId}`}>
-            Edit Company Profile
-          </Link>
+          <Link to={`/employer/profile/${userId}`}>Edit Company Profile</Link>
         </Button>
       </div>
     </div>

@@ -24,12 +24,12 @@ export const INDUSTRY_UI_TO_API: Record<string, string> = {
 };
 
 export const API_TO_INDUSTRY_UI: Record<string, string> = Object.fromEntries(
-  Object.entries(INDUSTRY_UI_TO_API).map(([ui, api]) => [api, ui])
+  Object.entries(INDUSTRY_UI_TO_API).map(([ui, api]) => [api, ui]),
 );
 
 export const INDUSTRY_LABEL_BY_API: Record<string, string> = Object.fromEntries(
   INDUSTRY_OPTIONS_BASE.map(({ value, label }) => [
     INDUSTRY_UI_TO_API[value],
     label,
-  ])
+  ]),
 );
