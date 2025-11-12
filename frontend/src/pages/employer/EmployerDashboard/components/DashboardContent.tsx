@@ -181,6 +181,9 @@ const JOBS_FETCH_BATCH = 100;
 const APPLICANTS_PAGE_SIZE = 5;
 const PANEL_HEIGHT_CLASS = "h-[520px]";
 const PANEL_SCROLL_AREA_CLASS = "flex-1 overflow-y-auto";
+const EMPTY_APPLICANTS_MAP: Record<string, JobApplication[]> = Object.freeze(
+  {}
+);
 
 const uniqueById = <T extends { id: string }>(items: T[]): T[] => {
   const seen = new Set<string>();
@@ -353,7 +356,10 @@ const EmployerDashboardContent = () => {
     },
   });
 
-  const applicantsMap = applicantsByJob ?? {};
+  const applicantsMap = useMemo(
+    () => applicantsByJob ?? EMPTY_APPLICANTS_MAP,
+    [applicantsByJob]
+  );
 
   const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
     if (!loadedJobs.length) {
