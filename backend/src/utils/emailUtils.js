@@ -11,7 +11,18 @@ const { Resend } = require('resend')
 async function createTransporter () {
   // Option 1: Use Resend (Preferred - Simple API, no complex auth)
   if (process.env.RESEND_API_KEY) {
+    const fromEmail = process.env.SMTP_FROM || 'onboarding@resend.dev'
     console.log('📧 Using Resend email service')
+    console.log('   From address:', fromEmail)
+    
+    // Check if using test domain
+    if (fromEmail.includes('onboarding@resend.dev')) {
+      console.log('   ⚠️  TEST MODE: Can only send to your Resend account email')
+      console.log('   💡 To send to anyone, verify your domain at https://resend.com/domains')
+    } else {
+      console.log('   ✅ Using verified domain - can send to any email')
+    }
+    
     return {
       type: 'resend',
       client: new Resend(process.env.RESEND_API_KEY)
@@ -334,13 +345,17 @@ async function sendEmail (options) {
 
     if (transporter.type === 'resend') {
       // Use Resend API
-      const data = await transporter.client.emails.send({
+      const { data, error } = await transporter.client.emails.send({
         from: fromEmail,
         to: [to],
         subject,
         text,
         html: html || text
       })
+
+      if (error) {
+        throw error
+      }
 
       console.log('✅ Email sent successfully via Resend')
       console.log('   To:', to)
@@ -377,6 +392,17 @@ async function sendEmail (options) {
     if (error.statusCode) {
       console.error('   Status:', error.statusCode)
     }
+    
+    // Provide helpful context for common Resend errors
+    if (error.statusCode === 403 && error.message?.includes('domain')) {
+      console.error('   💡 Domain not verified. Options:')
+      console.error('      1. Verify your domain at https://resend.com/domains')
+      console.error('      2. Or use SMTP_FROM="KU-Connect <onboarding@resend.dev>" for testing')
+    } else if (error.statusCode === 403 && error.message?.includes('own email')) {
+      console.error('   💡 Test mode: Can only send to your Resend account email')
+      console.error('      To send to anyone, verify domain at https://resend.com/domains')
+    }
+    
     return false
   }
 }
