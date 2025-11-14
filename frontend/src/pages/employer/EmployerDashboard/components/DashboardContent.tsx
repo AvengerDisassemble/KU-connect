@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -125,8 +129,8 @@ const formatRelativeDate = (iso: string, now = new Date()): string => {
 };
 
 const mapJobToViewModel = (
-  job: JobListResponse["jobs"][number],
-  applicantsCache: JobApplication[] | undefined
+  job: JobListResponse["items"][number],
+  applicantsCache: JobApplication[] | undefined,
 ): JobCardViewModel => {
   const total = applicantsCache?.length ?? 0;
   const shortlisted =
@@ -158,22 +162,11 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
       if (record.status === "QUALIFIED") {
         acc.qualified += 1;
       }
-  return records.reduce<AggregateStats>(
-    (acc, record) => {
-      if (record.status === "QUALIFIED") {
-        acc.qualified += 1;
-      }
 
       if (isSameThaiDay(record.submittedAt)) {
         acc.newToday += 1;
       }
-      if (isSameThaiDay(record.submittedAt)) {
-        acc.newToday += 1;
-      }
 
-      if (isThaiDateInCurrentWeek(record.submittedAt)) {
-        acc.newThisWeek += 1;
-      }
       if (isThaiDateInCurrentWeek(record.submittedAt)) {
         acc.newThisWeek += 1;
       }
@@ -181,7 +174,7 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
       acc.total += 1;
       return acc;
     },
-    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 }
+    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 },
   );
 };
 
@@ -235,39 +228,10 @@ const EmployerDashboardContent = () => {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: false,
-    placeholderData: (previousData) => previousData,
   });
 
-  useEffect(() => {
-    if (!jobsPageData) return;
-
-    const normalizedItems = uniqueById<JobListItem>(jobsPageData.jobs);
-
-    setJobsByPage((prev) => {
-      const next = new Map(prev);
-      const current = next.get(jobsPageData.page);
-      if (current && areJobListsEqual(current, normalizedItems)) {
-        return prev;
-      }
-
-      if (!current && normalizedItems.length === 0) {
-        return prev;
-      }
-
-      next.set(jobsPageData.page, normalizedItems);
-      return next;
-    });
-
-    if (typeof jobsPageData.total === "number") {
-      setJobsTotal(jobsPageData.total);
-    }
-
-    if (jobsPageData.limit && jobsPageData.limit > 0) {
-      setJobsLimit((prev) =>
-        prev === jobsPageData.limit ? prev : jobsPageData.limit
-      );
-    }
-  }, [jobsPageData]);
+  const dashboardJobs: EmployerDashboardJobPosting[] =
+    dashboardData?.dashboard?.myJobPostings ?? [];
 
   const loadedJobs = dashboardJobs;
 
@@ -305,13 +269,9 @@ const EmployerDashboardContent = () => {
     if (!loadedJobs.length) {
       return [];
     }
-
-    if (jobsPageData && jobsPageData.page === jobPage) {
-      return uniqueById<JobListItem>(jobsPageData.jobs);
-    }
-
-    return [];
-  }, [jobPage, jobsByPage, jobsPageData]);
+    const start = (jobPage - 1) * JOBS_PAGE_SIZE;
+    return loadedJobs.slice(start, start + JOBS_PAGE_SIZE);
+  }, [jobPage, loadedJobs]);
 
   const jobCountBadge = loadedJobs.length;
   const jobPageLabel =
@@ -319,85 +279,14 @@ const EmployerDashboardContent = () => {
       ? `${Math.min(jobPage, totalJobPages)} of ${totalJobPages}`
       : "0 of 0";
 
-  const prefetchedJobPages = useRef<Set<number>>(new Set());
-
-  useEffect(() => {
-    prefetchedJobPages.current.clear();
-  }, [hrId]);
-
-  useEffect(() => {
-    if (!hrId || !jobsTotal || !jobsLimit) {
-      return;
-    }
-
-    const knownPages = jobsByPage;
-    const totalPages = Math.ceil(jobsTotal / jobsLimit);
-    const toFetch: number[] = [];
-
-    for (let page = 1; page <= totalPages; page += 1) {
-      if (knownPages.has(page)) continue;
-      if (prefetchedJobPages.current.has(page)) continue;
-      toFetch.push(page);
-      prefetchedJobPages.current.add(page);
-    }
-
-    if (!toFetch.length) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const preload = async () => {
-      await Promise.all(
-        toFetch.map(async (page) => {
-          try {
-            const payload: Record<string, unknown> = {
-              page,
-              limit: jobsLimit || JOBS_PAGE_SIZE,
-            };
-            if (hrId) {
-              payload.hrId = hrId;
-            }
-            const response = await listJobs(payload);
-            if (cancelled) return;
-            const normalizedItems = uniqueById<JobListItem>(response.jobs);
-            if (!normalizedItems.length) return;
-            setJobsByPage((prev) => {
-              if (prev.has(page)) {
-                return prev;
-              }
-              const next = new Map(prev);
-              next.set(page, normalizedItems);
-              return next;
-            });
-            if (
-              typeof response.total === "number" &&
-              response.total !== jobsTotal
-            ) {
-              setJobsTotal(response.total);
-            }
-          } catch (error) {
-            console.error("Failed to preload jobs page", page, error);
-          }
-        })
-      );
-    };
-
-    void preload();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [hrId, jobsTotal, jobsLimit, jobsByPage]);
-
-  const loadingJobs = profileLoading || jobsInitialLoading;
-  const showJobsError = !loadingJobs && (profileError || jobsError);
-  const jobsRefetching = jobsFetching && !loadingJobs;
+  const loadingJobs = profileLoading || dashboardLoading;
+  const showJobsError = !loadingJobs && (profileError || dashboardError);
+  const jobsRefetching = dashboardFetching && !loadingJobs;
 
   const jobControlsDisabled = loadingJobs || dashboardFetching;
   const prevJobsDisabled = jobPage <= 1 || jobControlsDisabled;
   const nextJobsDisabled =
-    jobControlsDisabled || jobsTotal === 0 || jobPage * jobsLimit >= jobsTotal;
+    jobControlsDisabled || totalJobPages === 0 || jobPage >= totalJobPages;
 
   const showJobsSkeleton = loadingJobs;
 
@@ -439,7 +328,10 @@ const EmployerDashboardContent = () => {
     },
   });
 
-  const applicantsMap = useMemo(() => applicantsByJob ?? {}, [applicantsByJob]);
+  const applicantsMap = useMemo(
+    () => applicantsByJob ?? EMPTY_APPLICANTS_MAP,
+    [applicantsByJob],
+  );
 
   const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
     if (!loadedJobs.length) {
@@ -474,7 +366,7 @@ const EmployerDashboardContent = () => {
     }
 
     return allApplicantRecords.filter(
-      (record) => record.jobId === selectedJobId
+      (record) => record.jobId === selectedJobId,
     );
   }, [allApplicantRecords, selectedJobId]);
 
@@ -531,7 +423,6 @@ const EmployerDashboardContent = () => {
 
   const applicantControlsDisabled = applicantsFetching || applicantsLoadingAll;
   const applicantPrevDisabled = applicantControlsDisabled || applicantPage <= 1;
-  const applicantPrevDisabled = applicantControlsDisabled || applicantPage <= 1;
   const applicantNextDisabled =
     applicantControlsDisabled ||
     totalApplicantPages === 0 ||
@@ -539,10 +430,7 @@ const EmployerDashboardContent = () => {
 
   const applicantPageLabel =
     totalApplicantPages > 0
-      ? `${Math.min(
-          applicantPage,
-          totalApplicantPages
-        )} of ${totalApplicantPages}`
+      ? `${Math.min(applicantPage, totalApplicantPages)} of ${totalApplicantPages}`
       : "0 of 0";
 
   const aggregateStats = useMemo(
@@ -567,15 +455,7 @@ const EmployerDashboardContent = () => {
   const jobCards: JobCardViewModel[] = useMemo(
     () =>
       jobPageItems.map((job) => mapJobToViewModel(job, applicantsMap[job.id])),
-    [applicantsMap, jobPageItems]
-  );
-
-  const selectedJob = useMemo(
-    () =>
-      selectedJobId
-        ? loadedJobs.find((job) => job.id === selectedJobId) ?? null
-        : null,
-    [loadedJobs, selectedJobId]
+    [applicantsMap, jobPageItems],
   );
 
   const handleViewApplicants = (jobId: string): void => {
@@ -701,9 +581,6 @@ const EmployerDashboardContent = () => {
 
             {totalJobPages > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
-                <span className="text-sm text-muted-foreground">
-                  Page {jobPageLabel}
-                </span>
                 <span className="text-sm text-muted-foreground">
                   Page {jobPageLabel}
                 </span>
@@ -850,9 +727,6 @@ const EmployerDashboardContent = () => {
 
             {applicantTotalCount > 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/20 px-6 py-4">
-                <span className="text-sm text-muted-foreground">
-                  Page {applicantPageLabel}
-                </span>
                 <span className="text-sm text-muted-foreground">
                   Page {applicantPageLabel}
                 </span>

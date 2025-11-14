@@ -71,7 +71,6 @@ const step1Schema = z
     email: z.string().email("Invalid email address").max(255),
     password: passwordSchema,
     confirmPassword: z.string(),
-    phoneNumber: phoneSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -140,7 +139,6 @@ interface FormData {
   email: string;
   password: string;
   confirmPassword: string;
-  phoneNumber: string;
   companyName: string;
   address: string;
   description: string;
@@ -223,7 +221,6 @@ const EmployerRegistration = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    phoneNumber: "",
     companyName: "",
     address: "",
     description: "",
@@ -303,7 +300,6 @@ const EmployerRegistration = () => {
           email: formData.email,
           password: formData.password,
           confirmPassword: formData.confirmPassword,
-          phoneNumber: formData.phoneNumber,
         });
       } else if (step === 2) {
         step2Schema.parse({
@@ -389,7 +385,6 @@ const EmployerRegistration = () => {
         surname: formData.surname.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        phoneNumber: formData.phoneNumber.trim(),
         companyName: formData.companyName.trim(),
         address: formData.address.trim(),
         phoneNumber: formData.phoneNumber.trim(),

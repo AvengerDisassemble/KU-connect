@@ -9,7 +9,6 @@ export async function api<T = unknown>(
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
 
   const ct = res.headers.get("content-type") || "";
-  const ct = res.headers.get("content-type") || "";
   return ct.includes("application/json")
     ? await res.json()
     : ((await res.text()) as unknown as T);
