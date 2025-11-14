@@ -8,13 +8,30 @@ import RegisterPage from "@/pages/public/register/RegisterPage";
 import NotFoundPage from "@/pages/public/NotFoundPage";
 import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
 import StudentProfilePage from "@/pages/student/profile/ProfilePage";
-import BrowserJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
+import BrowseJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
+import EmployerPageShell from "@/components/EmployerPageShell";
+// import { AdminLayout } from "@/components/admin/AdminLayout";
 import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 import JobEditPage from "@/pages/employer/JobPosting/JobEditPage";
+
+const EmployerBrowseJobsRoute: React.FC = () => (
+  <EmployerPageShell title="Browse Jobs">
+    <BrowseJobsPage />
+  </EmployerPageShell>
+);
+
+// const AdminBrowseJobsRoute: React.FC = () => (
+//   <AdminLayout
+//     title="Browse Jobs"
+//     description="Review job listings available on the platform."
+//   >
+//     <BrowseJobsPage />
+//   </AdminLayout>
+// );
 
 const App: React.FC = () => {
   return (
@@ -42,13 +59,37 @@ const App: React.FC = () => {
             }
           />
           <Route
-            path="/student/browsejobs"
+            path="/student/browse-jobs"
             element={
               <Guard role="student">
-                <BrowserJobsPage />
+                <BrowseJobsPage />
               </Guard>
             }
           />
+          <Route
+            path="/employer/browse-jobs"
+            element={
+              <Guard role="employer">
+                <EmployerBrowseJobsRoute />
+              </Guard>
+            }
+          />
+          <Route
+            path="/professor/browse-jobs"
+            element={
+              <Guard role="professor">
+                <BrowseJobsPage />
+              </Guard>
+            }
+          />
+          {/* <Route
+            path="/admin/browse-jobs"
+            element={
+              <Guard role="admin">
+                <AdminBrowseJobsRoute />
+              </Guard>
+            }
+          /> */}
           <Route
             path="/employer"
             element={
