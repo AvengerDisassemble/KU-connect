@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   MapPin,
   DollarSign,
@@ -6,11 +7,20 @@ import {
   Briefcase,
   Clock,
   Loader2,
+  MoreHorizontal,
+  Flag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Job } from "@/services/jobs";
+import { ReportJobDialog } from "./ReportJobDialog";
 import { formatSalary, formatDeadline, getJobTypeColor } from "../utils";
 
 interface JobDetailViewProps {
@@ -19,6 +29,60 @@ interface JobDetailViewProps {
   isApplied?: boolean;
   isApplying?: boolean;
 }
+
+interface JobActionsMenuProps {
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+}
+
+const JobActionsMenu = ({
+  jobId,
+  jobTitle,
+  companyName,
+}: JobActionsMenuProps) => {
+  const [isReportOpen, setReportOpen] = useState(false);
+
+  const handleReportClick = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setReportOpen(true);
+  };
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 text-muted-foreground hover:text-primary"
+            aria-label="Job actions"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuItem
+            onClick={handleReportClick}
+            className="text-red-600 focus:text-red-600"
+          >
+            <Flag className="mr-2 h-4 w-4" />
+            Report job
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ReportJobDialog
+        jobId={jobId}
+        jobTitle={jobTitle}
+        companyName={companyName}
+        open={isReportOpen}
+        onOpenChange={setReportOpen}
+      />
+    </>
+  );
+};
 
 const JobDetailView = ({
   job,
@@ -59,7 +123,9 @@ const JobDetailView = ({
   };
 
   const getWorkArrangementColor = (arrangement?: string | null) => {
-    switch (arrangement?.toLowerCase()) {
+    const normalized = arrangement?.toLowerCase().replace(/[^a-z]/g, "");
+
+    switch (normalized) {
       case "remote":
         return "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300";
       case "onsite":
@@ -76,18 +142,25 @@ const JobDetailView = ({
       <div className="p-8">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-start gap-4 mb-4">
-            <div className="flex-shrink-0 w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Building2 className="h-8 w-8 text-primary" />
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="flex items-start gap-4 flex-1 min-w-0">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Building2 className="h-8 w-8 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="mb-2 text-3xl font-bold text-foreground line-clamp-2">
+                  {job.title || "Untitled role"}
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                  {job.companyName || "Company name unavailable"}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-3xl font-bold text-foreground mb-2">
-                {job.title || "Untitled role"}
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                {job.companyName || "Company name unavailable"}
-              </p>
-            </div>
+            <JobActionsMenu
+              jobId={job.id}
+              jobTitle={job.title || "Untitled role"}
+              companyName={job.companyName || "Company name unavailable"}
+            />
           </div>
 
           <div className="flex flex-wrap gap-2 mb-4">
@@ -107,7 +180,7 @@ const JobDetailView = ({
             <span>{formatPostedDate(job.createdAt)}</span>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2">
             <Button
               className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
               disabled={!onApply || isApplied || isApplying}
