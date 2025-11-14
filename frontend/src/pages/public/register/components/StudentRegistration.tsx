@@ -22,7 +22,7 @@ const getRoleDestination = (role?: string) => {
   switch (role) {
     case "student":
     case "alumni":
-      return "/student/browsejobs";
+      return "/student/browse-jobs";
     case "employer":
     case "professor":
       return "/employer/profile";
@@ -260,7 +260,7 @@ const StudentRegistration = () => {
           );
           const { user } = loginData.data;
 
-          navigate("/student/browsejobs");
+          navigate("/student/browse-jobs");
           return user.name;
         })(),
         {

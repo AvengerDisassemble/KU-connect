@@ -24,6 +24,7 @@ const PAGE_SIZE = 15;
 const BrowseJobs = () => {
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
+  const isStudent = user?.role === "student";
 
   const [activeTab, setActiveTab] = useState<TabKey>("search");
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,6 +49,8 @@ const BrowseJobs = () => {
 
   const normalizeWorkArrangement = (value?: string | null) =>
     value?.toLowerCase().replace(/[^a-z]/g, "") ?? "";
+
+  const emptySetRef = useMemo(() => new Set<string>(), []);
 
   const jobFilters = useMemo<JobFiltersPayload>(() => {
     const filters: JobFiltersPayload = {};
@@ -106,7 +109,7 @@ const BrowseJobs = () => {
       }
       return getSavedJobs(user.id, 1, PAGE_SIZE);
     },
-    enabled: isAuthenticated && Boolean(user?.id),
+    enabled: isStudent && isAuthenticated && Boolean(user?.id),
     retry: false,
   });
 
@@ -127,6 +130,12 @@ const BrowseJobs = () => {
         : "Failed to load saved jobs.";
     toast.error(message);
   }, [savedQuery.error]);
+
+  useEffect(() => {
+    if (!isStudent && activeTab !== "search") {
+      setActiveTab("search");
+    }
+  }, [isStudent, activeTab]);
 
   const browseJobs = useMemo<JobResponse[]>(() => {
     const jobs = browseQuery.data?.jobs;
@@ -404,7 +413,10 @@ const BrowseJobs = () => {
   const selectedJob =
     displayedJobs.find((job) => job.id === selectedJobId) ?? null;
 
-  const savedCount = savedQuery.data?.total ?? savedJobs.size;
+  const savedCount = isStudent ? savedQuery.data?.total ?? savedJobs.size : 0;
+
+  const visibleSavedJobs = isStudent ? savedJobs : emptySetRef;
+  const visibleSavingJobs = isStudent ? savingJobIds : emptySetRef;
 
   const totalResults =
     activeTab === "saved" ? displayedJobs.length : totalAvailable;
@@ -413,6 +425,16 @@ const BrowseJobs = () => {
     activeTab === "saved"
       ? `${totalResults} saved ${totalResults === 1 ? "job" : "jobs"}`
       : `${totalResults} ${totalResults === 1 ? "job" : "jobs"} found`;
+
+  const handleTabChange = useCallback(
+    (value: TabKey) => {
+      if (!isStudent && value === "saved") {
+        return;
+      }
+      setActiveTab(value);
+    },
+    [isStudent]
+  );
 
   const handleClearFilters = useCallback(() => {
     setSearchQuery("");
@@ -424,6 +446,10 @@ const BrowseJobs = () => {
 
   const handleToggleSave = useCallback(
     async (jobId: string) => {
+      if (!isStudent) {
+        return;
+      }
+
       if (!user?.id) {
         toast.info("Please sign in to save jobs.");
         return;
@@ -479,7 +505,7 @@ const BrowseJobs = () => {
         });
       }
     },
-    [queryClient, savedJobs, user]
+    [isStudent, queryClient, savedJobs, user]
   );
 
   const isApplicationBusy = Boolean(jobPendingApply) || isSubmittingApplication;
@@ -561,9 +587,9 @@ const BrowseJobs = () => {
   const isSelectedJobApplied =
     selectedJob && (appliedJobs.has(selectedJob.id) || selectedJob.isApplied);
   const isSelectedJobSaved =
-    selectedJob && savedJobs.has(selectedJob.id) ? true : false;
+    isStudent && selectedJob ? savedJobs.has(selectedJob.id) : false;
   const isSelectedJobSaving =
-    selectedJob && savingJobIds.has(selectedJob.id) ? true : false;
+    isStudent && selectedJob ? savingJobIds.has(selectedJob.id) : false;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -575,12 +601,13 @@ const BrowseJobs = () => {
         workArrangementFilter={workArrangementFilter}
         locationOptions={locationOptions}
         savedCount={savedCount}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         onSearchChange={setSearchQuery}
         onJobTypeFilterChange={setJobTypeFilter}
         onLocationFilterChange={setLocationFilter}
         onWorkArrangementFilterChange={setWorkArrangementFilter}
         onClearFilters={handleClearFilters}
+        showSavedTab={isStudent}
       />
 
       <main className="flex flex-1 overflow-hidden lg:grid lg:grid-cols-[420px_minmax(0,1fr)] lg:overflow-visible">
@@ -589,24 +616,26 @@ const BrowseJobs = () => {
           resultText={resultText}
           isLoading={listIsLoading}
           selectedJobId={selectedJobId}
-          savedJobs={savedJobs}
+          savedJobs={visibleSavedJobs}
           activeTab={activeTab}
           sortBy={sortBy}
           onSortByChange={setSortBy}
           onSelectJob={handleSelectJob}
-          onToggleSave={handleToggleSave}
+          onToggleSave={isStudent ? handleToggleSave : undefined}
           onClearFilters={handleClearFilters}
           pagination={paginationState}
+          savingJobIds={visibleSavingJobs}
+          showSaveActions={isStudent}
         />
 
         <section className="hidden lg:flex lg:flex-1 lg:min-w-0">
           <div className="sticky top-0 flex h-screen w-full flex-col bg-card">
             <JobDetailView
               job={selectedJob}
-              onApply={handleRequestApply}
+              onApply={isStudent ? handleRequestApply : undefined}
               isApplied={Boolean(isSelectedJobApplied)}
               isApplying={isApplicationBusy}
-              onToggleSave={handleToggleSave}
+              onToggleSave={isStudent ? handleToggleSave : undefined}
               isSaved={isSelectedJobSaved}
               isSaving={isSelectedJobSaving}
             />
@@ -619,23 +648,25 @@ const BrowseJobs = () => {
             selectedJob={selectedJob}
             onOpenChange={setDetailSheetOpen}
             onClose={handleCloseDetailSheet}
-            onApply={handleRequestApply}
+            onApply={isStudent ? handleRequestApply : undefined}
             isApplied={Boolean(isSelectedJobApplied)}
             isApplying={isApplicationBusy}
-            onToggleSave={handleToggleSave}
+            onToggleSave={isStudent ? handleToggleSave : undefined}
             isSaved={isSelectedJobSaved}
             isSaving={isSelectedJobSaving}
           />
         ) : null}
       </main>
 
-      <JobApplicationDialog
-        job={jobPendingApply}
-        open={Boolean(jobPendingApply)}
-        onOpenChange={handleApplicationDialogChange}
-        onApplied={handleApplicationSuccess}
-        onSubmittingChange={(next) => setSubmittingApplication(next)}
-      />
+      {isStudent ? (
+        <JobApplicationDialog
+          job={jobPendingApply}
+          open={Boolean(jobPendingApply)}
+          onOpenChange={handleApplicationDialogChange}
+          onApplied={handleApplicationSuccess}
+          onSubmittingChange={(next) => setSubmittingApplication(next)}
+        />
+      ) : null}
     </div>
   );
 };

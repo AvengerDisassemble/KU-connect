@@ -33,10 +33,12 @@ interface JobListProps {
   activeTab: TabKey;
   sortBy: string;
   onSelectJob: (jobId: string) => void;
-  onToggleSave: (jobId: string) => void;
+  onToggleSave?: (jobId: string) => void;
   onClearFilters: () => void;
   onSortByChange: (value: string) => void;
   pagination?: PaginationState;
+  savingJobIds?: Set<string>;
+  showSaveActions?: boolean;
 }
 
 const JobList = ({
@@ -52,6 +54,8 @@ const JobList = ({
   onClearFilters,
   onSortByChange,
   pagination,
+  savingJobIds,
+  showSaveActions = true,
 }: JobListProps) => {
   const previousSortRef = useRef(sortBy);
   const isSorting = previousSortRef.current !== sortBy;
@@ -138,6 +142,7 @@ const JobList = ({
               {displayedJobs.map((job, index) => {
                 const isSaved = savedJobs.has(job.id);
                 const isSelected = job.id === selectedJobId;
+                const isSaving = savingJobIds?.has(job.id) ?? false;
 
                 return (
                   <JobCard
@@ -149,6 +154,8 @@ const JobList = ({
                     onToggleSave={onToggleSave}
                     index={index}
                     isSorting={isSorting}
+                    canSave={showSaveActions}
+                    isSaving={isSaving}
                   />
                 );
               })}
