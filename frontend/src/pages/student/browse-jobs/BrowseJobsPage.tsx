@@ -35,6 +35,7 @@ const BrowseJobs = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
+  const [savingJobIds, setSavingJobIds] = useState<Set<string>>(new Set());
   const [isDetailSheetOpen, setDetailSheetOpen] = useState(false);
   const [jobPendingApply, setJobPendingApply] = useState<JobResponse | null>(
     null
@@ -428,6 +429,21 @@ const BrowseJobs = () => {
         return;
       }
 
+      let shouldSkip = false;
+      setSavingJobIds((prev) => {
+        if (prev.has(jobId)) {
+          shouldSkip = true;
+          return prev;
+        }
+        const next = new Set(prev);
+        next.add(jobId);
+        return next;
+      });
+
+      if (shouldSkip) {
+        return;
+      }
+
       const currentlySaved = savedJobs.has(jobId);
 
       try {
@@ -452,6 +468,15 @@ const BrowseJobs = () => {
             ? error.message
             : "Failed to update saved job.";
         toast.error(message);
+      } finally {
+        setSavingJobIds((prev) => {
+          if (!prev.has(jobId)) {
+            return prev;
+          }
+          const next = new Set(prev);
+          next.delete(jobId);
+          return next;
+        });
       }
     },
     [queryClient, savedJobs, user]
@@ -535,6 +560,10 @@ const BrowseJobs = () => {
 
   const isSelectedJobApplied =
     selectedJob && (appliedJobs.has(selectedJob.id) || selectedJob.isApplied);
+  const isSelectedJobSaved =
+    selectedJob && savedJobs.has(selectedJob.id) ? true : false;
+  const isSelectedJobSaving =
+    selectedJob && savingJobIds.has(selectedJob.id) ? true : false;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -577,6 +606,9 @@ const BrowseJobs = () => {
               onApply={handleRequestApply}
               isApplied={Boolean(isSelectedJobApplied)}
               isApplying={isApplicationBusy}
+              onToggleSave={handleToggleSave}
+              isSaved={isSelectedJobSaved}
+              isSaving={isSelectedJobSaving}
             />
           </div>
         </section>
@@ -590,6 +622,9 @@ const BrowseJobs = () => {
             onApply={handleRequestApply}
             isApplied={Boolean(isSelectedJobApplied)}
             isApplying={isApplicationBusy}
+            onToggleSave={handleToggleSave}
+            isSaved={isSelectedJobSaved}
+            isSaving={isSelectedJobSaving}
           />
         ) : null}
       </main>

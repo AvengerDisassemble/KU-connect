@@ -18,6 +18,9 @@ interface JobDetailSheetProps {
   onApply?: (jobId: string) => void;
   isApplied?: boolean;
   isApplying?: boolean;
+  onToggleSave?: (jobId: string) => void;
+  isSaved?: boolean;
+  isSaving?: boolean;
 }
 
 const JobDetailSheet = ({
@@ -28,6 +31,9 @@ const JobDetailSheet = ({
   onApply,
   isApplied,
   isApplying,
+  onToggleSave,
+  isSaved,
+  isSaving,
 }: JobDetailSheetProps) => {
   return (
     <Sheet open={isDetailSheetOpen} onOpenChange={onOpenChange}>
@@ -67,6 +73,9 @@ const JobDetailSheet = ({
               onApply={onApply}
               isApplied={isApplied}
               isApplying={isApplying}
+              onToggleSave={onToggleSave}
+              isSaved={isSaved}
+              isSaving={isSaving}
             />
           </div>
         </div>

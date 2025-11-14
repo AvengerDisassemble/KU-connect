@@ -28,4 +28,6 @@ export interface Notification {
 export interface NotificationsResponse {
   notifications: Notification[];
   unreadCount: number;
+  hasMore?: boolean;
+  lastFetchedAt?: string;
 }

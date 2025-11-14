@@ -9,6 +9,8 @@ import {
   Loader2,
   MoreHorizontal,
   Flag,
+  Bookmark,
+  BookmarkCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +30,9 @@ interface JobDetailViewProps {
   onApply?: (jobId: string) => void;
   isApplied?: boolean;
   isApplying?: boolean;
+  onToggleSave?: (jobId: string) => void;
+  isSaved?: boolean;
+  isSaving?: boolean;
 }
 
 interface JobActionsMenuProps {
@@ -89,6 +94,9 @@ const JobDetailView = ({
   onApply,
   isApplied = false,
   isApplying = false,
+  onToggleSave,
+  isSaved = false,
+  isSaving = false,
 }: JobDetailViewProps) => {
   if (!job) {
     return (
@@ -202,9 +210,31 @@ const JobDetailView = ({
             </Button>
             <Button
               variant="outline"
-              className="border-border hover:bg-secondary"
+              className={`border-border hover:bg-secondary flex-1 sm:flex-none min-w-[140px] ${
+                isSaved ? "bg-secondary text-secondary-foreground" : ""
+              }`}
+              disabled={!onToggleSave || isSaving}
+              onClick={() => {
+                if (!job || !onToggleSave || isSaving) return;
+                onToggleSave(job.id);
+              }}
             >
-              Save Job
+              {isSaving ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving…
+                </span>
+              ) : isSaved ? (
+                <span className="flex items-center gap-2">
+                  <BookmarkCheck className="h-4 w-4" />
+                  Saved
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <Bookmark className="h-4 w-4" />
+                  Save Job
+                </span>
+              )}
             </Button>
           </div>
         </div>
