@@ -32,7 +32,7 @@ const NotFoundPage: React.FC = () => {
       transition: {
         duration: 3,
         repeat: Infinity,
-        ease: "easeInOut",
+        ease: "easeInOut" as const,
       },
     },
   };
@@ -47,7 +47,7 @@ const NotFoundPage: React.FC = () => {
     {
       icon: Search,
       label: "Browse Jobs",
-      href: "/student/browsejobs",
+      href: "/student/browse-jobs",
       description: "Explore available opportunities",
     },
     {
