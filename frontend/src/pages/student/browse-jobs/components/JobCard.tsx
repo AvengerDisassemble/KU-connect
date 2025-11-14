@@ -12,11 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Job } from "../types";
-import {
-  formatSalary,
-  formatRelativeTime,
-  getJobTypeColor,
-} from "../utils/helpers";
+import { formatRelativeTime } from "@/utils/formatRelativeTime";
+import { formatSalary, getJobTypeColor } from "../utils/helpers";
 
 interface JobCardProps {
   job: Job;

@@ -13,7 +13,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { formatRelativeTime } from "@/pages/student/browse-jobs/utils/helpers";
+import { formatRelativeTime } from "@/utils/formatRelativeTime";
 import type { Notification, NotificationCategory } from "@/types/notifications";
 
 const categoryConfig: Record<

@@ -48,37 +48,7 @@ export const formatDeadline = (dateString?: string | null): string => {
   return date.toLocaleDateString("en-US", options);
 };
 
-export const formatRelativeTime = (dateString?: string | null): string => {
-  if (!dateString) {
-    return "Just now";
-  }
-
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) {
-    return "Just now";
-  }
-
-  const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  const units = [
-    { seconds: 31536000, label: "y" },
-    { seconds: 2592000, label: "mo" },
-    { seconds: 86400, label: "d" },
-    { seconds: 3600, label: "h" },
-    { seconds: 60, label: "m" },
-    { seconds: 1, label: "s" },
-  ];
-
-  for (const unit of units) {
-    const count = Math.floor(seconds / unit.seconds);
-    if (count >= 1) {
-      return `${count}${unit.label} ago`;
-    }
-  }
-
-  return "Just now";
-};
+export { formatRelativeTime } from "@/utils/formatRelativeTime";
 
 export const getJobTypeColor = (type?: string | null): string => {
   const normalized = type?.toLowerCase();
