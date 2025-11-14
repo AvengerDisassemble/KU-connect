@@ -4,7 +4,6 @@
  */
 
 const prisma = require('../models/prisma')
-const { sendEmail } = require('../utils/emailUtils')
 
 /**
  * Create a user notification record in the database
@@ -49,42 +48,6 @@ async function createUserNotification(data) {
       }
     }
   })
-}
-
-/**
- * Send email notification to a user
- * @private
- * @param {string} toUserId - User ID to send email to
- * @param {string} subject - Email subject
- * @param {string} text - Email body text
- * @returns {Promise<boolean>} True if email sent successfully
- */
-async function sendEmailNotification(toUserId, subject, text) {
-  try {
-    // Resolve user email
-    const user = await prisma.user.findUnique({
-      where: { id: toUserId },
-      select: { email: true }
-    })
-
-    if (!user) {
-      console.warn(`User ${toUserId} not found for email notification`)
-      return false
-    }
-
-    // Send email (don't throw on failure)
-    const result = await sendEmail({
-      to: user.email,
-      subject,
-      text
-    })
-
-    return result
-  } catch (error) {
-    console.error('Email notification error:', error.message)
-    // Don't throw - email failure shouldn't fail the notification
-    return false
-  }
 }
 
 /**
@@ -160,9 +123,6 @@ async function notifyEmployerOfApplication({ studentUserId, jobId }) {
     applicationId: null // Will be set if needed
   })
 
-  // Send email notification (don't fail if email fails)
-  await sendEmailNotification(employerUserId, title, message)
-
   return notification
 }
 
@@ -223,9 +183,6 @@ async function notifyStudentOfApproval({ employerUserId, studentUserId, jobId, s
     jobId,
     applicationId: applicationId || null
   })
-
-  // Send email notification
-  await sendEmailNotification(studentUserId, title, message)
 
   return notification
 }
@@ -319,6 +276,5 @@ module.exports = {
   markAsRead,
   getUnreadCount,
   // Expose for testing
-  createUserNotification,
-  sendEmailNotification
+  createUserNotification
 }

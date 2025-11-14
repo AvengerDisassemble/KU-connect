@@ -1,18 +1,18 @@
 # KU-Connect: Bidirectional User Notification System (Implementation Plan)
 
-This plan delivers a user-to-user notification feature with email delivery that fits the current backend (Express + Prisma, CommonJS) and is explicitly compatible with the updated Admin Announcement notification model in this branch (the one slated for merge).
+This plan delivers a user-to-user notification feature that fits the current backend (Express + Prisma, CommonJS) and is explicitly compatible with the updated Admin Announcement notification model in this branch (the one slated for merge).
 
 ## Scope
 - Student → Employer: notify employer when a student applies to a job.
 - Employer → Student: notify student when an employer qualifies/rejects an application.
-- Persist in DB (in-app), email the recipient, list by user, mark as read.
+- Persist in DB (in-app), list by user, mark as read.
 - Keep compatible with existing Admin Announcement notifications.
+- **Note:** Email notifications have been removed from this implementation. Notifications are in-app only.
 
 ## Key Constraints and Conventions
 - Backend is CommonJS; use `module.exports/require` (not ES modules).
 - Auto route registration under `src/routes` maps folder structure to `/api/...`.
 - Admin notifications in this branch use `Announcement` + `Notification` (fan-out with fields `announcementId`, `userId`, `isRead`, `createdAt`). We MUST NOT repurpose or alter this model to avoid regressions.
-- Reuse `src/utils/emailUtils.sendEmail` for SMTP/Ethereal support.
 - Use existing middlewares: `authMiddleware`, `verifiedUserMiddleware`, `roleMiddleware`, and `rateLimitMiddleware`.
 
 ## Data Model
@@ -52,19 +52,17 @@ Migration steps:
 - Run migration and regenerate client (see How to Run below) to update the committed client under `src/generated/prisma`.
 
 ## Service Layer: `src/services/notificationService.js`
-Create a dedicated service with small, testable functions that encapsulate DB + email. Contracts below:
+Create a dedicated service with small, testable functions that encapsulate DB operations. Contracts below:
 
 - notifyEmployerOfApplication({ studentUserId, jobId })
-  - Resolve employer’s `userId` via `Job.hr.userId`.
-  - Build title/message using student’s `User.name` + `User.surname` and `Job.title`.
+  - Resolve employer's `userId` via `Job.hr.userId`.
+  - Build title/message using student's `User.name` + `User.surname` and `Job.title`.
   - Insert `UserNotification` with type `EMPLOYER_APPLICATION`.
-  - Send email to employer (lookup `User.email` by employer userId) via `sendEmail`.
   - Return created notification.
 
 - notifyStudentOfApproval({ employerUserId, studentUserId, jobId, status, applicationId })
   - Build title/message including job title and status (lowercased for readability; `status` matches `ApplicationStatus` enum: `QUALIFIED` | `REJECTED`).
   - Insert `UserNotification` with type `APPLICATION_STATUS`.
-  - Send email to student (lookup `User.email` by student userId) via `sendEmail`.
   - Return created notification.
 
 - getNotificationsForUser(userId, { page=1, limit=20 })
@@ -75,13 +73,11 @@ Create a dedicated service with small, testable functions that encapsulate DB + 
 
 - Internal helpers
   - createUserNotification(data)
-  - sendEmailNotification(toUserId, subject, text) → resolve `User.email` then call `sendEmail`.
 
 Compatibility placeholders:
 - Add TODO blocks where we could later forward to a unified notification API if the admin branch introduces one post-merge.
 
 Error modes:
-- If email fails, log and continue (don’t fail DB persist).
 - Throw 404 on missing job/employer/student as appropriate.
 
 ## Controllers: `src/controllers/notificationController.js`
@@ -119,15 +115,6 @@ Middlewares:
   - API key header check (simple HMAC/API key via env) if needed for system-to-system calls.
 - In the main happy path, we will call service methods directly from existing controllers, avoiding public trigger endpoints entirely for user actions.
 
-## Email Integration
-Reuse `sendEmail` from `src/utils/emailUtils.js`.
-
-Templates (plain text acceptable initially; HTML optional):
-- Employer: `New Job Application` → "<student name> <surname> has applied for your job post \"<job title>\"."
-- Student: `Application Update` → "Your job application for \"<job title>\" has been <approved/rejected>."
-
-If SMTP is not configured, Ethereal preview links will be logged (already implemented).
-
 ## Integration Points in Existing Flows
 - In `jobController.applyToJob` (after successful creation), call:
   - `notificationService.notifyEmployerOfApplication({ studentUserId: req.user.id, jobId })`
@@ -149,13 +136,13 @@ GET/PATCH rely on params and auth; use simple param checks in controller.
 New tests mirror existing structure and style (CommonJS):
 
 - `tests/src/routes/notifications/index.test.js`
-  - POST employer/application sends in-app + email (mock `sendEmail`)
-  - POST student/approval sends in-app + email (mock `sendEmail`)
-  - GET /api/notifications returns only current user’s items
+  - POST employer/application creates in-app notification
+  - POST student/approval creates in-app notification
+  - GET /api/notifications returns only current user's items
   - PATCH /api/notifications/:id/read sets read=true only for recipient
 
 - `tests/src/services/notificationService.test.js`
-  - Unit-test service methods with Prisma test DB; mock `sendEmail` to avoid network
+  - Unit-test service methods with Prisma test DB
 
 Test scaffolding:
 - Use existing `tests/src/utils/testHelpers.js` for users and cleanups; extend to `prisma.userNotification.deleteMany()` in cleanup.
@@ -195,14 +182,18 @@ Test scaffolding:
 - Employer not found for job (deleted HR/user): 404
 - Student not found for application: 404
 - Duplicate application events: allow multiple notifications (idempotency in future if desired)
-- Email failure: log + continue
-- Access control: prevent marking others’ notifications as read
+- Access control: prevent marking others' notifications as read
 
 ## Success Criteria
-- DB rows created for each event and emails attempted
+- DB rows created for each event
 - Authenticated users see only their notifications and can mark them read
 - Tests cover both flows and endpoints
 - No regression to admin announcement notification system
+
+## Future Enhancements
+- Email notifications could be added back in the future if required
+- Push notifications for real-time updates
+- Notification preferences and settings
 
 ## How to Run (Developer)
 - After changes:

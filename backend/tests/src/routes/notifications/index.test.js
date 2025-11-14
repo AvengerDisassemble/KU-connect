@@ -10,12 +10,6 @@ const request = require('supertest')
 const prisma = require('../../../../src/models/prisma')
 const app = require('../../../../src/app')
 const { createTestToken, TEST_DEGREE_TYPES, cleanupDatabase } = require('../../utils/testHelpers')
-const emailUtils = require('../../../../src/utils/emailUtils')
-
-// Mock email sending to avoid network calls
-jest.mock('../../../../src/utils/emailUtils', () => ({
-  sendEmail: jest.fn().mockResolvedValue(true)
-}))
 
 jest.setTimeout(30000)
 
@@ -169,11 +163,6 @@ describe('Notification Routes (Integration)', () => {
     await prisma.$disconnect()
   })
 
-  beforeEach(() => {
-    // Clear mock calls before each test
-    emailUtils.sendEmail.mockClear()
-  })
-
   describe('GET /api/notifications', () => {
     it('should return notifications for authenticated user', async () => {
       const res = await request(app)
@@ -312,14 +301,6 @@ describe('Notification Routes (Integration)', () => {
       expect(res.body.data.recipientId).toBe(employer.id)
       expect(res.body.data.type).toBe('EMPLOYER_APPLICATION')
       expect(res.body.message).toContain('created successfully')
-
-      // Verify email was sent
-      expect(emailUtils.sendEmail).toHaveBeenCalled()
-      expect(emailUtils.sendEmail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: employer.email
-        })
-      )
     })
 
     it('should reject non-admin users', async () => {
@@ -373,14 +354,6 @@ describe('Notification Routes (Integration)', () => {
       expect(res.body.data.recipientId).toBe(student1.id)
       expect(res.body.data.type).toBe('APPLICATION_STATUS')
       expect(res.body.data.message).toContain('qualified')
-
-      // Verify email was sent
-      expect(emailUtils.sendEmail).toHaveBeenCalled()
-      expect(emailUtils.sendEmail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: student1.email
-        })
-      )
     })
 
     it('should handle REJECTED status', async () => {

@@ -8,13 +8,7 @@ process.env.ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'testsecret
 
 const prisma = require('../../../src/models/prisma')
 const notificationService = require('../../../src/services/notificationService')
-const emailUtils = require('../../../src/utils/emailUtils')
 const { TEST_DEGREE_TYPES, cleanupDatabase } = require('../utils/testHelpers')
-
-// Mock email sending
-jest.mock('../../../src/utils/emailUtils', () => ({
-  sendEmail: jest.fn().mockResolvedValue(true)
-}))
 
 jest.setTimeout(30000)
 
@@ -95,12 +89,8 @@ describe('NotificationService', () => {
     await prisma.$disconnect()
   })
 
-  beforeEach(() => {
-    emailUtils.sendEmail.mockClear()
-  })
-
   describe('notifyEmployerOfApplication', () => {
-    it('should create notification and send email to employer', async () => {
+    it('should create notification for employer', async () => {
       const result = await notificationService.notifyEmployerOfApplication({
         studentUserId: student.id,
         jobId: job.id
@@ -113,14 +103,6 @@ describe('NotificationService', () => {
       expect(result.title).toBe('New Job Application')
       expect(result.message).toContain('Student Service')
       expect(result.message).toContain('Backend Developer')
-
-      // Verify email was sent
-      expect(emailUtils.sendEmail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: employer.email,
-          subject: 'New Job Application'
-        })
-      )
 
       // Verify in database
       const notification = await prisma.userNotification.findUnique({
@@ -165,14 +147,6 @@ describe('NotificationService', () => {
       expect(result.title).toBe('Application Update')
       expect(result.message).toContain('qualified')
       expect(result.message).toContain('Backend Developer')
-
-      // Verify email was sent
-      expect(emailUtils.sendEmail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: student.email,
-          subject: 'Application Update'
-        })
-      )
     })
 
     it('should create notification for REJECTED status', async () => {
@@ -384,22 +358,6 @@ describe('NotificationService', () => {
     it('should return 0 for user with no unread notifications', async () => {
       const count = await notificationService.getUnreadCount('non-existent-user')
       expect(count).toBe(0)
-    })
-  })
-
-  describe('Email handling', () => {
-    it('should continue if email fails', async () => {
-      // Mock email failure
-      emailUtils.sendEmail.mockRejectedValueOnce(new Error('Email service down'))
-
-      const result = await notificationService.notifyEmployerOfApplication({
-        studentUserId: student.id,
-        jobId: job.id
-      })
-
-      // Notification should still be created
-      expect(result).toBeDefined()
-      expect(result.recipientId).toBe(employer.id)
     })
   })
 })
