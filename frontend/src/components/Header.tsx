@@ -1,4 +1,4 @@
-import { Search, Bell, Menu, LogOut, Loader2 } from "lucide-react";
+import { Search, Menu, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -8,6 +8,7 @@ import { logout } from "@/services/auth";
 import { useAvatar } from "@/hooks/useAvatar";
 import { getInitials } from "@/utils/getInitials";
 import Logo from "@/assets/logo.png";
+import { NotificationBell } from "@/components/notifications";
 
 const Header = () => {
   const { user, isAuthenticated } = useAuth();
@@ -79,11 +80,7 @@ const Header = () => {
         )}
 
         {/* Notifications */}
-        {isStudent && (
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-          </Button>
-        )}
+        {isStudent && <NotificationBell userId={user?.id} />}
 
         {/* User Profile */}
         {isAuthenticated && isStudent && user ? (
