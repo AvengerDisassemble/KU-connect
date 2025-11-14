@@ -52,7 +52,7 @@ export default function JobPostingPage() {
     );
   }
 
-  if (user.role !== "employer" && user.role !== "admin") {
+  if (!hasEmployerAccess) {
     return (
       <>
         <div className="fixed inset-0 -z-50 pointer-events-none bg-bg-1" />
@@ -77,6 +77,8 @@ export default function JobPostingPage() {
           <h1 className="mb-8 text-3xl font-bold text-accent">Post a Job</h1>
 
           <p className="text-muted-foreground">
+            Connect with talented KU engineering students ready to join your
+            team
             Connect with talented KU engineering students ready to join your
             team
           </p>

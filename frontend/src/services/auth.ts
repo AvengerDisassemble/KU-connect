@@ -77,6 +77,9 @@ export interface RegisterEmployerData {
   phoneNumber: string;
   companyName: string;
   address: string;
+  phoneNumber: string;
+  contactEmail?: string;
+  industry?: string;
 }
 
 /**
@@ -84,7 +87,7 @@ export interface RegisterEmployerData {
  */
 export async function login(
   email: string,
-  password: string
+  password: string,
 ): Promise<LoginResponse> {
   const response = await fetch(`${BASE_URL}/login`, {
     method: "POST",
@@ -272,7 +275,7 @@ export async function registerEmployer(data: RegisterEmployerData) {
     }
 
     const err = new Error(
-      errorBody?.message || "Employer registration failed"
+      errorBody?.message || "Employer registration failed",
     ) as Error & { errors?: unknown };
     if (errorBody?.errors) {
       err.errors = errorBody.errors;
