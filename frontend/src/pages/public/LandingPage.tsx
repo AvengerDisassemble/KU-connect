@@ -4,12 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   GraduationCap,
   Building2,
-  Users,
-  Briefcase,
   Star,
   ArrowRight,
   CheckCircle,
-  TrendingUp,
   Shield,
   ChevronDown,
 } from "lucide-react";
@@ -17,7 +14,7 @@ import {
 const LandingPage = () => {
   const [scrollY, setScrollY] = useState(0);
   const [visibleSections, setVisibleSections] = useState<Set<string>>(
-    new Set(),
+    new Set()
   );
 
   useEffect(() => {
@@ -105,8 +102,7 @@ const LandingPage = () => {
             : "opacity-0 translate-y-10"
         }`}
       >
-        <div className="max-w-6xl mx-auto">
-        </div>
+        <div className="max-w-6xl mx-auto"></div>
       </section>
 
       {/* Features Section */}
