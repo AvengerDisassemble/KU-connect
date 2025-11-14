@@ -15,6 +15,15 @@ import {
 import type { TabKey, Job } from "../types";
 import JobCard from "./JobCard";
 
+interface PaginationState {
+  page: number;
+  pageCount: number;
+  pageSize: number;
+  total: number;
+  isFetching: boolean;
+  onPageChange: (page: number) => void;
+}
+
 interface JobListProps {
   displayedJobs: Job[];
   resultText: string;
@@ -27,6 +36,7 @@ interface JobListProps {
   onToggleSave: (jobId: string) => void;
   onClearFilters: () => void;
   onSortByChange: (value: string) => void;
+  pagination?: PaginationState;
 }
 
 const JobList = ({
@@ -41,6 +51,7 @@ const JobList = ({
   onToggleSave,
   onClearFilters,
   onSortByChange,
+  pagination,
 }: JobListProps) => {
   const previousSortRef = useRef(sortBy);
   const isSorting = previousSortRef.current !== sortBy;
@@ -54,6 +65,35 @@ const JobList = ({
     { value: "deadline", label: "Deadline" },
     { value: "salary", label: "Highest salary" },
   ];
+
+  const fallbackTotal = displayedJobs.length;
+  const fallbackStart = fallbackTotal > 0 ? 1 : 0;
+  const fallbackEnd = fallbackTotal;
+  const fallbackIndicator = fallbackTotal > 0 ? "1 of 1" : "0 of 0";
+
+  const rangeStart = pagination
+    ? pagination.total === 0
+      ? 0
+      : (pagination.page - 1) * pagination.pageSize + 1
+    : fallbackStart;
+  const rangeEnd = pagination
+    ? pagination.total === 0
+      ? 0
+      : Math.min(pagination.page * pagination.pageSize, pagination.total)
+    : fallbackEnd;
+  const rangeTotal = pagination ? pagination.total : fallbackTotal;
+  const pageIndicator = pagination
+    ? `${pagination.page} of ${pagination.pageCount}`
+    : fallbackIndicator;
+
+  const disableNav = isLoading || (pagination?.isFetching ?? false);
+  const disablePrev =
+    disableNav || !pagination || pagination.page <= 1 || pagination.total === 0;
+  const disableNext =
+    disableNav ||
+    !pagination ||
+    pagination.page >= pagination.pageCount ||
+    pagination.total === 0;
 
   return (
     <div className="flex w-full flex-col border-r bg-card/40 lg:w-[420px] lg:max-w-[420px] lg:flex-none">
@@ -143,20 +183,48 @@ const JobList = ({
       <div className="border-t px-4 py-3">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div>
-            1 - {Math.min(displayedJobs.length, 10)} of {displayedJobs.length}
+            {rangeTotal === 0
+              ? "0 of 0"
+              : `${rangeStart} - ${rangeEnd} of ${rangeTotal}`}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={disablePrev}
+              onClick={() => pagination?.onPageChange(1)}
+            >
               ‹‹
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={disablePrev}
+              onClick={() =>
+                pagination?.onPageChange((pagination?.page ?? 1) - 1)
+              }
+            >
               ‹
             </Button>
-            <div className="px-3 py-0.5">1</div>
-            <Button variant="ghost" size="sm">
+            <div className="px-3 py-0.5">{pageIndicator}</div>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={disableNext}
+              onClick={() =>
+                pagination?.onPageChange((pagination?.page ?? 1) + 1)
+              }
+            >
               ›
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={disableNext}
+              onClick={() =>
+                pagination?.onPageChange(pagination?.pageCount ?? 1)
+              }
+            >
               ››
             </Button>
           </div>

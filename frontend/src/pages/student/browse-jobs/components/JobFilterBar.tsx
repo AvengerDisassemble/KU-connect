@@ -41,7 +41,7 @@ const jobTypeOptions: SelectOption[] = [
 
 const workArrangementOptions: SelectOption[] = [
   { value: "all", label: "All work styles" },
-  { value: "onsite", label: "On-site" },
+  { value: "on-site", label: "On-site" },
   { value: "remote", label: "Remote" },
   { value: "hybrid", label: "Hybrid" },
 ];
