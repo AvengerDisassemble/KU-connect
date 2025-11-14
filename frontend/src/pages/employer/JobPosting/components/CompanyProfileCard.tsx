@@ -12,6 +12,8 @@ import {
   getEmployerProfile,
   type EmployerProfileResponse,
 } from "@/services/employerProfile";
+import { INDUSTRY_LABEL_BY_API } from "@/lib/domain/industries";
+import { COMPANY_SIZE_LABEL_BY_API } from "@/lib/domain/companySize";
 
 const initialsOf = (name?: string | null) =>
   (name ?? "")
@@ -21,24 +23,6 @@ const initialsOf = (name?: string | null) =>
     .slice(0, 2)
     .map((s) => s[0]?.toUpperCase() ?? "")
     .join("") || "CO";
-
-const INDUSTRY_LABEL: Record<string, string> = {
-  IT_HARDWARE_AND_DEVICES: "IT Hardware & Devices",
-  IT_SOFTWARE: "IT Software",
-  IT_SERVICES: "IT Services",
-  NETWORK_SERVICES: "Network Services",
-  EMERGING_TECH: "Emerging Tech",
-  E_COMMERCE: "E-commerce",
-  OTHER: "Other",
-};
-
-const COMPANY_SIZE_LABEL: Record<string, string> = {
-  ONE_TO_TEN: "1-10",
-  ELEVEN_TO_FIFTY: "11-50",
-  FIFTY_ONE_TO_TWO_HUNDRED: "51-200",
-  TWO_HUNDRED_ONE_TO_FIVE_HUNDRED: "201-500",
-  FIVE_HUNDRED_PLUS: "500+",
-};
 
 type Props = {
   userId: string;
@@ -53,10 +37,10 @@ const CompanyProfileCard: React.FC<Props> = ({
 }: Props) => {
   const queryClient = useQueryClient();
   const [profile, setProfile] = useState<EmployerProfileResponse | null>(
-    prefetchedProfile ?? null
+    prefetchedProfile ?? null,
   );
   const [loading, setLoading] = useState<boolean>(
-    typeof loadingOverride === "boolean" ? loadingOverride : !prefetchedProfile
+    typeof loadingOverride === "boolean" ? loadingOverride : !prefetchedProfile,
   );
   const [err, setErr] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -68,7 +52,7 @@ const CompanyProfileCard: React.FC<Props> = ({
   );
   const previewQueryKey = useMemo(
     () => ["employerAvatarPreview", userId],
-    [userId]
+    [userId],
   );
 
   useEffect(() => {
@@ -98,8 +82,7 @@ const CompanyProfileCard: React.FC<Props> = ({
         if (cancelled) return;
         setProfile(data);
       } catch (error: unknown) {
-        const message =
-          error instanceof Error ? error.message : String(error);
+        const message = error instanceof Error ? error.message : String(error);
         if (!cancelled) setErr(message || "Failed to load company profile");
       } finally {
         if (!cancelled) setLoading(false);
@@ -188,9 +171,9 @@ const CompanyProfileCard: React.FC<Props> = ({
 
   const companyName = profile?.hr?.companyName ?? "Your Company";
   const industryRaw = profile?.hr?.industry ?? "";
-  const industry = INDUSTRY_LABEL[industryRaw] || industryRaw || "—";
+  const industry = INDUSTRY_LABEL_BY_API[industryRaw] || industryRaw || "—";
   const sizeRaw = profile?.hr?.companySize ?? "";
-  const companySize = COMPANY_SIZE_LABEL[sizeRaw] || sizeRaw || "";
+  const companySize = COMPANY_SIZE_LABEL_BY_API[sizeRaw] || sizeRaw || "";
   const address = profile?.hr?.address ?? "";
   const initials = initialsOf(companyName);
   const logoLoading = avatarLoading || avatarFetching;
@@ -231,9 +214,7 @@ const CompanyProfileCard: React.FC<Props> = ({
                   {address ? `${address} • ${industry}` : industry}
                 </p>
                 {!!companySize && (
-                  <p className="text-muted-foreground text-sm">
-                    {companySize} employees
-                  </p>
+                  <p className="text-muted-foreground text-sm">{companySize}</p>
                 )}
               </>
             )}
@@ -245,9 +226,7 @@ const CompanyProfileCard: React.FC<Props> = ({
           variant="outline"
           className="w-full lg:w-auto lg:ml-auto lg:flex-none px-4 lg:px-8 border-primary text-primary hover:bg-primary hover:text-white"
         >
-          <Link to={`/employer/profile/${userId}`}>
-            Edit Company Profile
-          </Link>
+          <Link to={`/employer/profile/${userId}`}>Edit Company Profile</Link>
         </Button>
       </div>
     </div>
