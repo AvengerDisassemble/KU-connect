@@ -110,6 +110,8 @@ model User {
   notifications           Notification[]
   sentNotifications       UserNotification[] @relation("NotificationSender")
   receivedNotifications   UserNotification[] @relation("NotificationRecipient")
+  // Back-relation to saved jobs — allows querying what this user saved
+  savedJobs     SavedJob[]
 }
 
 model RefreshToken {
