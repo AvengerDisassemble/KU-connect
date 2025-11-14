@@ -10,7 +10,7 @@ All authentication features have been successfully implemented and tested. The s
 Authentication Endpoints
   POST /api/register/alumni
     ✅ should register a new alumni successfully
-    ✅ should not register alumni with invalid data  
+    ✅ should not register alumni with invalid data
     ✅ should not register alumni with duplicate email
   POST /api/register/enterprise
     ✅ should register a new enterprise successfully
@@ -29,18 +29,21 @@ Authentication Endpoints
 ## 🚀 Implemented API Endpoints
 
 ### Public Endpoints (No authentication required)
+
 - **POST /api/login** - User authentication
-- **POST /api/register/alumni** - Alumni (student) registration  
+- **POST /api/register/alumni** - Alumni (student) registration
 - **POST /api/register/enterprise** - Company registration
 - **POST /api/auth/refresh** - Refresh access token
 - **POST /api/logout** - User logout
 
 ### Protected Endpoints (Authentication required)
+
 - **GET /api/auth/me** - Get current user profile
 
 ## 🏗️ System Architecture
 
 ### Database Models
+
 - **User**: Core user data with role-based access
 - **RefreshToken**: Secure token management
 - **Student**: Alumni-specific data (degree, address)
@@ -49,6 +52,7 @@ Authentication Endpoints
 - **Admin**: System administrator data
 
 ### Security Features
+
 - **Password Hashing**: bcrypt with salt rounds 12
 - **JWT Tokens**: Dual-token system (access + refresh)
 - **HTTP-Only Cookies**: Secure token storage
@@ -57,6 +61,7 @@ Authentication Endpoints
 - **Error Handling**: Centralized error management
 
 ### Middleware System
+
 - **authMiddleware**: JWT verification and user attachment
 - **roleMiddleware**: Role-based access control
 - **errorHandler**: Global error management
@@ -65,10 +70,11 @@ Authentication Endpoints
 ## 🔧 Technical Implementation
 
 ### Key Files Created/Modified
+
 ```
 src/
 ├── controllers/authController.js    # Authentication logic
-├── services/authService.js         # Business logic layer  
+├── services/authService.js         # Business logic layer
 ├── middlewares/
 │   ├── authMiddleware.js           # JWT verification
 │   ├── roleMiddleware.js           # Role-based access
@@ -80,7 +86,7 @@ src/
 └── routes/
     ├── auth.js                     # Auth management routes
     ├── login.js                    # Login endpoint
-    ├── logout.js                   # Logout endpoint  
+    ├── logout.js                   # Logout endpoint
     └── register/
         ├── alumni.js               # Alumni registration
         └── enterprise.js           # Enterprise registration
@@ -90,12 +96,13 @@ tests/src/auth.test.js              # Comprehensive test suite
 ```
 
 ### Environment Configuration
+
 ```env
 # JWT Configuration
 ACCESS_TOKEN_SECRET="your-super-secret-access-token-key"
 REFRESH_TOKEN_SECRET="your-super-secret-refresh-token-key"
 
-# Application Configuration  
+# Application Configuration
 NODE_ENV="development"
 PORT="3001"
 FRONTEND_URL="http://localhost:3000"
@@ -108,11 +115,12 @@ FRONTEND_URL="http://localhost:3000"
 ✅ **Secure Storage**: HTTP-only, secure, SameSite cookies  
 ✅ **Input Validation**: Email format, password strength, required fields  
 ✅ **Error Handling**: No sensitive data leakage  
-✅ **Role-Based Access**: Proper permission matrix implementation  
+✅ **Role-Based Access**: Proper permission matrix implementation
 
 ## 📱 Frontend Integration Ready
 
 The API is fully configured for frontend integration with:
+
 - CORS enabled for `http://localhost:3000`
 - Cookie-based authentication (no manual token management needed)
 - Consistent JSON response format
@@ -133,18 +141,19 @@ The API is fully configured for frontend integration with:
 The authentication system is **complete and ready for use**. You can now:
 
 1. **Integrate with Frontend**: Connect your React app to these endpoints
-2. **Add Protected Routes**: Use the middleware for role-based features  
+2. **Add Protected Routes**: Use the middleware for role-based features
 3. **Implement Business Logic**: Build job postings, applications, etc.
 4. **Deploy**: System is production-ready with proper security
 
 ## 💡 Usage Examples
 
 ### Alumni Registration
+
 ```bash
 POST /api/register/alumni
 {
   "name": "John",
-  "surname": "Doe", 
+  "surname": "Doe",
   "email": "john@ku.th",
   "password": "Password123",
   "degreeTypeId": 1,
@@ -152,13 +161,14 @@ POST /api/register/alumni
 }
 ```
 
-### Enterprise Registration  
+### Enterprise Registration
+
 ```bash
 POST /api/register/enterprise
 {
   "name": "Alice",
   "surname": "Smith",
-  "email": "alice@company.com", 
+  "email": "alice@company.com",
   "password": "Password123",
   "companyName": "Tech Corp Ltd",
   "address": "456 Business District, Bangkok"
@@ -166,6 +176,7 @@ POST /api/register/enterprise
 ```
 
 ### Login
+
 ```bash
 POST /api/login
 {

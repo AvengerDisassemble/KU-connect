@@ -3,20 +3,24 @@
 ## Files Modified/Created
 
 ### Schema & Database
+
 - ✅ `prisma/schema.prisma` - Added Account model, made User.password optional
 - ✅ `prisma/migrations/20251014080912_add_oauth_account_model/` - Migration files generated
 
 ### Core Application
+
 - ✅ `src/services/authService.js` - Added `findOrCreateGoogleUser()`, updated `loginUser()`
 - ✅ `src/utils/passport.js` - New: Google OAuth strategy configuration
 - ✅ `src/routes/auth.js` - Added `/auth/google` and `/auth/google/callback` routes
 - ✅ `src/app.js` - Integrated Passport middleware
 
 ### Tests
+
 - ✅ `tests/src/services/authService.test.js` - Unit tests for OAuth functions
 - ✅ `tests/src/routes/authRoutes.test.js` - Integration tests for OAuth routes
 
 ### Documentation
+
 - ✅ `documents/authorization-and-authentication/OAUTH_IMPLEMENTATION_GUIDE.md` - Complete guide
 - ✅ `.env.example` - Updated with OAuth variables
 
@@ -37,13 +41,13 @@ GOOGLE_CALLBACK_URL="http://localhost:3000/api/auth/google/callback"
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/auth/google` | Initiate Google OAuth |
-| GET | `/api/auth/google/callback` | OAuth callback, returns JWT |
-| POST | `/api/auth/refresh` | Refresh access token |
-| POST | `/api/auth/logout` | Invalidate refresh token |
-| GET | `/api/auth/me` | Get current user profile |
+| Method | Endpoint                    | Description                 |
+| ------ | --------------------------- | --------------------------- |
+| GET    | `/api/auth/google`          | Initiate Google OAuth       |
+| GET    | `/api/auth/google/callback` | OAuth callback, returns JWT |
+| POST   | `/api/auth/refresh`         | Refresh access token        |
+| POST   | `/api/auth/logout`          | Invalidate refresh token    |
+| GET    | `/api/auth/me`              | Get current user profile    |
 
 ## Key Features Implemented
 
@@ -112,16 +116,21 @@ model Account {
 ## Common Issues & Solutions
 
 **Issue:** "This account uses OAuth authentication"
+
 - **Solution:** User has OAuth account, cannot use local login
 
 **Issue:** Migration not applied
+
 - **Solution:** Run `npx prisma migrate dev`
 
 **Issue:** Prisma Client out of date
+
 - **Solution:** Run `npx prisma generate`
 
 **Issue:** No DegreeType found
+
 - **Solution:** Insert at least one DegreeType record
 
 **Issue:** CORS errors
+
 - **Solution:** Check `FRONTEND_URL` in `.env`

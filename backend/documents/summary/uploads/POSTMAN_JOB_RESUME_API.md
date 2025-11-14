@@ -3,6 +3,7 @@
 This document provides complete instructions for testing the job-specific resume upload/selection API using Postman.
 
 ## Table of Contents
+
 1. [Prerequisites](#prerequisites)
 2. [Authentication Setup](#authentication-setup)
 3. [Environment Variables](#environment-variables)
@@ -15,6 +16,7 @@ This document provides complete instructions for testing the job-specific resume
 ## Prerequisites
 
 Before testing these endpoints, ensure:
+
 1. The backend server is running (`npm run dev`)
 2. Database is migrated and seeded with at least:
    - One student user with a profile resume
@@ -44,6 +46,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -62,15 +65,15 @@ Save the `accessToken` for subsequent requests.
 
 Set up Postman environment variables for easier testing:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `base_url` | API base URL | `http://localhost:3000/api` |
-| `student_token` | Student access token | `eyJhbGciOiJIUz...` |
-| `student2_token` | Another student token | `eyJhbGciOiJIUz...` |
-| `hr_token` | HR/Employer token | `eyJhbGciOiJIUz...` |
-| `admin_token` | Admin token | `eyJhbGciOiJIUz...` |
-| `student_user_id` | Student user ID (CUID) | `clxxx...` |
-| `job_id` | Test job ID | `1` |
+| Variable          | Description            | Example                     |
+| ----------------- | ---------------------- | --------------------------- |
+| `base_url`        | API base URL           | `http://localhost:3000/api` |
+| `student_token`   | Student access token   | `eyJhbGciOiJIUz...`         |
+| `student2_token`  | Another student token  | `eyJhbGciOiJIUz...`         |
+| `hr_token`        | HR/Employer token      | `eyJhbGciOiJIUz...`         |
+| `admin_token`     | Admin token            | `eyJhbGciOiJIUz...`         |
+| `student_user_id` | Student user ID (CUID) | `clxxx...`                  |
+| `job_id`          | Test job ID            | `1`                         |
 
 ---
 
@@ -94,6 +97,7 @@ Body (form-data):
 ```
 
 #### Postman Setup
+
 1. Select **POST** method
 2. URL: `{{base_url}}/jobs/{{job_id}}/resume`
 3. **Headers** tab:
@@ -103,6 +107,7 @@ Body (form-data):
    - Key: `resume`, Type: **File**, Value: [Select a PDF file]
 
 #### Success Response (200)
+
 ```json
 {
   "success": true,
@@ -136,6 +141,7 @@ Content-Type: application/json
 ```
 
 #### Postman Setup
+
 1. Select **POST** method
 2. URL: `{{base_url}}/jobs/{{job_id}}/resume`
 3. **Headers** tab:
@@ -146,6 +152,7 @@ Content-Type: application/json
    - Content: `{ "mode": "profile" }`
 
 #### Success Response (200)
+
 ```json
 {
   "success": true,
@@ -159,6 +166,7 @@ Content-Type: application/json
 ```
 
 #### Error Response - No Profile Resume (400)
+
 ```json
 {
   "success": false,
@@ -181,12 +189,14 @@ Authorization: Bearer {{student_token}}
 ```
 
 #### Postman Setup
+
 1. Select **GET** method
 2. URL: `{{base_url}}/jobs/{{job_id}}/resume/{{student_user_id}}`
 3. **Headers** tab:
    - Key: `Authorization`, Value: `Bearer {{student_token}}`
 
 #### Success Response (200)
+
 ```json
 {
   "success": true,
@@ -199,6 +209,7 @@ Authorization: Bearer {{student_token}}
 ```
 
 #### Error Response - Access Denied (403)
+
 ```json
 {
   "success": false,
@@ -221,12 +232,14 @@ Authorization: Bearer {{student_token}}
 ```
 
 #### Postman Setup
+
 1. Select **GET** method
 2. URL: `{{base_url}}/jobs/{{job_id}}/resume/self`
 3. **Headers** tab:
    - Key: `Authorization`, Value: `Bearer {{student_token}}`
 
 #### Response
+
 Same as endpoint #3.
 
 ---
@@ -244,12 +257,14 @@ Authorization: Bearer {{student_token}}
 ```
 
 #### Postman Setup
+
 1. Select **DELETE** method
 2. URL: `{{base_url}}/jobs/{{job_id}}/resume`
 3. **Headers** tab:
    - Key: `Authorization`, Value: `Bearer {{student_token}}`
 
 #### Success Response (200)
+
 ```json
 {
   "success": true,
@@ -258,6 +273,7 @@ Authorization: Bearer {{student_token}}
 ```
 
 #### Error Response - Not Found (404)
+
 ```json
 {
   "success": false,
@@ -274,34 +290,38 @@ Authorization: Bearer {{student_token}}
 **Goal:** Student applies to a job with a custom resume
 
 1. **Login as Student**
+
    ```
    POST /api/auth/login
    Save: student_token, student_user_id
    ```
 
 2. **Upload Resume for Job**
+
    ```
    POST /api/jobs/1/resume
    Headers: Authorization: Bearer {{student_token}}
    Body (form-data): resume = [PDF file]
-   
+
    Expected: 200 OK, source = "UPLOADED"
    ```
 
 3. **Verify Resume Upload**
+
    ```
    GET /api/jobs/1/resume/self
    Headers: Authorization: Bearer {{student_token}}
-   
+
    Expected: 200 OK, url returned, source = "UPLOADED"
    ```
 
 4. **Update Resume (Replace)**
+
    ```
    POST /api/jobs/1/resume
    Headers: Authorization: Bearer {{student_token}}
    Body (form-data): resume = [Different PDF file]
-   
+
    Expected: 200 OK, new link returned
    Note: Old file should be deleted automatically
    ```
@@ -313,28 +333,31 @@ Authorization: Bearer {{student_token}}
 **Goal:** Student applies to a job using their existing profile resume
 
 1. **Ensure Profile Resume Exists**
+
    ```
    POST /api/documents/resume
    Headers: Authorization: Bearer {{student_token}}
    Body (form-data): resume = [PDF file]
-   
+
    Expected: 200 OK
    ```
 
 2. **Apply with Profile Resume**
+
    ```
    POST /api/jobs/1/resume
    Headers: Authorization: Bearer {{student_token}}
    Body (JSON): { "mode": "profile" }
-   
+
    Expected: 200 OK, source = "PROFILE"
    ```
 
 3. **Verify Profile Resume is Used**
+
    ```
    GET /api/jobs/1/resume/self
    Headers: Authorization: Bearer {{student_token}}
-   
+
    Expected: 200 OK, source = "PROFILE"
    ```
 
@@ -345,6 +368,7 @@ Authorization: Bearer {{student_token}}
 **Goal:** Student switches from uploaded resume to profile resume and vice versa
 
 1. **Upload Custom Resume**
+
    ```
    POST /api/jobs/1/resume
    Body (form-data): resume = [PDF file]
@@ -352,6 +376,7 @@ Authorization: Bearer {{student_token}}
    ```
 
 2. **Switch to Profile Resume**
+
    ```
    POST /api/jobs/1/resume
    Body (JSON): { "mode": "profile" }
@@ -374,6 +399,7 @@ Authorization: Bearer {{student_token}}
 **Goal:** Employer views resumes of students who applied to their job
 
 1. **Login as HR**
+
    ```
    POST /api/auth/login
    Body: HR credentials
@@ -381,19 +407,21 @@ Authorization: Bearer {{student_token}}
    ```
 
 2. **View Applicant Resume**
+
    ```
    GET /api/jobs/1/resume/{{student_user_id}}
    Headers: Authorization: Bearer {{hr_token}}
-   
+
    Expected: 200 OK, url returned
    Note: Only works if HR owns job ID 1
    ```
 
 3. **Try to View Another Job's Resume (Not Owned)**
+
    ```
    GET /api/jobs/999/resume/{{student_user_id}}
    Headers: Authorization: Bearer {{hr_token}}
-   
+
    Expected: 403 Forbidden (if HR doesn't own job 999)
    ```
 
@@ -404,6 +432,7 @@ Authorization: Bearer {{student_token}}
 **Goal:** Admin can view any student's job resume
 
 1. **Login as Admin**
+
    ```
    POST /api/auth/login
    Body: Admin credentials
@@ -411,10 +440,11 @@ Authorization: Bearer {{student_token}}
    ```
 
 2. **View Any Student's Resume**
+
    ```
    GET /api/jobs/1/resume/{{student_user_id}}
    Headers: Authorization: Bearer {{admin_token}}
-   
+
    Expected: 200 OK
    ```
 
@@ -425,27 +455,30 @@ Authorization: Bearer {{student_token}}
 **Goal:** Verify authorization rules are enforced
 
 1. **Student A Tries to View Student B's Resume**
+
    ```
    GET /api/jobs/1/resume/{{student2_user_id}}
    Headers: Authorization: Bearer {{student_token}}
-   
+
    Expected: 403 Forbidden
    ```
 
 2. **Unauthenticated Request**
+
    ```
    GET /api/jobs/1/resume/self
    No Authorization header
-   
+
    Expected: 401 Unauthorized
    ```
 
 3. **HR Tries to Upload Resume (Wrong Role)**
+
    ```
    POST /api/jobs/1/resume
    Headers: Authorization: Bearer {{hr_token}}
    Body (form-data): resume = [PDF]
-   
+
    Expected: 403 Forbidden
    ```
 
@@ -456,46 +489,51 @@ Authorization: Bearer {{student_token}}
 **Goal:** Test validation and error responses
 
 1. **Missing Profile Resume**
+
    ```
    POST /api/jobs/1/resume
    Headers: Authorization: Bearer {{student2_token}}
    Body (JSON): { "mode": "profile" }
-   
+
    Expected: 400 Bad Request
    Message: "No profile resume found..."
    ```
 
 2. **Invalid Mode**
+
    ```
    POST /api/jobs/1/resume
    Body (JSON): { "mode": "invalid" }
-   
+
    Expected: 400 Bad Request
    Message: "Invalid mode..."
    ```
 
 3. **Non-Existent Job**
+
    ```
    POST /api/jobs/99999/resume
    Body (form-data): resume = [PDF]
-   
+
    Expected: 404 Not Found
    Message: "Job not found"
    ```
 
 4. **Non-PDF File**
+
    ```
    POST /api/jobs/1/resume
    Body (form-data): resume = [.txt or .jpg file]
-   
+
    Expected: 500 or 400 (Multer validation)
    ```
 
 5. **File Too Large (>10MB)**
+
    ```
    POST /api/jobs/1/resume
    Body (form-data): resume = [PDF > 10MB]
-   
+
    Expected: 413 Payload Too Large (from Multer)
    ```
 
@@ -506,6 +544,7 @@ Authorization: Bearer {{student_token}}
 **Goal:** Test resume deletion and cleanup
 
 1. **Upload Resume**
+
    ```
    POST /api/jobs/1/resume
    Body (form-data): resume = [PDF]
@@ -513,18 +552,20 @@ Authorization: Bearer {{student_token}}
    ```
 
 2. **Delete Resume**
+
    ```
    DELETE /api/jobs/1/resume
    Headers: Authorization: Bearer {{student_token}}
-   
+
    Expected: 200 OK
    ```
 
 3. **Verify Deletion**
+
    ```
    GET /api/jobs/1/resume/self
    Headers: Authorization: Bearer {{student_token}}
-   
+
    Expected: 404 Not Found
    ```
 
@@ -945,8 +986,8 @@ Copy this JSON to import the complete collection into Postman:
    - Example:
      ```javascript
      if (pm.response.code === 200) {
-         const response = pm.response.json();
-         pm.environment.set('student_token', response.data.accessToken);
+       const response = pm.response.json();
+       pm.environment.set("student_token", response.data.accessToken);
      }
      ```
 
@@ -973,20 +1014,21 @@ Copy this JSON to import the complete collection into Postman:
 
 ## Common Issues & Solutions
 
-| Issue | Solution |
-|-------|----------|
-| 401 Unauthorized | Check if token is valid and not expired. Re-login if needed. |
-| 403 Forbidden | Verify user has correct role for the endpoint. |
-| 404 Job not found | Ensure job ID exists in database. |
-| 400 No profile resume | Upload profile resume first via `/api/documents/resume`. |
-| 413 Payload too large | Reduce file size to under 10 MB. |
-| Multer error | Ensure file is PDF format and form-data key is `resume`. |
+| Issue                 | Solution                                                     |
+| --------------------- | ------------------------------------------------------------ |
+| 401 Unauthorized      | Check if token is valid and not expired. Re-login if needed. |
+| 403 Forbidden         | Verify user has correct role for the endpoint.               |
+| 404 Job not found     | Ensure job ID exists in database.                            |
+| 400 No profile resume | Upload profile resume first via `/api/documents/resume`.     |
+| 413 Payload too large | Reduce file size to under 10 MB.                             |
+| Multer error          | Ensure file is PDF format and form-data key is `resume`.     |
 
 ---
 
 ## Next Steps
 
 After testing these endpoints:
+
 1. Integrate with frontend upload components
 2. Test with S3 storage provider (set `STORAGE_PROVIDER=s3`)
 3. Add additional validation (e.g., file content checking)

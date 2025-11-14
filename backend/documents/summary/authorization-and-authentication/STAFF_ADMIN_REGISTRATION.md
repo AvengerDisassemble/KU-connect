@@ -1,14 +1,17 @@
 # University Staff and Admin Registration Implementation
 
 ## Overview
+
 This implementation adds the ability to register university staff (professors) and admin users to the KU Connect platform. Previously, the system only supported registration for enterprise users and alumni.
 
 ## Changes Made
 
 ### 1. Controller Functions (authController.js)
+
 Added two new registration controller functions:
 
 #### `registerStaff`
+
 - **Route**: `POST /api/register/staff`
 - **Purpose**: Register university staff members (professors)
 - **Required Fields**:
@@ -21,6 +24,7 @@ Added two new registration controller functions:
 - **Database**: Creates user record and associated professor record
 
 #### `registerAdmin`
+
 - **Route**: `POST /api/register/admin`
 - **Purpose**: Register administrative users
 - **Required Fields**:
@@ -33,29 +37,35 @@ Added two new registration controller functions:
 - **Note**: Admin accounts are pre-verified (`verified: true`)
 
 ### 2. Validation Functions (authValidator.js)
+
 Added two new validation middleware functions:
 
 #### `validateStaffRegistration`
+
 - Validates all required fields for staff registration
 - Ensures department is at least 2 characters long
 - Applies standard password security rules
 - Validates email format
 
 #### `validateAdminRegistration`
+
 - Validates all required fields for admin registration
 - Applies standard password security rules
 - Validates email format
 - No additional role-specific fields required
 
 ### 3. Route Files
+
 Created two new route files in `/routes/register/`:
 
 #### `staff.js`
+
 - Handles `POST /register/staff` endpoint
 - Uses `validateStaffRegistration` middleware
 - Calls `registerStaff` controller
 
 #### `admin.js`
+
 - Handles `POST /register/admin` endpoint
 - Uses `validateAdminRegistration` middleware
 - Calls `registerAdmin` controller
@@ -63,6 +73,7 @@ Created two new route files in `/routes/register/`:
 ## API Endpoints
 
 ### Register University Staff
+
 ```http
 POST /api/register/staff
 Content-Type: application/json
@@ -77,6 +88,7 @@ Content-Type: application/json
 ```
 
 **Response (Success):**
+
 ```json
 {
   "success": true,
@@ -96,6 +108,7 @@ Content-Type: application/json
 ```
 
 ### Register Admin
+
 ```http
 POST /api/register/admin
 Content-Type: application/json
@@ -109,6 +122,7 @@ Content-Type: application/json
 ```
 
 **Response (Success):**
+
 ```json
 {
   "success": true,
@@ -139,6 +153,7 @@ The implementation leverages the existing Prisma schema which already includes:
 ## Validation Rules
 
 ### Common Validation (All User Types)
+
 - Name: minimum 2 characters
 - Surname: minimum 2 characters
 - Email: valid email format
@@ -148,9 +163,11 @@ The implementation leverages the existing Prisma schema which already includes:
   - At least one number
 
 ### Staff-Specific Validation
+
 - Department: minimum 2 characters
 
 ### Admin-Specific Validation
+
 - No additional fields required beyond common validation
 
 ## Error Handling
@@ -161,9 +178,7 @@ All endpoints return standardized error responses:
 {
   "success": false,
   "message": "Validation failed",
-  "errors": [
-    "Department must be at least 2 characters long"
-  ]
+  "errors": ["Department must be at least 2 characters long"]
 }
 ```
 
@@ -197,10 +212,12 @@ The routes have been successfully registered and are ready for testing. You can 
 ## Files Modified/Created
 
 ### Modified Files:
+
 - `src/controllers/authController.js` - Added `registerStaff` and `registerAdmin` functions
 - `src/validators/authValidator.js` - Added validation functions
 
 ### Created Files:
+
 - `src/routes/register/staff.js` - Staff registration route
 - `src/routes/register/admin.js` - Admin registration route
 

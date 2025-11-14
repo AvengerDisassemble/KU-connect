@@ -1,9 +1,9 @@
-const express = require('express')
-const { registerStaff } = require('../../controllers/authController')
-const { validateStaffRegistration } = require('../../validators/authValidator')
-const { authLimiter } = require('../../middlewares/rateLimitMiddleware')
+const express = require("express");
+const { registerStaff } = require("../../controllers/authController");
+const { validateStaffRegistration } = require("../../validators/authValidator");
+const { authLimiter } = require("../../middlewares/rateLimitMiddleware");
 
-const router = express.Router()
+const router = express.Router();
 
 /**
  * @route POST /register/staff
@@ -11,6 +11,6 @@ const router = express.Router()
  * @access Public
  * Rate limited to 5 requests per 15 minutes to prevent account spam
  */
-router.post('/', authLimiter, validateStaffRegistration, registerStaff)
+router.post("/", authLimiter, validateStaffRegistration, registerStaff);
 
-module.exports = router
+module.exports = router;

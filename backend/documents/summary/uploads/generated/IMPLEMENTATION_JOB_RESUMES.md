@@ -1,25 +1,31 @@
 # Job-Specific Resume Upload Feature - Implementation Summary
 
 ## Overview
+
 Successfully implemented a feature allowing students to either use their profile resume or upload a different resume for each job application.
 
 ## What Was Implemented
 
 ### 1. Database Schema Changes
+
 **File:** `prisma/schema.prisma`
+
 - Added `ResumeSource` enum with values `PROFILE` and `UPLOADED`
 - Updated `Resume` model with:
   - `source` field (ResumeSource, default: UPLOADED)
   - `@@unique([studentId, jobId])` constraint to ensure one resume per student per job
 
 **Migration:** `20251021023702_add_job_resume_unique_and_source`
+
 - Applied successfully to database
 - Prisma client regenerated
 
 ### 2. Controller Implementation
+
 **Created:** `src/controllers/documents-controller/jobDocumentController.js`
 
 Implements four main functions:
+
 1. **`upsertJobResume`** - Create or update job-specific resume
    - Supports two modes: 'profile' (use existing profile resume) or 'upload' (upload new PDF)
    - Automatically cleans up old uploaded files when switching modes
@@ -41,21 +47,26 @@ Implements four main functions:
 **Helper:** `isHrOwnerOfJob` - Checks if user is HR owner of a specific job
 
 ### 3. Routes
+
 **Created:** `src/routes/jobs/index.js`
 
 Endpoints:
+
 - `POST /api/jobs/:jobId/resume` - Upsert resume (STUDENT only)
 - `GET /api/jobs/:jobId/resume/:studentUserId` - Get resume URL (owner/HR/admin)
 - `GET /api/jobs/:jobId/resume/self` - Get own resume URL (STUDENT only)
 - `DELETE /api/jobs/:jobId/resume` - Delete resume (STUDENT only)
 
 **Configuration:**
+
 - Uses same PDF validation as profile resumes (10 MB limit, PDF only)
 - Multer middleware for file uploads
 - Authentication and role-based authorization
 
 ### 4. Controller Reorganization
+
 **Restructured:**
+
 - Created `src/controllers/documents-controller/` folder
 - Moved `documentsController.js` into folder
 - Updated import paths in:
@@ -65,7 +76,9 @@ Endpoints:
 This organization keeps document-related controllers together.
 
 ### 5. Storage Integration
+
 **Prefix:** `resumes/job-applications/{jobId}/`
+
 - Uploaded job-specific resumes stored with job-scoped prefix
 - Profile mode references existing `Student.resumeKey` (no duplication)
 - Automatic cleanup of old files when:
@@ -74,9 +87,11 @@ This organization keeps document-related controllers together.
   - Deleting a job application resume
 
 ### 6. Tests
+
 **Created:** `tests/controllers/jobDocumentController.test.js`
 
 Comprehensive test coverage including:
+
 - Upload new resume for job application
 - Use profile resume for job application
 - Fail when profile resume doesn't exist
@@ -87,13 +102,16 @@ Comprehensive test coverage including:
 - Prevent deletion of profile resume when using PROFILE mode
 
 **Test Users:**
+
 - Student with profile resume
 - Student without profile resume
 - HR/Employer (job owner)
 - Admin
 
 ### 7. Documentation
+
 **Updated:** `documents/uploads/UPLOAD_SYSTEM_README.md`
+
 - Added section on Job-Specific Resume Endpoints
 - Documented two modes (UPLOAD vs PROFILE)
 - Included access control details
@@ -122,6 +140,7 @@ Comprehensive test coverage including:
 ## Files Modified/Created
 
 ### Created
+
 - `src/controllers/documents-controller/jobDocumentController.js` (362 lines)
 - `src/routes/jobs/index.js` (61 lines)
 - `tests/controllers/jobDocumentController.test.js` (450 lines)
@@ -129,6 +148,7 @@ Comprehensive test coverage including:
 - `verify-implementation.js` (verification script)
 
 ### Modified
+
 - `prisma/schema.prisma` (added enum, updated Resume model)
 - `src/controllers/documents-controller/documentsController.js` (moved, fixed imports)
 - `src/routes/documents/index.js` (updated controller import path)
@@ -136,11 +156,13 @@ Comprehensive test coverage including:
 - `documents/plan/upload-change.md` (updated with folder structure change)
 
 ### Moved
+
 - `src/controllers/documentsController.js` → `src/controllers/documents-controller/documentsController.js`
 
 ## Verification
 
 All components verified working:
+
 - ✅ Controller exports all required functions
 - ✅ Routes file properly exports Express router
 - ✅ Prisma client includes Resume model with new fields
@@ -150,6 +172,7 @@ All components verified working:
 ## Usage Example
 
 ### Upload a job-specific resume
+
 ```bash
 curl -X POST http://localhost:3000/api/jobs/1/resume \
   -H "Authorization: Bearer <student-token>" \
@@ -157,6 +180,7 @@ curl -X POST http://localhost:3000/api/jobs/1/resume \
 ```
 
 ### Use profile resume for a job
+
 ```bash
 curl -X POST http://localhost:3000/api/jobs/1/resume \
   -H "Authorization: Bearer <student-token>" \
@@ -165,18 +189,21 @@ curl -X POST http://localhost:3000/api/jobs/1/resume \
 ```
 
 ### Get job resume URL (as student owner)
+
 ```bash
 curl http://localhost:3000/api/jobs/1/resume/self \
   -H "Authorization: Bearer <student-token>"
 ```
 
 ### Get job resume URL (as HR owner)
+
 ```bash
 curl http://localhost:3000/api/jobs/1/resume/<student-user-id> \
   -H "Authorization: Bearer <hr-token>"
 ```
 
 ### Delete job resume
+
 ```bash
 curl -X DELETE http://localhost:3000/api/jobs/1/resume \
   -H "Authorization: Bearer <student-token>"

@@ -3,6 +3,7 @@
 ## Prerequisites
 
 Before you start, ensure you have:
+
 - Node.js installed
 - Dependencies installed: `npm install`
 - Database set up and migrated
@@ -23,6 +24,7 @@ npx prisma migrate dev --name add_user_and_profile_docs_keys
 ```
 
 This will add fields:
+
 - `User.avatarKey`
 - `Student.resumeKey` and `Student.transcriptKey`
 - `HR.verificationDocKey`
@@ -36,6 +38,7 @@ STORAGE_PROVIDER=local
 ```
 
 For S3 (production only), also add:
+
 ```env
 AWS_ACCESS_KEY_ID=your_key
 AWS_SECRET_ACCESS_KEY=your_secret
@@ -46,6 +49,7 @@ AWS_BUCKET_NAME=your-bucket
 ## Step 4: Test the Implementation
 
 Run tests:
+
 ```powershell
 npm test
 ```
@@ -59,6 +63,7 @@ npm start
 ## Testing with Postman/Thunder Client
 
 ### Upload Avatar
+
 ```
 POST http://localhost:3000/api/profile/avatar
 Headers:
@@ -68,6 +73,7 @@ Body (form-data):
 ```
 
 ### Get Avatar URL
+
 ```
 GET http://localhost:3000/api/profile/avatar/:userId
 Headers:
@@ -75,6 +81,7 @@ Headers:
 ```
 
 ### Upload Resume (Students)
+
 ```
 POST http://localhost:3000/api/documents/resume
 Headers:
@@ -84,6 +91,7 @@ Body (form-data):
 ```
 
 ### Upload Transcript (Students)
+
 ```
 POST http://localhost:3000/api/documents/transcript
 Headers:
@@ -93,6 +101,7 @@ Body (form-data):
 ```
 
 ### Upload Employer Verification (HR/Employer)
+
 ```
 POST http://localhost:3000/api/documents/employer-verification
 Headers:
@@ -135,18 +144,22 @@ backend/
 ## Troubleshooting
 
 ### "Module not found" errors
+
 Run: `npm install`
 
 ### "Column does not exist" database errors
+
 Run: `npx prisma migrate dev`
 Then: `npx prisma generate`
 
 ### Multer file upload errors
+
 - Check file size (avatars: 2MB, documents: 10MB)
 - Verify MIME type is correct
 - Ensure field name matches (avatar/resume/transcript/verification)
 
 ### S3 errors
+
 - Verify AWS credentials in `.env`
 - Check IAM permissions
 - Ensure bucket exists and region is correct

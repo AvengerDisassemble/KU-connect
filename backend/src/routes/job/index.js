@@ -14,8 +14,7 @@ const { strictLimiter, writeLimiter } = require('../../middlewares/rateLimitMidd
 const reportRouter = require('./report')
 
 // ===================== AUTH REQUIRED FOR ALL JOB ROUTES =====================
-router.use(authMiddleware)
-
+router.use(authMiddleware);
 
 // ===================== PUBLIC ACCESS (ALL ROLES) =====================
 
@@ -24,7 +23,7 @@ router.use(authMiddleware)
 // Rate limited: Expensive query with multiple joins
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.get(
-  '/my-applications',
+  "/my-applications",
   strictLimiter,
   verifiedUserMiddleware,
   roleMiddleware(['STUDENT']),
@@ -35,10 +34,10 @@ router.get(
 // SECURITY: Changed from GET to POST to prevent sensitive filter data (minSalary, maxSalary)
 // from being exposed in URLs, logs, browser history, and referrer headers
 // Rate limited: Filtering operations can be expensive with multiple conditions
-router.post('/list', strictLimiter, jobController.listJobs)
+router.post("/list", strictLimiter, jobController.listJobs);
 
 // GET /api/job/:id
-router.get('/:id', jobController.getJobById)
+router.get("/:id", jobController.getJobById);
 
 // ===================== HR ACCESS =====================
 
@@ -46,31 +45,31 @@ router.get('/:id', jobController.getJobById)
 // Rate limited: Write operation
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.post(
-  '/',
+  "/",
   writeLimiter,
   verifiedUserMiddleware,
   roleMiddleware(['EMPLOYER']),
   validate(createJobSchema),
-  jobController.createJob
-)
+  jobController.createJob,
+);
 
 // PATCH /api/job/:id → HR updates their own job
 // Rate limited: Write operation with complex transaction
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.patch(
-  '/:id',
+  "/:id",
   writeLimiter,
   verifiedUserMiddleware,
   roleMiddleware(['EMPLOYER']),
   validate(updateJobSchema),
-  jobController.updateJob
-)
+  jobController.updateJob,
+);
 
 // GET /api/job/:id/applyer → HR views applicants
 // Rate limited: Expensive query with multiple joins
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.get(
-  '/:id/applyer',
+  "/:id/applyer",
   strictLimiter,
   verifiedUserMiddleware,
   roleMiddleware(['EMPLOYER']),
@@ -81,19 +80,19 @@ router.get(
 // Rate limited: Write operation
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.post(
-  '/:id/applyer',
+  "/:id/applyer",
   writeLimiter,
   verifiedUserMiddleware,
   roleMiddleware(['EMPLOYER']),
   validate(manageApplicationSchema),
-  jobController.manageApplication
-)
+  jobController.manageApplication,
+);
 
 // DELETE /api/job/:id → Delete a job (Admin or HR owner)
 // Rate limited: Write operation with cascading deletes
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.delete(
-  '/:id',
+  "/:id",
   writeLimiter,
   verifiedUserMiddleware,
   roleMiddleware(['ADMIN', 'EMPLOYER']), 
@@ -107,15 +106,15 @@ router.delete(
 // Rate limited: Write operation with resume creation
 // REQUIRES: APPROVED status (verifiedUserMiddleware)
 router.post(
-  '/:id',
+  "/:id",
   writeLimiter,
   verifiedUserMiddleware,
   roleMiddleware(['STUDENT']),
   validate(applyJobSchema),
-  jobController.applyToJob
-)
+  jobController.applyToJob,
+);
 
 // ===================== JOB REPORT ROUTES =====================
-router.use('/', reportRouter)
+router.use("/", reportRouter);
 
-module.exports = router
+module.exports = router;

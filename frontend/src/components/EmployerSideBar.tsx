@@ -1,12 +1,18 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import Logo from "@/assets/logo.png";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
-import { logout } from "@/services/auth";
 import { useState } from "react";
 
-export default function EmployerSidebar() {
+import { LogOut } from "lucide-react";
+
+import Logo from "@/assets/logo.png";
+import { useAuth } from "@/hooks/useAuth";
+import { logout } from "@/services/auth";
+import { Button } from "@/components/ui/button";
+
+interface EmployerSidebarProps {
+  onNavigate?: () => void;
+}
+
+export default function EmployerSidebar({ onNavigate }: EmployerSidebarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -39,6 +45,7 @@ export default function EmployerSidebar() {
       setIsSigningOut(true);
       await logout();
       navigate("/login");
+      onNavigate?.();
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
@@ -47,18 +54,18 @@ export default function EmployerSidebar() {
   };
 
   return (
-    <aside className="flex min-h-screen w-60 flex-col border-r border-border bg-card">
+    <aside className="flex min-h-screen w-full max-w-[280px] flex-col border-r border-border bg-card max-[390px]:max-w-[240px] md:w-60">
       {/* Logo */}
-      <div className="border-border border-b p-8 pt-8 text-center">
+      <div className="border-border border-b p-8 pt-8 text-center max-[390px]:p-6">
         <div className="flex items-center justify-center">
           <img
             src={Logo}
             alt="KU Connect Logo"
-            className="ml-12 block h-12 w-auto max-w-[260px] select-none object-contain"
+            className="ml-12 block h-12 w-auto max-w-[260px] select-none object-contain max-[390px]:ml-0"
             draggable={false}
           />
         </div>
-        <div className="text-sm font-medium text-accent">
+        <div className="text-sm font-medium text-accent max-[390px]:text-xs">
           for employer
         </div>
       </div>
@@ -70,8 +77,11 @@ export default function EmployerSidebar() {
             key={item.to}
             to={item.to}
             end={item.end}
+            onClick={() => {
+              onNavigate?.();
+            }}
             className={({ isActive }) =>
-              `block border-l-[3px] px-8 py-4 font-medium transition-colors ${
+              `block border-l-[3px] px-8 py-4 font-medium transition-colors max-[390px]:px-6 max-[390px]:py-3 ${
                 isActive
                   ? "border-l-accent bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted/60"

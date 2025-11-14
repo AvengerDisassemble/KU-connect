@@ -9,10 +9,12 @@ All requirements from the OAuth implementation task have been successfully compl
 ### 1. Database Schema (`prisma/schema.prisma`)
 
 **User Model Updates:**
+
 - Changed `password` field from `String` to `String?` (optional)
 - Added `accounts Account[]` relation
 
 **New Account Model:**
+
 ```prisma
 model Account {
   id                String   @id @default(cuid())
@@ -40,6 +42,7 @@ model Account {
 ### 2. Auth Service (`src/services/authService.js`)
 
 **New Function: `findOrCreateGoogleUser()`**
+
 - Implements upsert logic for Google OAuth users
 - Handles three scenarios:
   1. Existing account → Returns existing user
@@ -47,6 +50,7 @@ model Account {
   3. New user → Creates User + Account + Student
 
 **Updated Function: `loginUser()`**
+
 - Added check for null password
 - Throws error for OAuth-only accounts
 - Prevents local login for OAuth users
@@ -61,10 +65,12 @@ model Account {
 ### 4. Auth Routes (`src/routes/auth.js`)
 
 **New Routes:**
+
 - `GET /auth/google` - Initiates OAuth flow
 - `GET /auth/google/callback` - Handles callback, issues JWT
 
 **Callback Handler:**
+
 - Authenticates with Passport
 - Generates access and refresh tokens
 - Stores refresh token in database
@@ -79,11 +85,13 @@ model Account {
 ### 6. Unit Tests (`tests/src/services/authService.test.js`) - NEW FILE
 
 **Tests for `findOrCreateGoogleUser()`:**
+
 - ✅ Returns existing user when account exists
 - ✅ Links Google account to existing email
 - ✅ Creates new user, account, and student record
 
 **Tests for `loginUser()` OAuth Protection:**
+
 - ✅ Throws error for OAuth-only users
 - ✅ Allows local login with password
 - ✅ Handles non-existent users
@@ -91,6 +99,7 @@ model Account {
 ### 7. Integration Tests (`tests/src/routes/authRoutes.test.js`) - NEW FILE
 
 **Tests for OAuth Routes:**
+
 - ✅ GET /auth/google initiates OAuth
 - ✅ Callback returns JWT tokens
 - ✅ Callback handles failures
@@ -106,6 +115,7 @@ model Account {
 ### 9. Dependencies
 
 Installed packages:
+
 - `passport` v0.7.0
 - `passport-google-oauth20` v2.0.0
 
@@ -121,6 +131,7 @@ User (Identity)
 ```
 
 **Benefits:**
+
 - Multiple OAuth providers per user
 - Easy to add new providers
 - Clear separation of concerns
@@ -129,6 +140,7 @@ User (Identity)
 ## Key Implementation Details
 
 ### OAuth Flow
+
 1. User clicks "Sign in with Google"
 2. Redirected to Google OAuth consent
 3. Google redirects to callback with code
@@ -137,6 +149,7 @@ User (Identity)
 6. JWT tokens issued and returned
 
 ### Security Features
+
 - ✅ Sessions disabled (stateless JWT)
 - ✅ Password validation for local accounts
 - ✅ OAuth verification through Google
@@ -144,6 +157,7 @@ User (Identity)
 - ✅ Unique constraint on provider+accountId
 
 ### Default Values for New OAuth Users
+
 - `role: 'STUDENT'`
 - `verified: true`
 - `password: null`
@@ -161,6 +175,7 @@ GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
 ## Testing Status
 
 All tests pass (assuming proper setup):
+
 - ✅ Unit tests for OAuth service functions
 - ✅ Unit tests for login protection
 - ✅ Integration tests for OAuth routes
@@ -169,6 +184,7 @@ All tests pass (assuming proper setup):
 ## Code Style & Standards
 
 All code follows:
+
 - ✅ JavaScript Standard Style
 - ✅ JSDoc documentation for all functions
 - ✅ Consistent error handling
@@ -195,6 +211,7 @@ All code follows:
 ## Ready for Production Checklist
 
 Before deploying to production:
+
 - [ ] Set up Google OAuth credentials
 - [ ] Update callback URL for production domain
 - [ ] Use HTTPS for all OAuth endpoints
@@ -209,6 +226,7 @@ Before deploying to production:
 ## Extension Opportunities
 
 The implementation is designed to be extensible:
+
 - Add Facebook OAuth (similar pattern)
 - Add GitHub OAuth (similar pattern)
 - Add account linking/unlinking UI

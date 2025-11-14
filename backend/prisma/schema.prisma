@@ -233,6 +233,8 @@ model Job {
   reports                   JobReport[]
   createdAt                 DateTime          @default(now())
   updatedAt                 DateTime          @updatedAt
+  // Back-relation: which users saved this job
+  savedBy                   SavedJob[]
 }
 
 model Tag {
@@ -267,6 +269,23 @@ model Benefit {
   jobId String
   text  String
   job   Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------
+//  SAVED JOBS JOIN MODEL
+// ------------------------------
+
+model SavedJob {
+  userId    String
+  jobId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@id([userId, jobId])
+  @@index([userId])
+  @@index([jobId])
 }
 
 // ------------------------------

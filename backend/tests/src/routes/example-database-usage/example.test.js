@@ -3,10 +3,10 @@
  * @author KU Connect Team
  */
 
-const assert = require('assert')
+const assert = require("assert");
 // ...existing code...
-describe('example-database-usage/example.js route', () => {
-  it('should have tests implemented', () => {
-    assert.ok(true)
-  })
-})
+describe("example-database-usage/example.js route", () => {
+  it("should have tests implemented", () => {
+    assert.ok(true);
+  });
+});
