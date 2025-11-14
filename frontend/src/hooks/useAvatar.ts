@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   downloadAvatar,
@@ -42,18 +42,35 @@ export function useAvatar(explicitUserId?: string) {
     },
   });
 
-  const avatarUrl = useMemo(() => {
-    if (!avatarQuery.data || !isClientSide) return null;
-    return URL.createObjectURL(avatarQuery.data);
-  }, [avatarQuery.data]);
+  const avatarUrlRef = useRef<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    return () => {
-      if (avatarUrl) {
-        URL.revokeObjectURL(avatarUrl);
+    if (!isClientSide) {
+      return;
+    }
+
+    if (avatarQuery.data) {
+      const objectUrl = URL.createObjectURL(avatarQuery.data);
+      if (avatarUrlRef.current && avatarUrlRef.current !== objectUrl) {
+        URL.revokeObjectURL(avatarUrlRef.current);
       }
-    };
-  }, [avatarUrl]);
+      avatarUrlRef.current = objectUrl;
+      setAvatarUrl(objectUrl);
+      return () => {
+        URL.revokeObjectURL(objectUrl);
+        if (avatarUrlRef.current === objectUrl) {
+          avatarUrlRef.current = null;
+        }
+      };
+    }
+
+    if (avatarUrlRef.current) {
+      URL.revokeObjectURL(avatarUrlRef.current);
+      avatarUrlRef.current = null;
+    }
+    setAvatarUrl(null);
+  }, [avatarQuery.data]);
 
   const uploadMutation = useMutation({
     mutationFn: uploadAvatar,
