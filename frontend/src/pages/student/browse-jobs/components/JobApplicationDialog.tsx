@@ -122,7 +122,8 @@ const JobApplicationDialog = ({
       if (!job) {
         throw new Error("Missing job context");
       }
-      return applyToJob(job.id, resumeLink);
+      const application = await applyToJob(job.id, { resumeLink });
+      return { applicationId: application.id };
     },
     onMutate: () => {
       onSubmittingChange(true);
