@@ -1,5 +1,5 @@
 import { BASE_URL } from "@/lib/config";
-import { refreshAccessToken } from "@/services/auth";
+import { clearAuthSession, refreshAccessToken } from "@/services/auth";
 import { requestWithPolicies } from "./httpClient";
 
 // Generic API
@@ -45,7 +45,8 @@ export interface UpdateEmployerProfileRequest {
 // internal helpers
 const buildRequestInit = (init?: RequestInit): RequestInit => {
   const headers = new Headers(init?.headers ?? {});
-  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
+  const isFormData =
+    typeof FormData !== "undefined" && init?.body instanceof FormData;
 
   if (!headers.has("Content-Type") && !isFormData) {
     headers.set("Content-Type", "application/json");
@@ -62,7 +63,7 @@ const buildRequestInit = (init?: RequestInit): RequestInit => {
 
 const authorizedFetch = async (
   input: RequestInfo | URL,
-  init?: RequestInit
+  init?: RequestInit,
 ) => {
   let response = await fetch(input, buildRequestInit(init));
   if (response.status === 401) {
@@ -96,12 +97,16 @@ const readJson = async (res: Response) => {
 // APIs
 
 // GET /profile/:userId
-export const getEmployerProfile = async (userId: string): Promise<EmployerProfileResponse> => {
+export const getEmployerProfile = async (
+  userId: string,
+): Promise<EmployerProfileResponse> => {
   const res = await requestWithPolicies({
     key: `GET /profile/${userId}`,
     execute: () => authorizedFetch(`${BASE_URL}/profile/${userId}`),
   });
-  const body = await readJson(res) as ApiResponse<EmployerProfileResponse> | null;
+  const body = (await readJson(
+    res,
+  )) as ApiResponse<EmployerProfileResponse> | null;
 
   if (!res.ok || !body) {
     const message = body?.message || `${res.status} ${res.statusText}`;
@@ -113,25 +118,29 @@ export const getEmployerProfile = async (userId: string): Promise<EmployerProfil
 
 // PATCH /profile
 export const updateEmployerProfile = async (
-  data: UpdateEmployerProfileRequest
+  data: UpdateEmployerProfileRequest,
 ): Promise<EmployerProfileResponse> => {
   const res = await requestWithPolicies({
     key: `PATCH /profile`,
-    execute: () => authorizedFetch(`${BASE_URL}/profile`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        ...data,
-        role: "hr",
+    execute: () =>
+      authorizedFetch(`${BASE_URL}/profile`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          ...data,
+          role: "hr",
+        }),
       }),
-    }),
   });
-  const body = await readJson(res) as ApiResponse<EmployerProfileResponse> | null;
+  const body = (await readJson(
+    res,
+  )) as ApiResponse<EmployerProfileResponse> | null;
 
   if (!res.ok || !body) {
     const message = body?.message || `${res.status} ${res.statusText}`;
     throw new Error(message || "Failed to update profile");
   }
-  if (!body.success) throw new Error(body.message || "Failed to update profile");
+  if (!body.success)
+    throw new Error(body.message || "Failed to update profile");
   return body.data;
 };
 
@@ -140,26 +149,30 @@ interface EmployerVerificationResponse {
 }
 
 export const uploadEmployerVerificationDocument = async (
-  file: File
+  file: File,
 ): Promise<EmployerVerificationResponse> => {
   const formData = new FormData();
   formData.append("verification", file);
 
   const res = await requestWithPolicies({
     key: `POST /documents/employer-verification`,
-    execute: () => authorizedFetch(`${BASE_URL}/documents/employer-verification`, {
-      method: "POST",
-      body: formData,
-    }),
+    execute: () =>
+      authorizedFetch(`${BASE_URL}/documents/employer-verification`, {
+        method: "POST",
+        body: formData,
+      }),
   });
 
-  const body = await readJson(res) as ApiResponse<EmployerVerificationResponse> | null;
+  const body = (await readJson(
+    res,
+  )) as ApiResponse<EmployerVerificationResponse> | null;
 
   if (!res.ok || !body) {
     const message = body?.message || `${res.status} ${res.statusText}`;
     throw new Error(message || "Failed to upload verification document");
   }
-  if (!body.success) throw new Error(body.message || "Failed to upload verification document");
+  if (!body.success)
+    throw new Error(body.message || "Failed to upload verification document");
   return body.data;
 };
 
@@ -168,7 +181,7 @@ interface EmployerAvatarResponse {
 }
 
 export const uploadEmployerAvatar = async (
-  file: File
+  file: File,
 ): Promise<EmployerAvatarResponse> => {
   const formData = new FormData();
   formData.append("avatar", file);
@@ -182,7 +195,9 @@ export const uploadEmployerAvatar = async (
       }),
   });
 
-  const body = (await readJson(res)) as ApiResponse<EmployerAvatarResponse> | null;
+  const body = (await readJson(
+    res,
+  )) as ApiResponse<EmployerAvatarResponse> | null;
 
   if (!res.ok || !body) {
     const message = body?.message || `${res.status} ${res.statusText}`;
@@ -196,7 +211,9 @@ export const uploadEmployerAvatar = async (
   return body.data;
 };
 
-export const fetchEmployerAvatar = async (userId: string): Promise<ArrayBuffer | null> => {
+export const fetchEmployerAvatar = async (
+  userId: string,
+): Promise<ArrayBuffer | null> => {
   const res = await requestWithPolicies({
     key: `GET /profile/avatar/${userId}/download`,
     execute: () =>
