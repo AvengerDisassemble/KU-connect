@@ -16,6 +16,7 @@ interface JobFiltersProps {
   onLocationFilterChange: (value: string) => void;
   onWorkArrangementFilterChange: (value: string) => void;
   onClearFilters: () => void;
+  showSavedTab?: boolean;
 }
 
 const JobFilters = ({
@@ -32,7 +33,10 @@ const JobFilters = ({
   onLocationFilterChange,
   onWorkArrangementFilterChange,
   onClearFilters,
+  showSavedTab = true,
 }: JobFiltersProps) => {
+  const selectedTab = showSavedTab ? activeTab : "search";
+
   return (
     <header className="bg-[var(--neutral-bg-2)] shadow-sm">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
@@ -43,7 +47,7 @@ const JobFilters = ({
               Jobs
             </h1>
             <Tabs
-              value={activeTab}
+              value={selectedTab}
               onValueChange={(value) => onTabChange(value as TabKey)}
               className="hidden md:block"
             >
@@ -54,12 +58,14 @@ const JobFilters = ({
                 >
                   Search
                 </TabsTrigger>
-                <TabsTrigger
-                  value="saved"
-                  className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:translate-y-[-2px] data-[state=inactive]:opacity-70 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ease-out"
-                >
-                  {savedCount ? `Saved (${savedCount})` : "Saved"}
-                </TabsTrigger>
+                {showSavedTab ? (
+                  <TabsTrigger
+                    value="saved"
+                    className="data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:translate-y-[-2px] data-[state=inactive]:opacity-70 rounded-md px-4 py-2 text-sm font-medium transition-all duration-200 ease-out"
+                  >
+                    {savedCount ? `Saved (${savedCount})` : "Saved"}
+                  </TabsTrigger>
+                ) : null}
               </TabsList>
             </Tabs>
           </div>
@@ -69,7 +75,7 @@ const JobFilters = ({
         {/* Mobile Tabs */}
         <div className="md:hidden mb-4">
           <Tabs
-            value={activeTab}
+            value={selectedTab}
             onValueChange={(value) => onTabChange(value as TabKey)}
             className="w-full"
           >
@@ -80,12 +86,14 @@ const JobFilters = ({
               >
                 Search
               </TabsTrigger>
-              <TabsTrigger
-                value="saved"
-                className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:translate-y-[-1px] data-[state=inactive]:opacity-70 rounded-md flex-1 px-3 py-2 text-sm font-medium transition-all duration-200 ease-out"
-              >
-                {savedCount ? `Saved (${savedCount})` : "Saved"}
-              </TabsTrigger>
+              {showSavedTab ? (
+                <TabsTrigger
+                  value="saved"
+                  className="data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:translate-y-[-1px] data-[state=inactive]:opacity-70 rounded-md flex-1 px-3 py-2 text-sm font-medium transition-all duration-200 ease-out"
+                >
+                  {savedCount ? `Saved (${savedCount})` : "Saved"}
+                </TabsTrigger>
+              ) : null}
             </TabsList>
           </Tabs>
         </div>

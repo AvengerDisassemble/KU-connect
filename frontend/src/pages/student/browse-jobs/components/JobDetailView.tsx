@@ -145,6 +145,9 @@ const JobDetailView = ({
     }
   };
 
+  const showApplyButton = Boolean(onApply);
+  const showSaveButton = Boolean(onToggleSave);
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-8">
@@ -188,55 +191,61 @@ const JobDetailView = ({
             <span>{formatPostedDate(job.createdAt)}</span>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
-              disabled={!onApply || isApplied || isApplying}
-              onClick={() => {
-                if (!job || !onApply || isApplied || isApplying) return;
-                onApply(job.id);
-              }}
-            >
-              {isApplying ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Applying…
-                </span>
-              ) : isApplied ? (
-                "Applied"
-              ) : (
-                "Apply Now"
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className={`border-border hover:bg-secondary flex-1 sm:flex-none min-w-[140px] ${
-                isSaved ? "bg-secondary text-secondary-foreground" : ""
-              }`}
-              disabled={!onToggleSave || isSaving}
-              onClick={() => {
-                if (!job || !onToggleSave || isSaving) return;
-                onToggleSave(job.id);
-              }}
-            >
-              {isSaving ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving…
-                </span>
-              ) : isSaved ? (
-                <span className="flex items-center gap-2">
-                  <BookmarkCheck className="h-4 w-4" />
-                  Saved
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Bookmark className="h-4 w-4" />
-                  Save Job
-                </span>
-              )}
-            </Button>
-          </div>
+          {showApplyButton || showSaveButton ? (
+            <div className="flex flex-wrap gap-2">
+              {showApplyButton ? (
+                <Button
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
+                  disabled={!onApply || isApplied || isApplying}
+                  onClick={() => {
+                    if (!job || !onApply || isApplied || isApplying) return;
+                    onApply(job.id);
+                  }}
+                >
+                  {isApplying ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Applying…
+                    </span>
+                  ) : isApplied ? (
+                    "Applied"
+                  ) : (
+                    "Apply Now"
+                  )}
+                </Button>
+              ) : null}
+              {showSaveButton ? (
+                <Button
+                  variant="outline"
+                  className={`border-border hover:bg-secondary flex-1 sm:flex-none min-w-[140px] ${
+                    isSaved ? "bg-secondary text-secondary-foreground" : ""
+                  }`}
+                  disabled={!onToggleSave || isSaving}
+                  onClick={() => {
+                    if (!job || !onToggleSave || isSaving) return;
+                    onToggleSave(job.id);
+                  }}
+                >
+                  {isSaving ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving…
+                    </span>
+                  ) : isSaved ? (
+                    <span className="flex items-center gap-2">
+                      <BookmarkCheck className="h-4 w-4" />
+                      Saved
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <Bookmark className="h-4 w-4" />
+                      Save Job
+                    </span>
+                  )}
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
 
         <Separator className="my-6" />

@@ -5,6 +5,7 @@ import {
   Building2,
   DollarSign,
   Timer,
+  Loader2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,9 +23,11 @@ interface JobCardProps {
   isSelected: boolean;
   isSaved: boolean;
   onSelectJob: (jobId: string) => void;
-  onToggleSave: (jobId: string) => void;
+  onToggleSave?: (jobId: string) => void;
   index: number;
   isSorting: boolean;
+  canSave?: boolean;
+  isSaving?: boolean;
 }
 
 const JobCard = ({
@@ -35,13 +38,18 @@ const JobCard = ({
   onToggleSave,
   index,
   isSorting,
+  canSave = true,
+  isSaving = false,
 }: JobCardProps) => {
   const handleCardClick = () => onSelectJob(job.id);
 
   const handleSaveClick = (event: React.MouseEvent) => {
     event.stopPropagation();
+    if (!onToggleSave || isSaving) return;
     onToggleSave(job.id);
   };
+
+  const showSaveButton = Boolean(canSave && onToggleSave);
 
   const formattedDuration = job.duration?.trim() || null;
   const createdAgo = formatRelativeTime(job.createdAt);
@@ -102,22 +110,27 @@ const JobCard = ({
                       "Unnamed company"}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-8 w-8 text-muted-foreground transition-colors hover:text-primary",
-                    isSaved && "text-primary"
-                  )}
-                  onClick={handleSaveClick}
-                  aria-label={isSaved ? "Remove job from saved" : "Save job"}
-                >
-                  {isSaved ? (
-                    <BookmarkCheck className="h-4 w-4" />
-                  ) : (
-                    <Bookmark className="h-4 w-4" />
-                  )}
-                </Button>
+                {showSaveButton ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 text-muted-foreground transition-colors hover:text-primary",
+                      isSaved && "text-primary"
+                    )}
+                    onClick={handleSaveClick}
+                    aria-label={isSaved ? "Remove job from saved" : "Save job"}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : isSaved ? (
+                      <BookmarkCheck className="h-4 w-4" />
+                    ) : (
+                      <Bookmark className="h-4 w-4" />
+                    )}
+                  </Button>
+                ) : null}
               </div>
             </div>
           </div>
