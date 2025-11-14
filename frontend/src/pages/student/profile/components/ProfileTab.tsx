@@ -31,24 +31,13 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProfile, updateProfile } from "@/services/profile";
 import { fetchDegreeTypes, type DegreeType } from "@/services/degree";
+import { phoneSchema } from "@/pages/public/register/components/phoneSchema";
 import ResumeSection from "./ResumeSection";
 
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
   surname: z.string().min(1, "Last name is required").max(50),
-  phoneNumber: z
-    .string()
-    .trim()
-    .refine(
-      (value) => {
-        if (!value) return false;
-        const normalized = value.startsWith("+") ? value.slice(1) : value;
-        return /^\d{9,15}$/.test(normalized);
-      },
-      {
-        message: "Phone number must contain 9-15 digits and may start with +",
-      }
-    ),
+  phoneNumber: phoneSchema,
   address: z.string().min(1),
   gpa: z.preprocess(
     (v) => (v === "" ? undefined : v),
