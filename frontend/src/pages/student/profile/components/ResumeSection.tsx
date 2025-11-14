@@ -283,7 +283,7 @@ const ResumeSection = ({
   );
 
   return (
-    <Card>
+    <Card id="resume">
       <CardHeader>
         <CardTitle className="text-xl">Resume</CardTitle>
         <CardDescription>
