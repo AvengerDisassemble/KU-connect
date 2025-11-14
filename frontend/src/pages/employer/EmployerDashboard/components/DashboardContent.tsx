@@ -82,7 +82,7 @@ const isSameThaiDay = (isoDate: string, reference = new Date()): boolean => {
 
 const isThaiDateInCurrentWeek = (
   isoDate: string,
-  reference = new Date(),
+  reference = new Date()
 ): boolean => {
   const created = toBangkokDate(isoDate);
   const ref = toBangkokDate(reference);
@@ -127,7 +127,7 @@ const formatRelativeDate = (iso: string, now = new Date()): string => {
 
 const mapJobToViewModel = (
   job: JobListResponse["jobs"][number],
-  applicantsCache: JobApplication[] | undefined,
+  applicantsCache: JobApplication[] | undefined
 ): JobCardViewModel => {
   const total = applicantsCache?.length ?? 0;
   const shortlisted =
@@ -171,7 +171,7 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
       acc.total += 1;
       return acc;
     },
-    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 },
+    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 }
   );
 };
 
@@ -204,7 +204,7 @@ const EmployerDashboardContent = () => {
 
   const [jobPage, setJobPage] = useState(1);
   const [jobsByPage, setJobsByPage] = useState<Map<number, JobListItem[]>>(
-    () => new Map(),
+    () => new Map()
   );
   const [jobsTotal, setJobsTotal] = useState(0);
   const [jobsLimit, setJobsLimit] = useState(JOBS_PAGE_SIZE);
@@ -285,7 +285,7 @@ const EmployerDashboardContent = () => {
 
     if (jobsPageData.limit && jobsPageData.limit > 0) {
       setJobsLimit((prev) =>
-        prev === jobsPageData.limit ? prev : jobsPageData.limit,
+        prev === jobsPageData.limit ? prev : jobsPageData.limit
       );
     }
   }, [jobsPageData]);
@@ -318,7 +318,7 @@ const EmployerDashboardContent = () => {
 
   const jobIds = useMemo(
     () => loadedJobs.map((job) => job.id).sort(),
-    [loadedJobs],
+    [loadedJobs]
   );
 
   const totalJobPages = useMemo(() => {
@@ -415,7 +415,7 @@ const EmployerDashboardContent = () => {
           } catch (error) {
             console.error("Failed to preload jobs page", page, error);
           }
-        }),
+        })
       );
     };
 
@@ -442,7 +442,7 @@ const EmployerDashboardContent = () => {
   const handleNextJobsPage = useCallback(() => {
     if (nextJobsDisabled) return;
     setJobPage((prev) =>
-      totalJobPages ? Math.min(prev + 1, totalJobPages) : prev + 1,
+      totalJobPages ? Math.min(prev + 1, totalJobPages) : prev + 1
     );
   }, [nextJobsDisabled, totalJobPages]);
 
@@ -477,7 +477,7 @@ const EmployerDashboardContent = () => {
     },
   });
 
-  const applicantsMap = applicantsByJob ?? {};
+  const applicantsMap = useMemo(() => applicantsByJob ?? {}, [applicantsByJob]);
 
   const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
     if (!loadedJobs.length) {
@@ -512,7 +512,7 @@ const EmployerDashboardContent = () => {
     }
 
     return allApplicantRecords.filter(
-      (record) => record.jobId === selectedJobId,
+      (record) => record.jobId === selectedJobId
     );
   }, [allApplicantRecords, selectedJobId]);
 
@@ -554,7 +554,7 @@ const EmployerDashboardContent = () => {
     }
 
     setApplicantPage((prev) =>
-      Math.min(Math.max(prev, 1), totalApplicantPages),
+      Math.min(Math.max(prev, 1), totalApplicantPages)
     );
   }, [totalApplicantPages]);
 
@@ -562,9 +562,9 @@ const EmployerDashboardContent = () => {
     () =>
       filteredApplicants.slice(
         (applicantPage - 1) * APPLICANTS_PAGE_SIZE,
-        applicantPage * APPLICANTS_PAGE_SIZE,
+        applicantPage * APPLICANTS_PAGE_SIZE
       ),
-    [filteredApplicants, applicantPage],
+    [filteredApplicants, applicantPage]
   );
 
   const applicantControlsDisabled = applicantsFetching || applicantsLoadingAll;
@@ -576,20 +576,23 @@ const EmployerDashboardContent = () => {
 
   const applicantPageLabel =
     totalApplicantPages > 0
-      ? `${Math.min(applicantPage, totalApplicantPages)} of ${totalApplicantPages}`
+      ? `${Math.min(
+          applicantPage,
+          totalApplicantPages
+        )} of ${totalApplicantPages}`
       : "0 of 0";
 
   const aggregateStats = useMemo(
     () => computeAggregateStats(allApplicantRecords),
-    [allApplicantRecords],
+    [allApplicantRecords]
   );
 
   const openJobCount = useMemo(
     () =>
       loadedJobs.filter(
-        (job) => new Date(job.application_deadline).getTime() >= Date.now(),
+        (job) => new Date(job.application_deadline).getTime() >= Date.now()
       ).length,
-    [loadedJobs],
+    [loadedJobs]
   );
 
   const stats = {
@@ -601,15 +604,15 @@ const EmployerDashboardContent = () => {
   const jobCards: JobCardViewModel[] = useMemo(
     () =>
       jobPageItems.map((job) => mapJobToViewModel(job, applicantsMap[job.id])),
-    [applicantsMap, jobPageItems],
+    [applicantsMap, jobPageItems]
   );
 
   const selectedJob = useMemo(
     () =>
       selectedJobId
-        ? (loadedJobs.find((job) => job.id === selectedJobId) ?? null)
+        ? loadedJobs.find((job) => job.id === selectedJobId) ?? null
         : null,
-    [loadedJobs, selectedJobId],
+    [loadedJobs, selectedJobId]
   );
 
   const handleViewApplicants = (jobId: string): void => {
@@ -623,7 +626,7 @@ const EmployerDashboardContent = () => {
   const handleNextApplicantPage = useCallback(() => {
     if (applicantNextDisabled) return;
     setApplicantPage((prev) =>
-      totalApplicantPages ? Math.min(prev + 1, totalApplicantPages) : prev + 1,
+      totalApplicantPages ? Math.min(prev + 1, totalApplicantPages) : prev + 1
     );
   }, [applicantNextDisabled, totalApplicantPages]);
 
@@ -828,8 +831,8 @@ const EmployerDashboardContent = () => {
                   {hasSearch
                     ? "No applicants match your current filters."
                     : selectedJobId
-                      ? "No applications for this job yet."
-                      : "No applications received yet."}
+                    ? "No applications for this job yet."
+                    : "No applications received yet."}
                 </div>
               ) : (
                 <div className="px-4 pb-6 sm:px-6">

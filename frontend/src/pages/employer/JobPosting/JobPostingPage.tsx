@@ -13,6 +13,26 @@ import {
 
 export default function JobPostingPage() {
   const { user, isAuthenticated } = useAuth();
+  const employerId = user?.id;
+
+  const {
+    data: employerProfile,
+    isLoading: employerProfileLoading,
+    isError: employerProfileError,
+  } = useQuery<EmployerProfileResponse>({
+    queryKey: ["employer-profile", employerId],
+    queryFn: () => {
+      if (!employerId) {
+        throw new Error("Missing employer id");
+      }
+
+      return getEmployerProfile(employerId);
+    },
+    enabled: Boolean(employerId),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
 
   if (!isAuthenticated || !user) {
     return (
@@ -21,9 +41,7 @@ export default function JobPostingPage() {
 
         <main className="min-h-screen flex items-center justify-center p-8">
           <div className="text-center">
-            <h1 className="mb-2 text-2xl font-semibold">
-              Please sign in
-            </h1>
+            <h1 className="mb-2 text-2xl font-semibold">Please sign in</h1>
 
             <p className="text-muted-foreground">
               You must be logged in to post a job.
@@ -41,9 +59,7 @@ export default function JobPostingPage() {
 
         <main className="min-h-screen flex items-center justify-center p-8">
           <div className="text-center">
-            <h1 className="mb-2 text-2xl font-semibold">
-              Access denied
-            </h1>
+            <h1 className="mb-2 text-2xl font-semibold">Access denied</h1>
 
             <p className="text-muted-foreground">
               Only employer (or admin) accounts can post jobs.
@@ -54,29 +70,15 @@ export default function JobPostingPage() {
     );
   }
 
-  const {
-    data: employerProfile,
-    isLoading: employerProfileLoading,
-    isError: employerProfileError,
-  } = useQuery<EmployerProfileResponse>({
-    queryKey: ["employer-profile", user.id],
-    queryFn: () => getEmployerProfile(user.id),
-    enabled: !!user.id,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
-
   return (
     <EmployerPageShell title="Post a Job">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
-          <h1 className="mb-8 text-3xl font-bold text-accent">
-            Post a Job
-          </h1>
+          <h1 className="mb-8 text-3xl font-bold text-accent">Post a Job</h1>
 
           <p className="text-muted-foreground">
-            Connect with talented KU engineering students ready to join your team
+            Connect with talented KU engineering students ready to join your
+            team
           </p>
         </div>
 

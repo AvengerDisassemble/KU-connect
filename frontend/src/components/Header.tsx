@@ -52,7 +52,7 @@ const Header = () => {
             Home
           </Link>
           <Link
-            to="/student/browsejobs"
+            to="/student/browse-jobs"
             className="text-foreground hover:text-primary text-sm font-medium"
           >
             Browse Jobs
