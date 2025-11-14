@@ -14,6 +14,7 @@ import {
 export default function JobPostingPage() {
   const { user, isAuthenticated } = useAuth();
   const employerId = user?.id;
+  const hasEmployerAccess = user?.role === "employer" || user?.role === "admin";
 
   const {
     data: employerProfile,
@@ -77,8 +78,6 @@ export default function JobPostingPage() {
           <h1 className="mb-8 text-3xl font-bold text-accent">Post a Job</h1>
 
           <p className="text-muted-foreground">
-            Connect with talented KU engineering students ready to join your
-            team
             Connect with talented KU engineering students ready to join your
             team
           </p>
