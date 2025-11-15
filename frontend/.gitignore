@@ -38,3 +38,12 @@ dist-ssr
 Thumbs.db
 Thumbs.db:encryptable
 desktop.ini
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+frontend/playwright-report/
+frontend/test-results/
