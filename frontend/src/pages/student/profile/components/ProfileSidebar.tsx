@@ -37,7 +37,7 @@ const ProfileSidebar = ({
     }
   };
   return (
-    <aside className="w-72 bg-card rounded-2xl border-r border-border p-6">
+    <aside className="w-72 bg-card border-r border-border p-6">
       {/* Profile Avatar and Info */}
       <div className="text-center mb-8">
         {userId ? (

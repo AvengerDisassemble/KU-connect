@@ -14,6 +14,10 @@ import {
   MoreHorizontal,
   Phone,
   Flag,
+  Tag,
+  Globe,
+  Users,
+  ExternalLink,
   Bookmark,
   BookmarkCheck,
 } from "lucide-react";
@@ -26,7 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Job } from "@/services/jobs";
+import type { Job, JobDetail } from "@/services/jobs";
 import { ReportJobDialog } from "./ReportJobDialog";
 import {
   formatSalary,
@@ -36,13 +40,14 @@ import {
 } from "../utils";
 
 interface JobDetailViewProps {
-  job: Job | null;
+  job: (Job | JobDetail) | null;
   onApply?: (jobId: string) => void;
   isApplied?: boolean;
   isApplying?: boolean;
   onToggleSave?: (jobId: string) => void;
   isSaved?: boolean;
   isSaving?: boolean;
+  isLoadingDetail?: boolean;
 }
 
 interface JobActionsMenuProps {
@@ -50,6 +55,34 @@ interface JobActionsMenuProps {
   jobTitle: string;
   companyName: string;
 }
+
+type DetailEntry = {
+  id?: string;
+  text?: string | null;
+};
+
+const normalizeDetailItems = (items?: DetailEntry[] | null) => {
+  if (!Array.isArray(items)) {
+    return [] as Array<{ id: string; text: string }>;
+  }
+
+  const normalized: Array<{ id: string; text: string }> = [];
+
+  items.forEach((item, index) => {
+    if (!item) return;
+    const text = typeof item.text === "string" ? item.text.trim() : "";
+    if (!text) return;
+
+    const id =
+      typeof item.id === "string" && item.id.trim()
+        ? item.id
+        : `detail-${index}`;
+
+    normalized.push({ id, text });
+  });
+
+  return normalized;
+};
 
 const JobActionsMenu = ({
   jobId,
@@ -107,6 +140,7 @@ const JobDetailView = ({
   onToggleSave,
   isSaved = false,
   isSaving = false,
+  isLoadingDetail = false,
 }: JobDetailViewProps) => {
   if (!job) {
     return (
@@ -175,9 +209,88 @@ const JobDetailView = ({
       )} to be considered for this opportunity.`
     : "This role remains open until filled.";
 
+  const detailedJob = job as JobDetail | null;
+  const requirements = normalizeDetailItems(detailedJob?.requirements);
+  const qualifications = normalizeDetailItems(detailedJob?.qualifications);
+  const responsibilities = normalizeDetailItems(detailedJob?.responsibilities);
+  const benefits = normalizeDetailItems(detailedJob?.benefits);
+  const tags = Array.isArray(job.tags)
+    ? job.tags
+        .map((tag) => (typeof tag?.name === "string" ? tag.name.trim() : ""))
+        .filter(Boolean)
+    : [];
+  const hrProfile = detailedJob?.hr ?? null;
+
+  const hrWebsiteRaw =
+    typeof hrProfile?.website === "string" && hrProfile.website.trim()
+      ? hrProfile.website.trim()
+      : null;
+  const hrWebsite = hrWebsiteRaw
+    ? hrWebsiteRaw.match(/^https?:\/\//i)
+      ? hrWebsiteRaw
+      : `https://${hrWebsiteRaw}`
+    : null;
+
+  const hrCompanySize = hrProfile?.companySize
+    ? hrProfile.companySize
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/^\w/, (char: string) => char.toUpperCase())
+    : null;
+
+  const readableIndustry = hrProfile?.industry
+    ? hrProfile.industry
+        .toLowerCase()
+        .replace(/_/g, " ")
+        .replace(/^\w/, (char: string) => char.toUpperCase())
+    : null;
+  const hrAddress =
+    typeof hrProfile?.address === "string" && hrProfile.address.trim()
+      ? hrProfile.address.trim()
+      : null;
+  const hrPhone =
+    typeof hrProfile?.phoneNumber === "string" && hrProfile.phoneNumber.trim()
+      ? hrProfile.phoneNumber.trim()
+      : null;
+  const companyDisplayName =
+    hrProfile?.companyName || job.companyName || "Company";
+
+  const detailSections = [
+    {
+      key: "requirements",
+      title: "Requirements",
+      items: requirements,
+      empty: "Requirements not provided.",
+    },
+    {
+      key: "qualifications",
+      title: "Qualifications",
+      items: qualifications,
+      empty: "Qualifications not provided.",
+    },
+    {
+      key: "responsibilities",
+      title: "Responsibilities",
+      items: responsibilities,
+      empty: "Responsibilities not provided.",
+    },
+    {
+      key: "benefits",
+      title: "Benefits",
+      items: benefits,
+      empty: "Benefits not provided.",
+    },
+  ];
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="p-8">
+        {isLoadingDetail ? (
+          <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Loading additional job details…</span>
+          </div>
+        ) : null}
         {/* Header */}
         <div className="mb-6">
           <div className="mb-4 flex items-start justify-between gap-4">
@@ -386,6 +499,117 @@ const JobDetailView = ({
           <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
             <p>{job.description || "No description provided."}</p>
           </div>
+        </div>
+
+        <Separator className="my-6" />
+
+        {tags.length ? (
+          <div className="mb-6 space-y-3">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <Tag className="h-5 w-5 text-muted-foreground" />
+              Key Skills & Tags
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="rounded-full px-3 py-1"
+                >
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {hrProfile ? (
+          <div className="mb-6 rounded-xl border border-border/80 bg-muted/40 p-6 shadow-inner">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                  About the employer
+                </p>
+                <h3 className="text-2xl font-semibold text-foreground">
+                  {companyDisplayName}
+                </h3>
+              </div>
+              {hrWebsite ? (
+                <Button asChild variant="outline" size="sm" className="gap-2">
+                  <a href={hrWebsite} target="_blank" rel="noreferrer">
+                    Visit site
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                </Button>
+              ) : null}
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {readableIndustry ? (
+                <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <Globe className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">Industry</p>
+                    <p>{readableIndustry}</p>
+                  </div>
+                </div>
+              ) : null}
+              {hrCompanySize ? (
+                <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">Company size</p>
+                    <p>{hrCompanySize}</p>
+                  </div>
+                </div>
+              ) : null}
+              {hrAddress ? (
+                <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">Address</p>
+                    <p>{hrAddress}</p>
+                  </div>
+                </div>
+              ) : null}
+              {hrPhone ? (
+                <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <Phone className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium text-foreground">HQ phone</p>
+                    <p>{hrPhone}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+            {hrProfile.description ? (
+              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                {hrProfile.description}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* Role Expectations */}
+        <div className="space-y-6 mb-6">
+          {detailSections.map(({ key, title, items, empty }) => (
+            <div key={key} className="space-y-3">
+              <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+              {items.length ? (
+                <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+                  {items.map((item) => (
+                    <li key={item.id}>{item.text}</li>
+                  ))}
+                </ul>
+              ) : isLoadingDetail ? (
+                <div className="space-y-2">
+                  <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{empty}</p>
+              )}
+            </div>
+          ))}
         </div>
 
         <Separator className="my-6" />

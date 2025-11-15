@@ -1,4 +1,4 @@
-export type { Job } from "@/services/jobs";
+export type { Job, JobDetail } from "@/services/jobs";
 
 export type TabKey = "search" | "saved";
 
