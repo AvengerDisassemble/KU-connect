@@ -295,6 +295,7 @@ async function findOrCreateGoogleUser(googleProfile) {
           surname: true,
           email: true,
           role: true,
+          status: true,
           verified: true,
           createdAt: true,
           updatedAt: true,
@@ -305,7 +306,18 @@ async function findOrCreateGoogleUser(googleProfile) {
 
   if (existingAccount) {
     // User already exists with this Google account
-    return existingAccount.user;
+    // Return user with status field included
+    return {
+      id: existingAccount.user.id,
+      name: existingAccount.user.name,
+      surname: existingAccount.user.surname,
+      email: existingAccount.user.email,
+      role: existingAccount.user.role,
+      status: existingAccount.user.status,
+      verified: existingAccount.user.verified,
+      createdAt: existingAccount.user.createdAt,
+      updatedAt: existingAccount.user.updatedAt,
+    };
   }
 
   // Check if a user with this email already exists
@@ -335,6 +347,7 @@ async function findOrCreateGoogleUser(googleProfile) {
       surname: existingUser.surname,
       email: existingUser.email,
       role: existingUser.role,
+      status: existingUser.status,
       verified: existingUser.verified,
       createdAt: existingUser.createdAt,
       updatedAt: existingUser.updatedAt,
@@ -361,6 +374,7 @@ async function findOrCreateGoogleUser(googleProfile) {
         email,
         password: null, // OAuth users don't have passwords
         role: "STUDENT", // Default role
+        status: "APPROVED", // OAuth users are pre-approved (KU students verified by Google OAuth)
         verified: true, // OAuth users are pre-verified
       },
       select: {
@@ -369,6 +383,7 @@ async function findOrCreateGoogleUser(googleProfile) {
         surname: true,
         email: true,
         role: true,
+        status: true,
         verified: true,
         createdAt: true,
         updatedAt: true,
