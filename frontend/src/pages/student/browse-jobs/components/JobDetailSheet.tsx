@@ -7,12 +7,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { Job } from "../types";
+import type { Job, JobDetail } from "../types";
 import JobDetailView from "./JobDetailView";
 
 interface JobDetailSheetProps {
   isDetailSheetOpen: boolean;
-  selectedJob: Job | null;
+  selectedJob: (Job | JobDetail) | null;
   onOpenChange: (open: boolean) => void;
   onClose: () => void;
   onApply?: (jobId: string) => void;
@@ -21,6 +21,7 @@ interface JobDetailSheetProps {
   onToggleSave?: (jobId: string) => void;
   isSaved?: boolean;
   isSaving?: boolean;
+  isLoadingDetail?: boolean;
 }
 
 const JobDetailSheet = ({
@@ -34,6 +35,7 @@ const JobDetailSheet = ({
   onToggleSave,
   isSaved,
   isSaving,
+  isLoadingDetail,
 }: JobDetailSheetProps) => {
   return (
     <Sheet open={isDetailSheetOpen} onOpenChange={onOpenChange}>
@@ -76,6 +78,7 @@ const JobDetailSheet = ({
               onToggleSave={onToggleSave}
               isSaved={isSaved}
               isSaving={isSaving}
+              isLoadingDetail={isLoadingDetail}
             />
           </div>
         </div>
