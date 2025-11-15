@@ -13,9 +13,11 @@ import type { TabKey, SelectOption } from "./types";
 import { isJobApplicationClosed } from "./utils";
 import {
   getSavedJobs,
+  getJobById,
   listJobs,
   toggleSaveJob,
   type Job as JobResponse,
+  type JobDetail,
   type JobFilters as JobFiltersPayload,
   type JobListResponse,
 } from "@/services/jobs";
@@ -458,8 +460,37 @@ const BrowseJobs = () => {
     }
   }, [displayedJobs, selectedJobId, isDesktop]);
 
-  const selectedJob =
+  const selectedJobListItem =
     displayedJobs.find((job) => job.id === selectedJobId) ?? null;
+
+  const jobDetailQuery = useQuery<JobDetail>({
+    queryKey: ["jobs", "detail", selectedJobId],
+    queryFn: async () => {
+      if (!selectedJobId) {
+        throw new Error("Missing job identifier");
+      }
+      return getJobById(selectedJobId);
+    },
+    enabled: Boolean(selectedJobId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: false,
+  });
+
+  useEffect(() => {
+    if (!jobDetailQuery.error) {
+      return;
+    }
+    const message =
+      jobDetailQuery.error instanceof Error
+        ? jobDetailQuery.error.message
+        : "Unable to load job details.";
+    toast.error(message);
+  }, [jobDetailQuery.error]);
+
+  const selectedJobDetail = jobDetailQuery.data ?? selectedJobListItem;
+  const isJobDetailLoading =
+    Boolean(selectedJobId) && jobDetailQuery.isFetching && !jobDetailQuery.data;
 
   const savedCount = isStudent ? savedQuery.data?.total ?? savedJobs.size : 0;
 
@@ -638,11 +669,16 @@ const BrowseJobs = () => {
       : browseQuery.isLoading && !browseQuery.data;
 
   const isSelectedJobApplied =
-    selectedJob && (appliedJobs.has(selectedJob.id) || selectedJob.isApplied);
+    selectedJobListItem &&
+    (appliedJobs.has(selectedJobListItem.id) || selectedJobListItem.isApplied);
   const isSelectedJobSaved =
-    isStudent && selectedJob ? savedJobs.has(selectedJob.id) : false;
+    isStudent && selectedJobListItem
+      ? savedJobs.has(selectedJobListItem.id)
+      : false;
   const isSelectedJobSaving =
-    isStudent && selectedJob ? savingJobIds.has(selectedJob.id) : false;
+    isStudent && selectedJobListItem
+      ? savingJobIds.has(selectedJobListItem.id)
+      : false;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -684,21 +720,22 @@ const BrowseJobs = () => {
         <section className="hidden lg:flex lg:flex-1 lg:min-w-0">
           <div className="sticky top-0 flex h-screen w-full flex-col bg-card">
             <JobDetailView
-              job={selectedJob}
+              job={selectedJobDetail}
               onApply={isStudent ? handleRequestApply : undefined}
               isApplied={Boolean(isSelectedJobApplied)}
               isApplying={isApplicationBusy}
               onToggleSave={isStudent ? handleToggleSave : undefined}
               isSaved={isSelectedJobSaved}
               isSaving={isSelectedJobSaving}
+              isLoadingDetail={isJobDetailLoading}
             />
           </div>
         </section>
 
-        {!isDesktop && selectedJob ? (
+        {!isDesktop && selectedJobListItem ? (
           <JobDetailSheet
             isDetailSheetOpen={isDetailSheetOpen}
-            selectedJob={selectedJob}
+            selectedJob={selectedJobDetail}
             onOpenChange={(open) => {
               setDetailSheetOpen(open);
               if (!open) {
@@ -712,6 +749,7 @@ const BrowseJobs = () => {
             onToggleSave={isStudent ? handleToggleSave : undefined}
             isSaved={isSelectedJobSaved}
             isSaving={isSelectedJobSaving}
+            isLoadingDetail={isJobDetailLoading}
           />
         ) : null}
       </main>
