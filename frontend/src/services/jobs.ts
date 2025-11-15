@@ -35,6 +35,12 @@ export interface JobListItem {
   hr?: {
     id: string;
     companyName?: string | null;
+    description?: string | null;
+    address?: string | null;
+    industry?: string | null;
+    companySize?: string | null;
+    website?: string | null;
+    phoneNumber?: string | null;
   } | null;
   isSaved?: boolean;
   isApplied?: boolean;
@@ -109,6 +115,12 @@ export interface Job {
   hr?: {
     id: string;
     companyName?: string | null;
+    description?: string | null;
+    address?: string | null;
+    industry?: string | null;
+    companySize?: string | null;
+    website?: string | null;
+    phoneNumber?: string | null;
   } | null;
   isSaved?: boolean;
   isApplied?: boolean;
