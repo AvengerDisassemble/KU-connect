@@ -13,6 +13,22 @@ import {
 
 export default function JobPostingPage() {
   const { user, isAuthenticated } = useAuth();
+  const userId = user?.id;
+  const hasEmployerAccess =
+    user?.role === "employer" || user?.role === "admin";
+
+  const {
+    data: employerProfile,
+    isLoading: employerProfileLoading,
+    isError: employerProfileError,
+  } = useQuery<EmployerProfileResponse>({
+    queryKey: ["employer-profile", userId],
+    queryFn: () => getEmployerProfile(userId!),
+    enabled: Boolean(userId && hasEmployerAccess),
+    staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
 
   if (!isAuthenticated || !user) {
     return (
@@ -34,7 +50,7 @@ export default function JobPostingPage() {
     );
   }
 
-  if (user.role !== "employer" && user.role !== "admin") {
+  if (!hasEmployerAccess) {
     return (
       <>
         <div className="fixed inset-0 -z-50 pointer-events-none bg-bg-1" />
@@ -54,19 +70,6 @@ export default function JobPostingPage() {
     );
   }
 
-  const {
-    data: employerProfile,
-    isLoading: employerProfileLoading,
-    isError: employerProfileError,
-  } = useQuery<EmployerProfileResponse>({
-    queryKey: ["employer-profile", user.id],
-    queryFn: () => getEmployerProfile(user.id),
-    enabled: !!user.id,
-    staleTime: 5 * 60_000,
-    refetchOnWindowFocus: false,
-    retry: false,
-  });
-
   return (
     <EmployerPageShell title="Post a Job">
       <div className="mx-auto max-w-4xl">
@@ -76,7 +79,8 @@ export default function JobPostingPage() {
           </h1>
 
           <p className="text-muted-foreground">
-            Connect with talented KU engineering students ready to join your team
+            Connect with talented KU engineering students ready to join your
+            team
           </p>
         </div>
 
