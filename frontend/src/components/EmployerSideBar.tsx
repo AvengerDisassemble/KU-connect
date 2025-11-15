@@ -1,12 +1,12 @@
+import { useMemo, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 import { LogOut } from "lucide-react";
 
 import Logo from "@/assets/logo.png";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
-import { Button } from "@/components/ui/button";
 
 interface EmployerSidebarProps {
   onNavigate?: () => void;
@@ -17,45 +17,39 @@ export default function EmployerSidebar({ onNavigate }: EmployerSidebarProps) {
   const navigate = useNavigate();
   const [isSigningOut, setIsSigningOut] = useState(false);
 
-  const navItems = [
-    {
-      label: "Dashboard",
-      to: "/employer",
-      end: true,
-    },
-    {
-      label: "Post New Job",
-      to: "/employer/job-postings/create",
-      end: true,
-    },
-    {
-      label: "Company Profile",
-      to: `/employer/profile/${user!.id}`,
-      end: true,
-    },
-    {
-      label: "Preview Job Listings",
-      to: "/employer/job-postings",
-      end: true,
-    },
-  ] as const;
+  const companyProfilePath = useMemo(() => {
+    if (user?.id) {
+      return `/employer/profile/${user.id}`;
+    }
+
+    return "/employer/profile";
+  }, [user?.id]);
+
+  const navItems = useMemo(
+    () => [
+      { label: "Dashboard", to: "/employer", end: true },
+      { label: "Post New Job", to: "/employer/job-postings/create", end: true },
+      { label: "Browse Jobs", to: "/employer/browse-jobs", end: true },
+      { label: "Company Profile", to: companyProfilePath, end: true },
+    ],
+    [companyProfilePath]
+  );
 
   const handleLogout = async () => {
     try {
       setIsSigningOut(true);
       await logout();
       navigate("/login");
-      onNavigate?.();
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
       setIsSigningOut(false);
+      onNavigate?.();
     }
   };
 
   return (
     <aside className="flex min-h-screen w-full max-w-[280px] flex-col border-r border-border bg-card max-[390px]:max-w-[240px] md:w-60">
-      {/* Logo */}
       <div className="border-border border-b p-8 pt-8 text-center max-[390px]:p-6">
         <div className="flex items-center justify-center">
           <img
@@ -70,7 +64,6 @@ export default function EmployerSidebar({ onNavigate }: EmployerSidebarProps) {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 space-y-2 py-5 text-sm">
         {navItems.map((item) => (
           <NavLink
@@ -87,24 +80,20 @@ export default function EmployerSidebar({ onNavigate }: EmployerSidebarProps) {
                   : "text-muted-foreground hover:bg-muted/60"
               }`
             }
-            style={({ isActive }) => ({
-              borderLeftColor: isActive ? "var(--color-accent)" : "transparent",
-            })}
           >
             {item.label}
           </NavLink>
         ))}
       </nav>
 
-      {/* Sign out */}
-      <div className="px-6 pb-6">
+      <div className="border-border border-t p-8 max-[390px]:p-6">
         <Button
           variant="outline"
-          className="w-full justify-center border-border"
+          className="flex w-full items-center justify-center gap-2"
           onClick={handleLogout}
           disabled={isSigningOut}
         >
-          <LogOut className="mr-2 h-4 w-4" />
+          <LogOut className="h-4 w-4" />
           {isSigningOut ? "Signing out..." : "Sign out"}
         </Button>
       </div>

@@ -1,25 +1,24 @@
-import { Search, Bell, Menu, LogOut } from "lucide-react";
+import { Search, Menu, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
-import { useQuery } from "@tanstack/react-query";
-import { getProfile } from "@/services/profile";
+import { useAvatar } from "@/hooks/useAvatar";
+import { getInitials } from "@/utils/getInitials";
 import Logo from "@/assets/logo.png";
+import { NotificationBell } from "@/components/notifications";
 
 const Header = () => {
   const { user, isAuthenticated } = useAuth();
   const isStudent = user?.role === "student";
   const navigate = useNavigate();
-
-  // Fetch user profile for display
-  const { data: profile } = useQuery({
-    queryKey: ["profile", user?.id],
-    queryFn: () => getProfile(user!.id),
-    enabled: isStudent && !!user?.id,
-  });
+  const {
+    avatarUrl,
+    isLoading: isAvatarLoading,
+    isFetching: isAvatarFetching,
+  } = useAvatar(user?.id);
 
   const handleLogout = async () => {
     try {
@@ -30,11 +29,7 @@ const Header = () => {
     }
   };
 
-  // Generate initials from user name
-  const getInitials = (name?: string, surname?: string) => {
-    if (!name || !surname) return "U";
-    return `${name.charAt(0)}${surname.charAt(0)}`.toUpperCase();
-  };
+  const isAvatarBusy = isAvatarLoading || isAvatarFetching;
 
   if (isAuthenticated && !isStudent) {
     return null;
@@ -57,7 +52,7 @@ const Header = () => {
             Home
           </Link>
           <Link
-            to="/student/browsejobs"
+            to="/student/browse-jobs"
             className="text-foreground hover:text-primary text-sm font-medium"
           >
             Browse Jobs
@@ -85,22 +80,25 @@ const Header = () => {
         )}
 
         {/* Notifications */}
-        {isStudent && (
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-          </Button>
-        )}
+        {isStudent && <NotificationBell userId={user?.id} />}
 
         {/* User Profile */}
         {isAuthenticated && isStudent && user ? (
           <div className="flex items-center gap-2">
             <Avatar className="bg-primary w-9 h-9 rounded-full">
+              {avatarUrl ? (
+                <AvatarImage
+                  src={avatarUrl}
+                  alt="Profile avatar"
+                  className="object-cover"
+                />
+              ) : null}
               <AvatarFallback className="text-primary text-sm font-medium">
-                {profile
-                  ? getInitials(profile.name, profile.surname)
-                  : user.name
-                  ? user.name.charAt(0).toUpperCase()
-                  : "U"}
+                {isAvatarBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  getInitials(user.name, user.surname)
+                )}
               </AvatarFallback>
             </Avatar>
             <Button

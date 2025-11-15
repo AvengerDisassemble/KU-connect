@@ -107,11 +107,23 @@ const updateJobSchema = Joi.object({
  */
 const applyJobSchema = Joi.object({
   resumeLink: Joi.string()
-    .uri({ scheme: [/https?/] })
+    .trim()
     .max(300)
     .required()
+    .custom((value, helpers) => {
+      const urlPattern = /^https?:\/\//i;
+      const storagePattern = /^[^\s]+$/;
+
+      if (urlPattern.test(value) || storagePattern.test(value)) {
+        return value;
+      }
+
+      return helpers.error("any.invalid");
+    }, "resume link validation")
     .messages({
-      "string.uri": "Resume link must be a valid URL (http or https)",
+      "any.invalid":
+        "Resume link must be an https URL or storage key without spaces",
+      "string.max": "Resume link must be shorter than 300 characters",
     }),
 });
 

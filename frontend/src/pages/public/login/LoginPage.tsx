@@ -269,7 +269,7 @@ function getRoleDestination(role?: string, userId?: string) {
   }
   switch (normalizedRole) {
     case "STUDENT":
-      return "/student/dashboard";
+      return "/student/browse-jobs";
     case "EMPLOYER":
       return userId ? `/employer/profile/${userId}` : "/employer";
     case "ADMIN":
