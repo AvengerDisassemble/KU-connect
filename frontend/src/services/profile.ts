@@ -1,5 +1,5 @@
 import { BASE_URL } from "@/lib/config";
-import { refreshAccessToken } from "@/services/auth";
+import { clearAuthSession, refreshAccessToken } from "@/services/auth";
 
 export interface ProfileResponse {
   id: string;
@@ -8,6 +8,9 @@ export interface ProfileResponse {
   username?: string;
   email: string;
   verified: boolean;
+  phoneNumber?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
   student?: {
     id: string;
     userId: string;
@@ -15,6 +18,11 @@ export interface ProfileResponse {
     address: string;
     gpa?: number;
     expectedGraduationYear?: number;
+    resumeKey?: string | null;
+    transcriptKey?: string | null;
+    verificationDocKey?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
     degreeType?: {
       id: string;
       name: string;
@@ -31,6 +39,7 @@ export interface UpdateProfileRequest {
   expectedGraduationYear?: number;
   email?: string;
   degreeTypeId?: string;
+  phoneNumber?: string;
 }
 
 /**
@@ -73,11 +82,19 @@ const authorizedFetch = async (
   if (response.status === 401) {
     try {
       await refreshAccessToken();
-    } catch {
-      throw new Error("Session expired. Please log in again.");
+    } catch (error) {
+      clearAuthSession();
+      throw error instanceof Error
+        ? error
+        : new Error("Session expired. Please log in again.");
     }
 
     response = await fetch(input, buildRequestInit(init));
+
+    if (response.status === 401) {
+      clearAuthSession();
+      throw new Error("Session expired. Please log in again.");
+    }
   }
 
   return response;
