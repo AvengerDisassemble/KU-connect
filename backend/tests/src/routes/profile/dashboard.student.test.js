@@ -11,7 +11,7 @@ const { cleanupDatabase, createTestToken, TEST_DEGREE_TYPES } = require('../../u
 jest.setTimeout(30000)
 
 let degreeType
-let studentUser, hrUser, employerUser
+let studentUser, hrUser
 let studentToken, employerToken
 let testJobs = []
 let testApplications = []

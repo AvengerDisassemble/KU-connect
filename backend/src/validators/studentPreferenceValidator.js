@@ -78,9 +78,9 @@ const updateStudentPreferenceSchema = Joi.object({
       'any.only': 'Remote work preference must be one of: on-site, remote, hybrid'
     })
 })
-  .min(1) // At least one field must be updated (excluding forbidden fields)
+  .or('desiredLocation', 'minSalary', 'industry', 'jobType', 'remoteWork') // At least one allowed field must be present
   .messages({
-    'object.min': 'At least one preference field is required for update'
+    'object.missing': 'At least one preference field is required for update'
   })
 
 /**
