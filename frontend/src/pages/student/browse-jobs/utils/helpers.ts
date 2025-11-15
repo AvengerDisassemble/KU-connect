@@ -1,3 +1,5 @@
+import type { Job } from "@/services/jobs";
+
 export const formatSalary = (
   minSalary?: number | null,
   maxSalary?: number | null
@@ -65,4 +67,30 @@ export const getJobTypeColor = (type?: string | null): string => {
     default:
       return "bg-muted text-muted-foreground border-border";
   }
+};
+
+type JobLike = Pick<Job, "application_deadline"> & {
+  status?: string | null;
+};
+
+const isClosedStatus = (status?: string | null): boolean => {
+  if (!status) return false;
+  return status.trim().toLowerCase() === "closed";
+};
+
+const isDeadlineInPast = (deadline?: string | null): boolean => {
+  if (!deadline) return false;
+  const parsed = new Date(deadline);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.getTime() < Date.now();
+};
+
+export const isJobApplicationClosed = (job?: JobLike | null): boolean => {
+  if (!job) return false;
+
+  if (isClosedStatus(job.status)) {
+    return true;
+  }
+
+  return isDeadlineInPast(job.application_deadline);
 };
