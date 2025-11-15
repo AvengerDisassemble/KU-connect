@@ -1,13 +1,18 @@
 import { useState } from "react";
 import {
   MapPin,
-  DollarSign,
+  Banknote,
   Calendar,
   Building2,
   Briefcase,
+  CalendarClock,
   Clock,
+  Home,
+  Info,
   Loader2,
+  Mail,
   MoreHorizontal,
+  Phone,
   Flag,
   Bookmark,
   BookmarkCheck,
@@ -23,7 +28,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Job } from "@/services/jobs";
 import { ReportJobDialog } from "./ReportJobDialog";
-import { formatSalary, formatDeadline, getJobTypeColor } from "../utils";
+import {
+  formatSalary,
+  formatDeadline,
+  getJobTypeColor,
+  isJobApplicationClosed,
+} from "../utils";
 
 interface JobDetailViewProps {
   job: Job | null;
@@ -147,6 +157,23 @@ const JobDetailView = ({
 
   const showApplyButton = Boolean(onApply);
   const showSaveButton = Boolean(onToggleSave);
+  const applicationsClosed = isJobApplicationClosed(job);
+
+  const contactEmail = typeof job.email === "string" ? job.email.trim() : "";
+  const contactPhone =
+    typeof job.phone_number === "string" ? job.phone_number.trim() : "";
+  const contactOther =
+    typeof job.other_contact_information === "string"
+      ? job.other_contact_information.trim()
+      : "";
+
+  const applicationStatusMessage = applicationsClosed
+    ? "Applications for this role are closed."
+    : job.application_deadline
+    ? `Apply before ${formatDeadline(
+        job.application_deadline
+      )} to be considered for this opportunity.`
+    : "This role remains open until filled.";
 
   return (
     <div className="h-full overflow-y-auto">
@@ -184,6 +211,11 @@ const JobDetailView = ({
             >
               {job.workArrangement ?? "Work arrangement"}
             </Badge>
+            {applicationsClosed ? (
+              <Badge variant="destructive" className="uppercase tracking-wide">
+                Applications closed
+              </Badge>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
@@ -196,9 +228,19 @@ const JobDetailView = ({
               {showApplyButton ? (
                 <Button
                   className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
-                  disabled={!onApply || isApplied || isApplying}
+                  disabled={
+                    !onApply || isApplied || isApplying || applicationsClosed
+                  }
                   onClick={() => {
-                    if (!job || !onApply || isApplied || isApplying) return;
+                    if (
+                      !job ||
+                      !onApply ||
+                      isApplied ||
+                      isApplying ||
+                      applicationsClosed
+                    ) {
+                      return;
+                    }
                     onApply(job.id);
                   }}
                 >
@@ -209,6 +251,8 @@ const JobDetailView = ({
                     </span>
                   ) : isApplied ? (
                     "Applied"
+                  ) : applicationsClosed ? (
+                    "Applications Closed"
                   ) : (
                     "Apply Now"
                   )}
@@ -263,7 +307,7 @@ const JobDetailView = ({
           </div>
 
           <div className="flex items-start gap-3">
-            <DollarSign className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+            <Banknote className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium text-foreground">Salary Range</p>
               <p className="text-primary font-semibold">
@@ -287,6 +331,53 @@ const JobDetailView = ({
 
         <Separator className="my-6" />
 
+        {/* Role Details */}
+        <div className="space-y-4 mb-6">
+          <h2 className="text-xl font-semibold text-foreground">
+            Role Details
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex items-start gap-3">
+              <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">Position Type</p>
+                <p className="text-muted-foreground">
+                  {job.jobType || "Not specified"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Home className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">Work Arrangement</p>
+                <p className="text-muted-foreground">
+                  {job.workArrangement || "Not specified"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <CalendarClock className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">Duration</p>
+                <p className="text-muted-foreground">
+                  {job.duration || "Not specified"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">Company</p>
+                <p className="text-muted-foreground">
+                  {job.companyName || "Not specified"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-6" />
+
         {/* Job Description */}
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-4">
@@ -297,13 +388,56 @@ const JobDetailView = ({
           </div>
         </div>
 
-        {/* Additional sections can be added here */}
+        <Separator className="my-6" />
+
+        {/* Contact Information */}
+        <div className="space-y-4 mb-6">
+          <h2 className="text-xl font-semibold text-foreground">
+            Contact Information
+          </h2>
+          {contactEmail || contactPhone || contactOther ? (
+            <div className="space-y-3 text-sm text-muted-foreground">
+              {contactEmail ? (
+                <div className="flex items-start gap-3">
+                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <a
+                    href={`mailto:${contactEmail}`}
+                    className="text-foreground underline-offset-4 hover:underline"
+                  >
+                    {contactEmail}
+                  </a>
+                </div>
+              ) : null}
+              {contactPhone ? (
+                <div className="flex items-start gap-3">
+                  <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <a
+                    href={`tel:${contactPhone}`}
+                    className="text-foreground underline-offset-4 hover:underline"
+                  >
+                    {contactPhone}
+                  </a>
+                </div>
+              ) : null}
+              {contactOther ? (
+                <div className="flex items-start gap-3">
+                  <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <p className="whitespace-pre-wrap">{contactOther}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Contact details will be shared once your application is submitted.
+            </p>
+          )}
+        </div>
+
         <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
           <h3 className="font-medium text-foreground mb-2">About this role</h3>
           <p className="text-sm text-muted-foreground">
-            This position is posted by {job.companyName || "the employer"}.
-            Apply before {formatDeadline(job.application_deadline)} to be
-            considered for this opportunity.
+            This position is posted by {job.companyName || "the employer"}.{" "}
+            {applicationStatusMessage}
           </p>
         </div>
       </div>
