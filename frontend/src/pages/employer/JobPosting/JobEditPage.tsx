@@ -37,7 +37,11 @@ import {
   type JobDetail,
   type JobCreateUpdatePayload,
 } from "@/services/jobs";
-import { getEmployerProfile, type EmployerProfileResponse } from "@/services/employerProfile";
+import {
+  getEmployerDashboard,
+  getEmployerProfile,
+  type EmployerProfileResponse,
+} from "@/services/employerProfile";
 import { toSubmitPayload } from "./utils";
 
 const mapJobDetailToForm = (job: JobDetail): JobFormState => ({
@@ -117,12 +121,15 @@ const buildDiff = (
   return diff;
 };
 
+type EmployerDashboardData = Awaited<ReturnType<typeof getEmployerDashboard>>;
+
 const JobEditPage = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const jobIdParam = jobId ?? "";
+  const dashboardQueryKey = ["employer-dashboard", user?.id] as const;
 
   const {
     data: jobDetail,
@@ -164,7 +171,7 @@ const JobEditPage = () => {
       updateJob(jobIdParam, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["job-detail", jobIdParam] });
-      queryClient.invalidateQueries({ queryKey: ["employer-jobs"] });
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
       toast.success("Job updated successfully");
       navigate("/employer");
     },
@@ -177,19 +184,48 @@ const JobEditPage = () => {
     },
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useMutation<
+    Awaited<ReturnType<typeof deleteJob>>,
+    unknown,
+    void,
+    { previousDashboard?: EmployerDashboardData }
+  >({
     mutationFn: () => deleteJob(jobIdParam),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["employer-jobs"] });
-      toast.success("Job deleted");
-      navigate("/employer");
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: dashboardQueryKey });
+      const previousDashboard =
+        queryClient.getQueryData<EmployerDashboardData>(dashboardQueryKey);
+
+      if (previousDashboard?.dashboard?.myJobPostings) {
+        queryClient.setQueryData(dashboardQueryKey, {
+          ...previousDashboard,
+          dashboard: {
+            ...previousDashboard.dashboard,
+            myJobPostings:
+              previousDashboard.dashboard.myJobPostings.filter(
+                (job) => job.id !== jobIdParam,
+              ),
+          },
+        });
+      }
+
+      return { previousDashboard };
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, _variables, context) => {
+      if (context?.previousDashboard) {
+        queryClient.setQueryData(dashboardQueryKey, context.previousDashboard);
+      }
+
       const message =
         error instanceof Error
           ? error.message
           : "Failed to delete job";
       toast.error(message);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: dashboardQueryKey });
+      toast.success("Job deleted");
+      navigate("/employer");
     },
   });
 

@@ -208,3 +208,39 @@ export const fetchEmployerAvatar = async (userId: string): Promise<ArrayBuffer |
   const buffer = await res.arrayBuffer();
   return buffer.byteLength ? buffer : null;
 };
+
+export interface EmployerDashboardJobPosting {
+  id: string;
+  title: string;
+  location: string;
+  application_deadline: string;
+  createdAt?: string;
+  _count?: {
+    applications: number;
+  };
+}
+
+interface EmployerDashboardResponse {
+  userRole: string;
+  dashboard?: {
+    myJobPostings?: EmployerDashboardJobPosting[];
+    quickActions?: string[];
+  };
+  timestamp: string;
+}
+
+export const getEmployerDashboard = async (): Promise<EmployerDashboardResponse> => {
+  const res = await requestWithPolicies({
+    key: `GET /user-profile/dashboard`,
+    execute: () => authorizedFetch(`${BASE_URL}/user-profile/dashboard`),
+  });
+
+  const body = await readJson(res) as ApiResponse<EmployerDashboardResponse> | null;
+
+  if (!res.ok || !body) {
+    const message = body?.message || `${res.status} ${res.statusText}`;
+    throw new Error(message || "Failed to fetch employer dashboard");
+  }
+  if (!body.success) throw new Error(body.message || "Failed to fetch employer dashboard");
+  return body.data;
+};

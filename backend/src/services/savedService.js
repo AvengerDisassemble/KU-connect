@@ -53,6 +53,17 @@ async function listSavedJobs(userId, { page = 1, pageSize = 20 } = {}) {
  * @returns {Promise<object>} created record
  */
 async function addSavedJob(userId, jobId) {
+  // First, validate that the job exists
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+  });
+
+  if (!job) {
+    const err = new Error("Job not found");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+
   try {
     const saved = await prisma.savedJob.create({
       data: { userId, jobId },
@@ -67,7 +78,13 @@ async function addSavedJob(userId, jobId) {
       err.code = "ALREADY_SAVED";
       throw err;
     }
-    // Map record not found (foreign key) to NOT_FOUND when possible
+    // Map foreign key constraint violation to NOT_FOUND
+    if (error && error.code === "P2003") {
+      const err = new Error("User or Job not found");
+      err.code = "NOT_FOUND";
+      throw err;
+    }
+    // Map record not found to NOT_FOUND
     if (error && error.code === "P2025") {
       const err = new Error("Not found");
       err.code = "NOT_FOUND";

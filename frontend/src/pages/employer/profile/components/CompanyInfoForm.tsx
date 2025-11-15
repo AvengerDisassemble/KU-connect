@@ -15,6 +15,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Camera, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,55 +38,22 @@ import {
   type EmployerProfileResponse,
   type UpdateEmployerProfileRequest,
 } from "@/services/employerProfile";
+import {
+  API_TO_INDUSTRY_UI,
+  INDUSTRY_OPTIONS_BASE,
+  INDUSTRY_UI_TO_API,
+} from "@/lib/domain/industries";
+import {
+  API_TO_COMPANY_SIZE_UI,
+  COMPANY_SIZE_OPTIONS,
+  COMPANY_SIZE_UI_TO_API,
+} from "@/lib/domain/companySize";
+import { EMPLOYER_PROFILE_DRAFT_KEY } from "@/lib/constants/storageKeys";
 import { z, ZodError } from "zod";
 
 const PHONE_REGEX = /^[0-9+\-()\s]{8,15}$/;
 
 type Option = { value: string; label: string };
-
-const INDUSTRY_OPTIONS_BASE: Option[] = [
-  { value: "it-hardware-and-devices", label: "IT Hardware & Devices" },
-  { value: "it-software", label: "IT Software" },
-  { value: "it-services", label: "IT Services" },
-  { value: "network-services", label: "Network Services" },
-  { value: "emerging-tech", label: "Emerging Tech" },
-  { value: "e-commerce", label: "E-commerce" },
-  { value: "other", label: "Other" },
-];
-
-const INDUSTRY_UI_TO_API: Record<string, string> = {
-  "it-hardware-and-devices": "IT_HARDWARE_AND_DEVICES",
-  "it-software": "IT_SOFTWARE",
-  "it-services": "IT_SERVICES",
-  "network-services": "NETWORK_SERVICES",
-  "emerging-tech": "EMERGING_TECH",
-  "e-commerce": "E_COMMERCE",
-  other: "OTHER",
-};
-
-const API_TO_INDUSTRY_UI: Record<string, string> = Object.fromEntries(
-  Object.entries(INDUSTRY_UI_TO_API).map(([ui, api]) => [api, ui])
-);
-
-const COMPANY_SIZE_OPTIONS_BASE: Option[] = [
-  { value: "1-10", label: "1-10" },
-  { value: "11-50", label: "11-50" },
-  { value: "51-200", label: "51-200" },
-  { value: "201-500", label: "201-500" },
-  { value: "500+", label: "500+" },
-];
-
-const COMPANY_SIZE_UI_TO_API: Record<string, string> = {
-  "1-10": "ONE_TO_TEN",
-  "11-50": "ELEVEN_TO_FIFTY",
-  "51-200": "FIFTY_ONE_TO_TWO_HUNDRED",
-  "201-500": "TWO_HUNDRED_ONE_TO_FIVE_HUNDRED",
-  "500+": "FIVE_HUNDRED_PLUS",
-};
-
-const API_TO_COMPANY_SIZE_UI: Record<string, string> = Object.fromEntries(
-  Object.entries(COMPANY_SIZE_UI_TO_API).map(([ui, api]) => [api, ui])
-);
 
 const valuesOf = (ops: Option[]) => ops.map((o) => o.value);
 const isIn = (ops: Option[], v?: string) => !!v && valuesOf(ops).includes(v);
@@ -126,13 +94,13 @@ const formSchema = z.object({
     .string()
     .refine(
       (v) => isIn(INDUSTRY_OPTIONS_BASE, v),
-      "Industry must be selected from the list"
+      "Industry must be selected from the list",
     ),
   companySize: z
     .string()
     .refine(
-      (v) => isIn(COMPANY_SIZE_OPTIONS_BASE, v),
-      "Company Size must be selected from the list"
+      (v) => isIn(COMPANY_SIZE_OPTIONS as Option[], v),
+      "Company Size must be selected from the list",
     ),
   address: z.string().min(1, "Address is required"),
   contactEmail: z.string().email("Please enter a valid email address"),
@@ -156,7 +124,7 @@ const formSchema = z.object({
 
 const validateEmailInline = (
   value: string,
-  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>,
 ) => {
   const s = value.trim();
   if (s.length === 0) {
@@ -172,6 +140,23 @@ const validateEmailInline = (
 
 const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const [draftProfile] = useState<Partial<CompanyForm> | null>(() => {
+    if (typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem(EMPLOYER_PROFILE_DRAFT_KEY);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as Partial<CompanyForm>;
+      window.localStorage.removeItem(EMPLOYER_PROFILE_DRAFT_KEY);
+      return parsed;
+    } catch (error) {
+      console.error("Failed to parse employer profile draft", error);
+      return null;
+    }
+  });
+  const isEmployer = user?.role === "employer";
+  const resolvedUserId = userId ?? user?.id ?? null;
+  const canLoadProfile = Boolean(isEmployer && resolvedUserId);
 
   const [formData, setFormData] = useState<CompanyForm>({
     companyName: "",
@@ -196,22 +181,22 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
   const previewAvatarUrlRef = useRef<string | null>(null);
 
   const avatarQueryKey = useMemo(
-    () => ["employerAvatar", userId],
-    [userId]
+    () => ["employerAvatar", resolvedUserId],
+    [resolvedUserId],
   );
   const previewQueryKey = useMemo(
-    () => ["employerAvatarPreview", userId],
-    [userId]
+    () => ["employerAvatarPreview", resolvedUserId],
+    [resolvedUserId],
   );
 
   const {
     data: profile,
     isLoading: profileLoading,
   } = useQuery<EmployerProfileResponse>({
-    queryKey: ["employerProfile", userId],
-    queryFn: () => getEmployerProfile(userId!),
-    enabled: !!userId,
-  });
+      queryKey: ["employerProfile", resolvedUserId],
+      queryFn: () => getEmployerProfile(resolvedUserId!),
+      enabled: canLoadProfile,
+    });
 
   const {
     data: avatarData,
@@ -220,8 +205,8 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
     error: avatarQueryError,
   } = useQuery<ArrayBuffer | null>({
     queryKey: avatarQueryKey,
-    queryFn: () => fetchEmployerAvatar(userId!),
-    enabled: !!userId,
+    queryFn: () => fetchEmployerAvatar(resolvedUserId!),
+    enabled: canLoadProfile,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,
@@ -273,19 +258,31 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
   }, [previewQueryKey, qc]);
 
   useEffect(() => {
-    if (!profile) return;
+    if (!profile && !draftProfile) return;
 
-    setFormData({
-      companyName: profile.hr?.companyName ?? "",
-      industry: API_TO_INDUSTRY_UI[profile.hr?.industry ?? ""] ?? "",
-      companySize: API_TO_COMPANY_SIZE_UI[profile.hr?.companySize ?? ""] ?? "",
-      website: profile.hr?.website ?? "",
-      address: profile.hr?.address ?? "",
-      description: profile.hr?.description ?? "",
-      contactEmail: profile.email ?? "",
-      phoneNumber: profile.hr?.phoneNumber ?? profile.phoneNumber ?? "",
-    });
-  }, [profile]);
+    setFormData((prev) => ({
+      companyName: profile?.hr?.companyName ?? prev.companyName ?? "",
+      industry:
+        draftProfile?.industry ??
+        API_TO_INDUSTRY_UI[profile?.hr?.industry ?? ""] ??
+        prev.industry ??
+        "",
+      companySize:
+        draftProfile?.companySize ??
+        API_TO_COMPANY_SIZE_UI[profile?.hr?.companySize ?? ""] ??
+        prev.companySize ??
+        "",
+      website: draftProfile?.website ?? profile?.hr?.website ?? "",
+      address: profile?.hr?.address ?? prev.address ?? "",
+      description: draftProfile?.description ?? profile?.hr?.description ?? "",
+      contactEmail: profile?.email ?? prev.contactEmail ?? "",
+      phoneNumber:
+        profile?.hr?.phoneNumber ??
+        profile?.phoneNumber ??
+        prev.phoneNumber ??
+        "",
+    }));
+  }, [profile, draftProfile]);
 
   const mutation: UseMutationResult<
     EmployerProfileResponse,
@@ -295,7 +292,7 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
     mutationFn: (payload: UpdateEmployerProfileRequest) =>
       updateEmployerProfile(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["employerProfile", userId] });
+      qc.invalidateQueries({ queryKey: ["employerProfile", resolvedUserId] });
       toast.success("Profile Updated", {
         description: "Company profile has been saved.",
         duration: 3000,
@@ -347,11 +344,11 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
   };
 
   const handleAvatarChange = (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ): void => {
     const file = event.target.files?.[0] ?? null;
     event.target.value = "";
-    if (!file || !userId) return;
+    if (!file || !resolvedUserId) return;
 
     const allowedTypes = [
       "image/jpeg",
@@ -385,7 +382,7 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
 
   const submit = async (): Promise<void> => {
     if (!validate()) return;
-    if (!userId) {
+    if (!resolvedUserId) {
       toast.error("Missing userId in URL.");
       return;
     }
@@ -438,6 +435,37 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
   }, [profile?.hr?.companyName, profile?.name, profile?.surname]);
 
   const displayedAvatarUrl = previewAvatarUrl ?? currentAvatarUrl;
+
+  if (!isEmployer) {
+    return (
+      <Card className="border-none">
+        <CardHeader>
+          <CardTitle>Company Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            You must be signed in with an employer account to edit company
+            details.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!resolvedUserId) {
+    return (
+      <Card className="border-none">
+        <CardHeader>
+          <CardTitle>Company Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Missing employer ID. Open your profile from the employer dashboard.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (profileLoading) {
     return (
@@ -570,7 +598,7 @@ const CompanyInfoForm: React.FC<{ userId?: string }> = ({ userId }) => {
               <SelectValue placeholder="Select company size" />
             </SelectTrigger>
             <SelectContent>
-              {COMPANY_SIZE_OPTIONS_BASE.map((opt) => (
+              {COMPANY_SIZE_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {opt.label}
                 </SelectItem>
