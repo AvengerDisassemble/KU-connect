@@ -10,6 +10,7 @@ import {
   JobApplicationDialog,
 } from "./components";
 import type { TabKey, SelectOption } from "./types";
+import { isJobApplicationClosed } from "./utils";
 import {
   getSavedJobs,
   listJobs,
@@ -46,6 +47,9 @@ const BrowseJobs = () => {
     if (typeof window === "undefined") return false;
     return window.matchMedia("(min-width: 1024px)").matches;
   });
+  const [knownLocations, setKnownLocations] = useState<Set<string>>(
+    () => new Set<string>()
+  );
 
   const normalizeWorkArrangement = (value?: string | null) =>
     value?.toLowerCase().replace(/[^a-z]/g, "") ?? "";
@@ -146,6 +150,26 @@ const BrowseJobs = () => {
     const jobs = savedQuery.data?.jobs;
     return Array.isArray(jobs) ? (jobs as JobResponse[]) : [];
   }, [savedQuery.data]);
+
+  useEffect(() => {
+    setKnownLocations((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+
+      const addLocation = (value?: string | null) => {
+        const location = value?.trim();
+        if (location && !next.has(location)) {
+          next.add(location);
+          changed = true;
+        }
+      };
+
+      browseJobs.forEach((job) => addLocation(job.location));
+      savedJobsList.forEach((job) => addLocation(job.location));
+
+      return changed ? next : prev;
+    });
+  }, [browseJobs, savedJobsList]);
 
   useEffect(() => {
     const nextSavedIds = new Set<string>();
@@ -311,23 +335,39 @@ const BrowseJobs = () => {
 
   const locationOptions = useMemo<SelectOption[]>(() => {
     const source = activeTab === "saved" ? savedCombinedJobs : browseJobs;
+    const aggregate = new Set<string>();
 
-    const uniqueLocations = Array.from(
-      new Set(
-        source
-          .map((job) => job.location?.trim())
-          .filter((location): location is string => Boolean(location))
-      )
-    ).sort((a, b) => a.localeCompare(b));
+    source.forEach((job) => {
+      const location = job.location?.trim();
+      if (location) aggregate.add(location);
+    });
+
+    knownLocations.forEach((location) => {
+      if (location) aggregate.add(location);
+    });
+
+    if (locationFilter !== "all" && locationFilter.trim()) {
+      aggregate.add(locationFilter.trim());
+    }
+
+    const sortedLocations = Array.from(aggregate).sort((a, b) =>
+      a.localeCompare(b)
+    );
 
     return [
       { value: "all", label: "All locations" },
-      ...uniqueLocations.map((location) => ({
+      ...sortedLocations.map((location) => ({
         value: location,
         label: location,
       })),
     ];
-  }, [activeTab, savedCombinedJobs, browseJobs]);
+  }, [
+    activeTab,
+    savedCombinedJobs,
+    browseJobs,
+    knownLocations,
+    locationFilter,
+  ]);
 
   const pageSize = Math.max(1, browseQuery.data?.limit ?? PAGE_SIZE);
   const totalAvailable = browseQuery.data?.total ?? 0;
@@ -402,13 +442,21 @@ const BrowseJobs = () => {
       return;
     }
 
-    if (
-      !selectedJobId ||
-      !displayedJobs.some((job) => job.id === selectedJobId)
-    ) {
-      setSelectedJobId(displayedJobs[0].id);
+    const hasSelectedJob = selectedJobId
+      ? displayedJobs.some((job) => job.id === selectedJobId)
+      : false;
+
+    if (isDesktop) {
+      if (!hasSelectedJob) {
+        setSelectedJobId(displayedJobs[0].id);
+      }
+      return;
     }
-  }, [displayedJobs, selectedJobId]);
+
+    if (!hasSelectedJob && selectedJobId) {
+      setSelectedJobId(null);
+    }
+  }, [displayedJobs, selectedJobId, isDesktop]);
 
   const selectedJob =
     displayedJobs.find((job) => job.id === selectedJobId) ?? null;
@@ -537,6 +585,11 @@ const BrowseJobs = () => {
         return;
       }
 
+      if (isJobApplicationClosed(jobFromList)) {
+        toast.info("Applications for this job are closed.");
+        return;
+      }
+
       setJobPendingApply(jobFromList);
     },
     [appliedJobs, displayedJobs, browseJobs, savedJobsList, isApplicationBusy]
@@ -646,7 +699,12 @@ const BrowseJobs = () => {
           <JobDetailSheet
             isDetailSheetOpen={isDetailSheetOpen}
             selectedJob={selectedJob}
-            onOpenChange={setDetailSheetOpen}
+            onOpenChange={(open) => {
+              setDetailSheetOpen(open);
+              if (!open) {
+                setSelectedJobId(null);
+              }
+            }}
             onClose={handleCloseDetailSheet}
             onApply={isStudent ? handleRequestApply : undefined}
             isApplied={Boolean(isSelectedJobApplied)}
