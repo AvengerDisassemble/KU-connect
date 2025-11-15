@@ -77,7 +77,6 @@ export interface RegisterEmployerData {
   phoneNumber: string;
   companyName: string;
   address: string;
-  phoneNumber: string;
   contactEmail?: string;
   industry?: string;
 }
@@ -87,7 +86,7 @@ export interface RegisterEmployerData {
  */
 export async function login(
   email: string,
-  password: string,
+  password: string
 ): Promise<LoginResponse> {
   const response = await fetch(`${BASE_URL}/login`, {
     method: "POST",
@@ -113,11 +112,19 @@ export async function login(
 
   if (data.success) {
     const { accessToken, refreshToken, user } = data.data ?? {};
-    setAuthSession({
-      accessToken: accessToken ?? null,
-      refreshToken: refreshToken ?? null,
-      user: user ?? null,
-    });
+    const sessionPayload: AuthSessionPayload = {};
+
+    if (typeof accessToken === "string") {
+      sessionPayload.accessToken = accessToken;
+    }
+    if (typeof refreshToken === "string") {
+      sessionPayload.refreshToken = refreshToken;
+    }
+    if (user) {
+      sessionPayload.user = user;
+    }
+
+    setAuthSession(sessionPayload);
   }
 
   return data;
@@ -167,19 +174,19 @@ export async function refreshAccessToken(): Promise<LoginResponse> {
 
   const storedRefreshToken = localStorage.getItem("refreshToken");
 
-  if (!storedRefreshToken) {
-    clearAuthSession();
-    throw new Error("Refresh token missing");
-  }
-
   refreshPromise = (async (): Promise<LoginResponse> => {
+    const payload: { refreshToken?: string | null } = {};
+    if (storedRefreshToken) {
+      payload.refreshToken = storedRefreshToken;
+    }
+
     const response = await fetch(`${BASE_URL}/auth/refresh`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify({ refreshToken: storedRefreshToken }),
+      body: JSON.stringify(payload),
     });
 
     const raw = await response.text();
@@ -220,11 +227,19 @@ export async function refreshAccessToken(): Promise<LoginResponse> {
     }
 
     const { accessToken, refreshToken, user } = data.data ?? {};
-    setAuthSession({
-      accessToken: accessToken ?? null,
-      refreshToken: refreshToken ?? null,
-      user: user ?? null,
-    });
+    const sessionPayload: AuthSessionPayload = {};
+
+    if (typeof accessToken === "string") {
+      sessionPayload.accessToken = accessToken;
+    }
+    if (typeof refreshToken === "string") {
+      sessionPayload.refreshToken = refreshToken;
+    }
+    if (user) {
+      sessionPayload.user = user;
+    }
+
+    setAuthSession(sessionPayload);
 
     return data;
   })();
@@ -275,7 +290,7 @@ export async function registerEmployer(data: RegisterEmployerData) {
     }
 
     const err = new Error(
-      errorBody?.message || "Employer registration failed",
+      errorBody?.message || "Employer registration failed"
     ) as Error & { errors?: unknown };
     if (errorBody?.errors) {
       err.errors = errorBody.errors;
