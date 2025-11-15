@@ -7,7 +7,9 @@ All components of the file upload system have been successfully implemented acco
 ## 📦 What Was Implemented
 
 ### 1. Database Schema Updates
+
 **File:** `prisma/schema.prisma`
+
 - Added `avatarKey` to `User` model
 - Added `resumeKey` and `transcriptKey` to `Student` model
 - Added `verificationDocKey` to `HR` model
@@ -15,37 +17,49 @@ All components of the file upload system have been successfully implemented acco
 ### 2. Storage Provider Architecture
 
 #### Base Interface
+
 **File:** `src/services/storage/storageProvider.js`
+
 - Abstract base class defining the contract
 - Methods: `uploadFile()`, `getFileUrl()`, `deleteFile()`
 
 #### Local Storage Provider
+
 **File:** `src/services/storage/localStorageProvider.js`
+
 - Stores files in `uploads/<prefix>/` directory
 - Uses UUID-based file naming
 - Returns direct URLs for static serving
 
 #### S3 Storage Provider
+
 **File:** `src/services/storage/s3StorageProvider.js`
+
 - Uploads to AWS S3 with configurable bucket
 - Generates signed URLs (5-minute expiry)
 - Validates AWS credentials on instantiation
 
 #### Factory
+
 **File:** `src/services/storageFactory.js`
+
 - Selects provider based on `STORAGE_PROVIDER` env variable
 - Exports singleton instance for reuse
 
 ### 3. Controllers
 
 #### Profile Controller (Updated)
+
 **File:** `src/controllers/profileController.js`
+
 - Added `uploadAvatar()` - handles avatar uploads
 - Added `getAvatarUrl()` - retrieves avatar URLs
 - Includes old file cleanup logic
 
 #### Documents Controller (New)
+
 **File:** `src/controllers/documentsController.js`
+
 - `uploadResume()` - student resume upload (PDF only, 10MB max)
 - `getResumeUrl()` - retrieve resume URL (owner/admin)
 - `uploadTranscript()` - student transcript upload (PDF only, 10MB max)
@@ -56,13 +70,17 @@ All components of the file upload system have been successfully implemented acco
 ### 4. Routes
 
 #### Profile Routes (Updated)
+
 **File:** `src/routes/profile/index.js`
+
 - `POST /api/profile/avatar` - upload avatar (authenticated)
 - `GET /api/profile/avatar/:userId` - get avatar URL (authenticated)
 - Multer middleware with image validation and 2MB limit
 
 #### Documents Routes (New)
+
 **File:** `src/routes/documents/index.js`
+
 - `POST /api/documents/resume` - upload resume (students only)
 - `GET /api/documents/resume/:userId` - get resume URL
 - `POST /api/documents/transcript` - upload transcript (students only)
@@ -72,33 +90,43 @@ All components of the file upload system have been successfully implemented acco
 - Separate multer configs for PDFs and mixed file types
 
 ### 5. Server Configuration (Updated)
+
 **File:** `server.js`
+
 - Conditional static file serving for local provider in development
 - Serves `/uploads` directory when `STORAGE_PROVIDER=local` and not in production
 
 ### 6. Comprehensive Test Suite
 
 #### Interface Tests
+
 **File:** `tests/services/storage/interface.test.js`
+
 - Validates all providers implement required methods
 - Tests base class throws errors
 
 #### Local Provider Tests
+
 **File:** `tests/services/storage/localStorageProvider.test.js`
+
 - Upload functionality with different prefixes
 - File URL generation
 - Delete operations
 - Cleanup after tests
 
 #### S3 Provider Tests
+
 **File:** `tests/services/storage/s3StorageProvider.test.js`
+
 - Upload to real S3 (skipped if no credentials)
 - Signed URL generation
 - Delete operations
 - Environment variable validation
 
 #### Controller Tests
+
 **File:** `tests/controllers/documentsController.test.js`
+
 - Role-based access control validation
 - File type validation (PDF/JPEG/PNG)
 - Mock storage provider integration
@@ -107,7 +135,9 @@ All components of the file upload system have been successfully implemented acco
 ### 7. Documentation
 
 #### Main README
+
 **File:** `documents/uploads/UPLOAD_SYSTEM_README.md`
+
 - Complete system documentation
 - API endpoints reference
 - Setup instructions
@@ -116,32 +146,40 @@ All components of the file upload system have been successfully implemented acco
 - Troubleshooting guide
 
 #### Quick Start Guide
+
 **File:** `QUICKSTART_UPLOADS.md`
+
 - Step-by-step setup
 - Installation commands
 - Example API calls
 - Common issues and solutions
 
 #### Environment Example
+
 **File:** `.env.example` (updated)
+
 - Added `STORAGE_PROVIDER` configuration
 - AWS S3 credentials template
 
 ## 🔧 Configuration Required
 
 ### 1. Install Dependencies
+
 ```bash
 npm install multer uuid mime-types dotenv @aws-sdk/client-s3 @aws-sdk/s3-request-presigner
 ```
 
 ### 2. Run Migration
+
 ```bash
 npx prisma migrate dev --name add_user_and_profile_docs_keys
 npx prisma generate
 ```
 
 ### 3. Environment Variables
+
 Add to `.env`:
+
 ```env
 STORAGE_PROVIDER=local
 
@@ -153,6 +191,7 @@ STORAGE_PROVIDER=local
 ```
 
 ### 4. Run Tests
+
 ```bash
 npm test
 ```
@@ -178,16 +217,16 @@ npm test
 
 ## 🎯 API Endpoints Summary
 
-| Endpoint | Method | Role | File Type | Size Limit |
-|----------|--------|------|-----------|------------|
-| `/api/profile/avatar` | POST | Any | Images | 2 MB |
-| `/api/profile/avatar/:userId` | GET | Any | - | - |
-| `/api/documents/resume` | POST | STUDENT | PDF | 10 MB |
-| `/api/documents/resume/:userId` | GET | Owner/Admin | - | - |
-| `/api/documents/transcript` | POST | STUDENT | PDF | 10 MB |
-| `/api/documents/transcript/:userId` | GET | Owner/Admin | - | - |
-| `/api/documents/employer-verification` | POST | EMPLOYER | JPEG/PNG/PDF | 10 MB |
-| `/api/documents/employer-verification/:userId` | GET | Owner/Admin | - | - |
+| Endpoint                                       | Method | Role        | File Type    | Size Limit |
+| ---------------------------------------------- | ------ | ----------- | ------------ | ---------- |
+| `/api/profile/avatar`                          | POST   | Any         | Images       | 2 MB       |
+| `/api/profile/avatar/:userId`                  | GET    | Any         | -            | -          |
+| `/api/documents/resume`                        | POST   | STUDENT     | PDF          | 10 MB      |
+| `/api/documents/resume/:userId`                | GET    | Owner/Admin | -            | -          |
+| `/api/documents/transcript`                    | POST   | STUDENT     | PDF          | 10 MB      |
+| `/api/documents/transcript/:userId`            | GET    | Owner/Admin | -            | -          |
+| `/api/documents/employer-verification`         | POST   | EMPLOYER    | JPEG/PNG/PDF | 10 MB      |
+| `/api/documents/employer-verification/:userId` | GET    | Owner/Admin | -            | -          |
 
 ## ✨ Features
 

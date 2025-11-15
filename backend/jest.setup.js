@@ -11,8 +11,7 @@ global.console = {
   // but still show test failures
   error: jest.fn(),
   warn: jest.fn(),
-}
+};
 
 // If you need to see console output for debugging, uncomment:
 // global.console = originalConsole;
-

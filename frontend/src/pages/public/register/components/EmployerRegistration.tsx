@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,10 +12,54 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle2, Upload, X, FileText, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { registerEmployer } from "@/services/auth";
+import { login, registerEmployer } from "@/services/auth";
+import {
+  INDUSTRY_OPTIONS_BASE,
+  INDUSTRY_UI_TO_API,
+} from "@/lib/domain/industries";
+import {
+  COMPANY_SIZE_OPTIONS,
+  COMPANY_SIZE_UI_TO_API,
+} from "@/lib/domain/companySize";
+import {
+  updateEmployerProfile,
+  type UpdateEmployerProfileRequest,
+} from "@/services/employerProfile";
+import { EMPLOYER_PROFILE_DRAFT_KEY } from "@/lib/constants/storageKeys";
+
+const PASSWORD_RULES = [
+  {
+    id: "length",
+    message: "Password must be at least 8 characters",
+    test: (value: string) => value.length >= 8,
+  },
+  {
+    id: "lowercase",
+    message: "Password must contain at least one lowercase letter",
+    test: (value: string) => /[a-z]/.test(value),
+  },
+  {
+    id: "uppercase",
+    message: "Password must contain at least one uppercase letter",
+    test: (value: string) => /[A-Z]/.test(value),
+  },
+] as const;
+
+const passwordSchema = z
+  .string()
+  .min(1, "Password is required")
+  .superRefine((value, ctx) => {
+    const failingRule = PASSWORD_RULES.find((rule) => !rule.test(value));
+    if (failingRule) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: failingRule.message,
+      });
+    }
+  });
 
 const step1Schema = z
   .object({
@@ -24,7 +69,7 @@ const step1Schema = z
       .min(2, "Last name must be at least 2 characters")
       .max(50),
     email: z.string().email("Invalid email address").max(255),
-    password: z.string().min(8, "Password must be at least 8 characters"),
+    password: passwordSchema,
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -40,38 +85,52 @@ const step2Schema = z.object({
     .max(500, "Description must be less than 500 characters")
     .optional(),
   industry: z.string().optional(),
+  companySize: z
+    .string()
+    .optional()
+    .refine(
+      (val) =>
+        !val || COMPANY_SIZE_OPTIONS.some((option) => option.value === val),
+      "Invalid company size",
+    ),
 });
 
-const fileSchema = z
-  .any()
-  .refine(
-    (value) =>
-      value === null ||
-      value === undefined ||
-      (typeof File !== "undefined" && value instanceof File),
-    { message: "Invalid file type" }
-  )
-  .optional();
+const REQUIRED_FIELDS: (keyof FormData)[] = [
+  "name",
+  "surname",
+  "email",
+  "password",
+  "companyName",
+  "address",
+  "phoneNumber",
+];
+
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+const PHONE_REGEX = /^[0-9+\-()\s]{8,15}$/;
+
+const RequiredLabel = ({
+  htmlFor,
+  children,
+}: {
+  htmlFor: string;
+  children: ReactNode;
+}) => (
+  <Label htmlFor={htmlFor} aria-required className="text-sm sm:text-base">
+    {children}
+    <span className="text-destructive"> *</span>
+  </Label>
+);
 
 const step3Schema = z.object({
-  contactEmail: z
+  phoneNumber: z
     .string()
-    .email("Invalid email address")
-    .max(255)
-    .optional()
-    .or(z.literal("")),
-  phone: z
-    .string()
+    .trim()
     .regex(
-      /^[0-9+\s\-()]*$/,
-      "Phone number must contain only digits and valid separators"
-    )
-    .min(9, "Phone number must be at least 9 digits")
-    .max(20, "Phone number must not exceed 20 digits")
-    .optional()
-    .or(z.literal("")),
+      /^[0-9+\-()\s]{8,15}$/,
+      "Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces",
+    ),
   website: z.string().url("Invalid URL").optional().or(z.literal("")),
-  proofFile: fileSchema,
 });
 
 interface FormData {
@@ -82,13 +141,11 @@ interface FormData {
   confirmPassword: string;
   companyName: string;
   address: string;
-  logo: File | null;
   description: string;
   industry: string;
-  contactEmail: string;
-  phone: string;
+  companySize: string;
+  phoneNumber: string;
   website: string;
-  proofFile: File | null;
 }
 
 const getPasswordStrength = (password: string) => {
@@ -100,7 +157,62 @@ const getPasswordStrength = (password: string) => {
   return { strength: 100, label: "Strong" };
 };
 
+const getFieldValidationMessage = (
+  field: keyof FormData,
+  value: string,
+): string => {
+  const trimmed = value.trim();
+  switch (field) {
+    case "name":
+      if (!trimmed) return "First name is required";
+      if (trimmed.length < 2)
+        return "First name must be at least 2 characters";
+      return "";
+    case "surname":
+      if (!trimmed) return "Last name is required";
+      if (trimmed.length < 2)
+        return "Last name must be at least 2 characters";
+      return "";
+    case "email":
+      if (!trimmed) return "Email is required";
+      if (!EMAIL_REGEX.test(trimmed)) return "Invalid email address";
+      return "";
+    case "password": {
+      if (!trimmed) return "Password is required";
+      const failingRule = PASSWORD_RULES.find((rule) => !rule.test(trimmed));
+      return failingRule ? "Password does not meet all requirements" : "";
+    }
+    case "companyName":
+      if (!trimmed) return "Company name is required";
+      if (trimmed.length < 2)
+        return "Company name must be at least 2 characters";
+      return "";
+    case "address":
+      if (!trimmed) return "Address is required";
+      if (trimmed.length < 5)
+        return "Address must be at least 5 characters";
+      return "";
+    case "phoneNumber":
+      if (!trimmed) return "Phone number is required";
+      if (!PHONE_REGEX.test(trimmed))
+        return "Phone number must be 8-15 characters and contain only numbers, +, -, (), and spaces";
+      return "";
+    default:
+      return "";
+  }
+};
+
+const getConfirmPasswordMessage = (
+  password: string,
+  confirmPassword: string,
+) => {
+  if (!confirmPassword.trim()) return "Please confirm your password";
+  if (password !== confirmPassword) return "Passwords do not match";
+  return "";
+};
+
 const EmployerRegistration = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -111,20 +223,45 @@ const EmployerRegistration = () => {
     confirmPassword: "",
     companyName: "",
     address: "",
-    logo: null,
     description: "",
     industry: "",
-    contactEmail: "",
-    phone: "",
+    companySize: "",
+    phoneNumber: "",
     website: "",
-    proofFile: null,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const stepContainerRef = useRef<HTMLDivElement>(null);
   const passwordStrength = getPasswordStrength(formData.password);
+  const passwordRuleViolations =
+    formData.password.length > 0
+      ? PASSWORD_RULES.filter((rule) => !rule.test(formData.password))
+      : [];
+  const getFieldValue = (field: keyof FormData) => formData[field] ?? "";
+  const stepOneFields: (keyof FormData)[] = [
+    "name",
+    "surname",
+    "email",
+    "password",
+    "confirmPassword",
+  ];
+  const isStepOneReady = stepOneFields.every(
+    (field) => !getFieldValidationMessage(field, getFieldValue(field)),
+  );
+  const requiredFieldsValid = REQUIRED_FIELDS.every(
+    (field) => !getFieldValidationMessage(field, getFieldValue(field)),
+  );
+  const passwordAssistiveIds: string[] = [];
+  if (formData.password) {
+    passwordAssistiveIds.push("password-strength");
+  }
+  if (passwordRuleViolations.length > 0) {
+    passwordAssistiveIds.push("password-helper");
+  }
+  const passwordAriaDescribedBy = errors.password
+    ? "password-error"
+    : passwordAssistiveIds.join(" ") || undefined;
 
   // Focus management when step changes
   useEffect(() => {
@@ -138,48 +275,19 @@ const EmployerRegistration = () => {
     }
   }, [currentStep]);
 
-  useEffect(() => {
-    setFormData((prev) => {
-      if (!prev.email || prev.contactEmail) {
-        return prev;
-      }
-
-      return { ...prev, contactEmail: prev.email };
-    });
-  }, [formData.email]);
-
-  const handleInputChange = (
-    field: keyof FormData,
-    value: string | File | null
-  ) => {
+  const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => ({ ...prev, [field]: "" }));
-  };
+    const message = getFieldValidationMessage(field, value);
+    setErrors((prev) => ({ ...prev, [field]: message }));
 
-  const handleFileUpload = (field: "logo" | "proofFile", file: File | null) => {
-    if (file) {
-      // Validate file type and size
-      const validTypes = ["image/jpeg", "image/png", "application/pdf"];
-      const maxSize = 5 * 1024 * 1024; // 5MB
-
-      if (!validTypes.includes(file.type)) {
-        setErrors((prev) => ({
-          ...prev,
-          [field]: "Only JPEG, PNG, and PDF files are allowed",
-        }));
-        return;
-      }
-
-      if (file.size > maxSize) {
-        setErrors((prev) => ({
-          ...prev,
-          [field]: "File size must be less than 5MB",
-        }));
-        return;
-      }
-
-      handleInputChange(field, file);
-      toast.success(`${file.name} uploaded successfully`);
+    if (field === "password" || field === "confirmPassword") {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: getConfirmPasswordMessage(
+          field === "password" ? value : formData.password,
+          field === "confirmPassword" ? value : formData.confirmPassword,
+        ),
+      }));
     }
   };
 
@@ -199,13 +307,12 @@ const EmployerRegistration = () => {
           address: formData.address,
           description: formData.description,
           industry: formData.industry,
+          companySize: formData.companySize,
         });
       } else if (step === 3) {
         step3Schema.parse({
-          phone: formData.phone,
+          phoneNumber: formData.phoneNumber,
           website: formData.website,
-          proofFile: formData.proofFile,
-          contactEmail: formData.contactEmail,
         });
       }
       setErrors({});
@@ -239,7 +346,24 @@ const EmployerRegistration = () => {
   };
 
   const handleSubmit = async () => {
-    if (isSubmitting || !validateStep(3)) {
+    if (isSubmitting) {
+      return;
+    }
+
+    const confirmPasswordMessage = getConfirmPasswordMessage(
+      formData.password,
+      formData.confirmPassword,
+    );
+    if (confirmPasswordMessage) {
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: confirmPasswordMessage,
+      }));
+      toast.error(confirmPasswordMessage);
+      return;
+    }
+
+    if (!validateStep(3)) {
       return;
     }
 
@@ -247,20 +371,79 @@ const EmployerRegistration = () => {
     setErrors({});
 
     try {
-      const response = await registerEmployer({
+      const industryValue = formData.industry
+        ? INDUSTRY_UI_TO_API[formData.industry]
+        : undefined;
+      const companySizeValue = formData.companySize
+        ? COMPANY_SIZE_UI_TO_API[formData.companySize]
+        : undefined;
+      const websiteValue = formData.website.trim();
+      const descriptionValue = formData.description.trim();
+
+      const payload = {
         name: formData.name.trim(),
         surname: formData.surname.trim(),
         email: formData.email.trim(),
         password: formData.password,
         companyName: formData.companyName.trim(),
         address: formData.address.trim(),
-      });
+        phoneNumber: formData.phoneNumber.trim(),
+        ...(industryValue ? { industry: industryValue } : {}),
+      };
 
+      const response = await registerEmployer(payload);
       const successMessage =
         (response as { message?: string })?.message ||
         "Registration submitted! Awaiting verification.";
       toast.success(successMessage);
-      setIsSubmitted(true);
+
+      try {
+        const loginResult = await login(payload.email, payload.password);
+        const { user } = loginResult.data;
+        const userId = user?.id;
+
+        const profilePayload: UpdateEmployerProfileRequest = {};
+        if (industryValue) profilePayload.industry = industryValue;
+        if (companySizeValue) profilePayload.companySize = companySizeValue;
+        if (websiteValue) profilePayload.website = websiteValue;
+        if (descriptionValue) profilePayload.description = descriptionValue;
+
+        let draftForPrefill: Partial<UpdateEmployerProfileRequest> | null =
+          null;
+        if (Object.keys(profilePayload).length > 0) {
+          try {
+            await updateEmployerProfile(profilePayload);
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem(EMPLOYER_PROFILE_DRAFT_KEY);
+            }
+          } catch (profileError) {
+            console.error("Failed to sync employer details:", profileError);
+            toast.error(
+              "Profile saved without extras. Update details from your profile.",
+            );
+            draftForPrefill = {
+              industry: formData.industry,
+              companySize: formData.companySize,
+              website: formData.website,
+              description: formData.description,
+            };
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem(
+                EMPLOYER_PROFILE_DRAFT_KEY,
+                JSON.stringify(draftForPrefill),
+              );
+            }
+          }
+        }
+
+        navigate(userId ? `/employer/profile/${userId}` : "/employer", {
+          replace: true,
+        });
+      } catch (authError) {
+        console.error("Auto-login failed after registration:", authError);
+        toast.info("Registration complete. Please log in to continue.");
+        navigate("/login", { replace: true });
+      }
     } catch (error) {
       console.error("Employer registration failed:", error);
       let message =
@@ -282,44 +465,6 @@ const EmployerRegistration = () => {
     direction === "forward"
       ? "animate-slide-in-right"
       : "animate-slide-in-left";
-
-  if (isSubmitted) {
-    return (
-      <div
-        className="space-y-6 py-8 text-center animate-fade-in"
-        role="status"
-        aria-live="polite"
-      >
-        <div className="w-16 h-16 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
-          <CheckCircle2 className="w-10 h-10 text-accent" aria-hidden="true" />
-        </div>
-        <div className="space-y-2">
-          <h3 className="text-2xl font-bold text-foreground">
-            Registration Complete!
-          </h3>
-          <p className="text-muted-foreground max-w-md mx-auto">
-            Your employer account has been created. You can browse jobs while we
-            verify your company information.
-          </p>
-        </div>
-        <div className="bg-muted/50 p-4 sm:p-5 rounded-lg border border-border inline-block">
-          <p className="text-sm">
-            <strong className="text-foreground">Status:</strong>{" "}
-            <span className="text-secondary font-medium">Unverified</span>
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            You'll be able to post jobs once verification is complete.
-          </p>
-        </div>
-        <Button
-          onClick={() => (window.location.href = "/")}
-          className="bg-primary hover:bg-primary/90 h-11 sm:h-12 px-6 touch-manipulation"
-        >
-          Browse Jobs
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div
@@ -370,9 +515,7 @@ const EmployerRegistration = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm sm:text-base">
-                  First Name
-                </Label>
+                <RequiredLabel htmlFor="name">First Name</RequiredLabel>
                 <Input
                   id="name"
                   placeholder="Enter your first name"
@@ -397,9 +540,7 @@ const EmployerRegistration = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="surname" className="text-sm sm:text-base">
-                  Last Name
-                </Label>
+                <RequiredLabel htmlFor="surname">Last Name</RequiredLabel>
                 <Input
                   id="surname"
                   placeholder="Enter your last name"
@@ -427,9 +568,7 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm sm:text-base">
-                Work Email
-              </Label>
+              <RequiredLabel htmlFor="email">Work Email</RequiredLabel>
               <Input
                 id="email"
                 type="email"
@@ -455,9 +594,7 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm sm:text-base">
-                Password
-              </Label>
+              <RequiredLabel htmlFor="password">Password</RequiredLabel>
               <div className="relative">
                 <Input
                   id="password"
@@ -471,13 +608,7 @@ const EmployerRegistration = () => {
                     errors.password ? "border-destructive pr-10" : "pr-10"
                   }`}
                   aria-invalid={!!errors.password}
-                  aria-describedby={
-                    errors.password
-                      ? "password-error"
-                      : formData.password
-                      ? "password-strength"
-                      : undefined
-                  }
+                  aria-describedby={passwordAriaDescribedBy}
                   required
                 />
                 <button
@@ -507,8 +638,8 @@ const EmployerRegistration = () => {
                         passwordStrength.strength === 100
                           ? "bg-accent"
                           : passwordStrength.strength >= 50
-                          ? "bg-secondary"
-                          : "bg-destructive"
+                            ? "bg-secondary"
+                            : "bg-destructive"
                       }`}
                       style={{ width: `${passwordStrength.strength}%` }}
                     />
@@ -520,6 +651,17 @@ const EmployerRegistration = () => {
                     </span>
                   </p>
                 </div>
+              )}
+              {formData.password && passwordRuleViolations.length > 0 && (
+                <ul
+                  id="password-helper"
+                  className="text-xs text-destructive space-y-0.5"
+                  role="alert"
+                >
+                  {passwordRuleViolations.map((rule) => (
+                    <li key={rule.id}>{rule.message}</li>
+                  ))}
+                </ul>
               )}
               {errors.password && (
                 <p
@@ -576,7 +718,8 @@ const EmployerRegistration = () => {
 
             <Button
               onClick={handleNext}
-              className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"
+              className="w-full h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={!isStepOneReady}
             >
               Continue
             </Button>
@@ -592,9 +735,9 @@ const EmployerRegistration = () => {
             </p>
 
             <div className="space-y-2">
-              <Label htmlFor="companyName" className="text-sm sm:text-base">
+              <RequiredLabel htmlFor="companyName">
                 Company Name
-              </Label>
+              </RequiredLabel>
               <Input
                 id="companyName"
                 placeholder="Your company name"
@@ -623,9 +766,9 @@ const EmployerRegistration = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-sm sm:text-base">
+              <RequiredLabel htmlFor="address">
                 Company Address
-              </Label>
+              </RequiredLabel>
               <Textarea
                 id="address"
                 placeholder="Registered business address"
@@ -638,79 +781,6 @@ const EmployerRegistration = () => {
               {errors.address && (
                 <p className="text-sm text-destructive" role="alert">
                   {errors.address}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="logo" className="text-sm sm:text-base">
-                Company Logo
-              </Label>
-              <div
-                className="border-2 border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors"
-                role="button"
-                tabIndex={formData.logo ? -1 : 0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    document.getElementById("logo-upload")?.click();
-                  }
-                }}
-              >
-                {!formData.logo ? (
-                  <label
-                    htmlFor="logo-upload"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    <Upload
-                      className="w-8 h-8 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                    <span className="text-sm text-muted-foreground text-center">
-                      Click to upload logo (JPEG, PNG • Max 5MB)
-                    </span>
-                    <input
-                      id="logo-upload"
-                      type="file"
-                      accept="image/jpeg,image/png"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFileUpload("logo", e.target.files?.[0] || null)
-                      }
-                      aria-label="Upload company logo"
-                    />
-                  </label>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText
-                        className="w-5 h-5 text-primary"
-                        aria-hidden="true"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {formData.logo.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {(formData.logo.size / 1024).toFixed(1)} KB
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleInputChange("logo", null)}
-                      className="min-w-[44px] min-h-[44px]"
-                      aria-label="Remove uploaded logo"
-                    >
-                      <X className="w-4 h-4" aria-hidden="true" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {errors.logo && (
-                <p className="text-sm text-destructive" role="alert">
-                  {errors.logo}
                 </p>
               )}
             </div>
@@ -756,13 +826,32 @@ const EmployerRegistration = () => {
                   <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="healthcare">Healthcare</SelectItem>
-                  <SelectItem value="education">Education</SelectItem>
-                  <SelectItem value="retail">Retail</SelectItem>
-                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  {INDUSTRY_OPTIONS_BASE.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="companySize" className="text-sm sm:text-base">
+                Company Size
+              </Label>
+              <Select
+                value={formData.companySize}
+                onValueChange={(v) => handleInputChange("companySize", v)}
+              >
+                <SelectTrigger id="companySize" className="h-11 sm:h-12">
+                  <SelectValue placeholder="Select company size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COMPANY_SIZE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -788,72 +877,40 @@ const EmployerRegistration = () => {
         {/* Step 3: Verification */}
         {currentStep === 3 && (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Optional: Share contact details and supporting documents to speed
-              up verification.
-            </p>
-
             <div className="space-y-2">
-              <Label htmlFor="contactEmail" className="text-sm sm:text-base">
-                Contact Email
-              </Label>
-              <Input
-                id="contactEmail"
-                type="email"
-                placeholder="contact@company.com"
-                value={formData.contactEmail}
-                onChange={(e) =>
-                  handleInputChange("contactEmail", e.target.value)
-                }
-                className={`h-11 sm:h-12 ${
-                  errors.contactEmail ? "border-destructive" : ""
-                }`}
-                aria-invalid={!!errors.contactEmail}
-                aria-describedby={
-                  errors.contactEmail ? "contact-email-error" : undefined
-                }
-              />
-              {errors.contactEmail && (
-                <p
-                  id="contact-email-error"
-                  className="text-sm text-destructive"
-                  role="alert"
-                >
-                  {errors.contactEmail}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-sm sm:text-base">
+              <RequiredLabel htmlFor="phoneNumber">
                 Phone Number
-              </Label>
+              </RequiredLabel>
               <Input
-                id="phone"
+                id="phoneNumber"
                 type="tel"
                 placeholder="+66 12 345 6789"
-                value={formData.phone}
-                onChange={(e) => handleInputChange("phone", e.target.value)}
+                value={formData.phoneNumber}
+                onChange={(e) =>
+                  handleInputChange("phoneNumber", e.target.value)
+                }
                 className={`h-11 sm:h-12 ${
-                  errors.phone ? "border-destructive" : ""
+                  errors.phoneNumber ? "border-destructive" : ""
                 }`}
-                aria-invalid={!!errors.phone}
-                aria-describedby={errors.phone ? "phone-error" : undefined}
+                aria-invalid={!!errors.phoneNumber}
+                aria-describedby={
+                  errors.phoneNumber ? "phone-error" : undefined
+                }
               />
-              {errors.phone && (
+              {errors.phoneNumber && (
                 <p
                   id="phone-error"
                   className="text-sm text-destructive"
                   role="alert"
                 >
-                  {errors.phone}
+                  {errors.phoneNumber}
                 </p>
               )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="website" className="text-sm sm:text-base">
-                Website (Optional)
+                Website
               </Label>
               <Input
                 id="website"
@@ -878,85 +935,9 @@ const EmployerRegistration = () => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="proofFile" className="text-sm sm:text-base">
-                Proof of Registration (Optional)
-              </Label>
-              <div
-                className="border-2 border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors"
-                role="button"
-                tabIndex={formData.proofFile ? -1 : 0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    document.getElementById("proof-upload")?.click();
-                  }
-                }}
-              >
-                {!formData.proofFile ? (
-                  <label
-                    htmlFor="proof-upload"
-                    className="cursor-pointer flex flex-col items-center gap-2"
-                  >
-                    <Upload
-                      className="w-8 h-8 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                    <span className="text-sm text-muted-foreground text-center">
-                      <span className="block">
-                        Upload company registration or business license
-                      </span>
-                      <span className="block mt-1 text-xs">
-                        (JPEG, PNG, PDF • Max 5MB)
-                      </span>
-                    </span>
-                    <input
-                      id="proof-upload"
-                      type="file"
-                      accept="image/jpeg,image/png,application/pdf"
-                      className="hidden"
-                      onChange={(e) =>
-                        handleFileUpload(
-                          "proofFile",
-                          e.target.files?.[0] || null
-                        )
-                      }
-                      aria-label="Upload proof of registration"
-                    />
-                  </label>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText
-                        className="w-5 h-5 text-primary"
-                        aria-hidden="true"
-                      />
-                      <div>
-                        <p className="text-sm font-medium">
-                          {formData.proofFile.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {(formData.proofFile.size / 1024).toFixed(1)} KB
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleInputChange("proofFile", null)}
-                      className="min-w-[44px] min-h-[44px]"
-                      aria-label="Remove uploaded proof document"
-                    >
-                      <X className="w-4 h-4" aria-hidden="true" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {errors.proofFile && (
-                <p className="text-sm text-destructive" role="alert">
-                  {errors.proofFile}
-                </p>
-              )}
+            <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+              A company logo and a business registration document can be
+              uploaded after you sign in to the employer profile.
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -968,10 +949,11 @@ const EmployerRegistration = () => {
               >
                 Back
               </Button>
+
               <Button
                 onClick={handleSubmit}
                 className="flex-1 h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !requiredFieldsValid}
               >
                 {isSubmitting ? "Submitting..." : "Submit for Verification"}
               </Button>

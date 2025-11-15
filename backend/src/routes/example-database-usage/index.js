@@ -4,8 +4,8 @@
  */
 const prisma = require('../../models/prisma')
 
-const express = require('express')
-const router = express.Router()
+const express = require("express");
+const router = express.Router();
 
 /**
  * Creates an example professor-type user in the database for demonstration/testing purposes.
@@ -15,56 +15,56 @@ const router = express.Router()
  * @returns {Promise<void>} Resolves when the user is created or already exists.
  */
 async function createExampleProfessorUser() {
-    try {
-        const existingUser = await prisma.user.findUnique({
-            where: { username: 'prof.johndoe' }
-        })
-        if (!existingUser) {
-            const user = await prisma.user.create({
-                data: {
-                    name: 'John',
-                    surname: 'Doe',
-                    username: 'prof.johndoe',
-                    password: 'testpassword',
-                    verified: false,
-                    professor: {
-                        create: {
-                            department: 'Computer Science'
-                        }
-                    }
-                },
-                include: { professor: true }
-            })
-            console.log('Created professor user:', user)
-        } else {
-            console.log('Professor user already exists:', existingUser)
-        }
-    } catch (error) {
-        console.error('Error creating professor user:', error.message)
-        throw error
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { username: "prof.johndoe" },
+    });
+    if (!existingUser) {
+      const user = await prisma.user.create({
+        data: {
+          name: "John",
+          surname: "Doe",
+          username: "prof.johndoe",
+          password: "testpassword",
+          verified: false,
+          professor: {
+            create: {
+              department: "Computer Science",
+            },
+          },
+        },
+        include: { professor: true },
+      });
+      console.log("Created professor user:", user);
+    } else {
+      console.log("Professor user already exists:", existingUser);
     }
+  } catch (error) {
+    console.error("Error creating professor user:", error.message);
+    throw error;
+  }
 }
 
 // Why: Demonstrates a GET endpoint that interacts with the database
-router.get('/', async (req, res) => {
-    try {
-        const users = await prisma.user.findMany()
-        res.json(users)
-    } catch (error) {
-        console.error('Error fetching users:', error.message)
-        res.status(500).json({ error: 'Internal Server Error' })
-    }
-})
+router.get("/", async (req, res) => {
+  try {
+    const users = await prisma.user.findMany();
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // Why: Demonstrates an endpoint to create the example professor user
-router.get('/create-professor', async (req, res) => {
-    try {
-        await createExampleProfessorUser()
-        res.status(201).json({ message: 'Professor user created successfully' })
-    } catch (error) {
-        console.error('Error creating professor user:', error.message)
-        res.status(500).json({ error: 'Internal Server Error' })
-    }
-})
+router.get("/create-professor", async (req, res) => {
+  try {
+    await createExampleProfessorUser();
+    res.status(201).json({ message: "Professor user created successfully" });
+  } catch (error) {
+    console.error("Error creating professor user:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
-module.exports = router
+module.exports = router;
