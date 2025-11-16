@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Mail, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { phoneSchema } from "./phoneSchema";
 import { useNavigate, useLocation } from "react-router-dom";
 import { registerAlumni, login, setAuthSession } from "@/services/auth";
 import { API_BASE } from "@/services/api";
@@ -21,7 +22,7 @@ const getRoleDestination = (role?: string) => {
   switch (role) {
     case "student":
     case "alumni":
-      return "/student/browsejobs";
+      return "/student/browse-jobs";
     case "employer":
     case "professor":
       return "/employer/profile";
@@ -60,6 +61,7 @@ const alumniSchema = z
     confirmPassword: z.string(),
     address: z.string().min(1, { message: "Address is required" }),
     degreeTypeId: z.string().min(1, { message: "Select a degree type" }),
+    phoneNumber: phoneSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -81,6 +83,7 @@ const StudentRegistration = () => {
     confirmPassword: "",
     address: "",
     degreeTypeId: "",
+    phoneNumber: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [degreeOptions, setDegreeOptions] = useState<DegreeOption[]>([]);
@@ -210,6 +213,8 @@ const StudentRegistration = () => {
         z.string().min(3).max(30).parse(value);
       } else if (field === "password") {
         z.string().min(8).parse(value);
+      } else if (field === "phoneNumber") {
+        phoneSchema.parse(value);
       }
       setErrors((prev) => ({ ...prev, [field]: "" }));
     } catch (err) {
@@ -245,6 +250,7 @@ const StudentRegistration = () => {
             password: validatedData.password,
             address: validatedData.address,
             degreeTypeId: validatedData.degreeTypeId,
+            phoneNumber: validatedData.phoneNumber,
           });
 
           // Step 2: Login
@@ -254,7 +260,7 @@ const StudentRegistration = () => {
           );
           const { user } = loginData.data;
 
-          navigate("/student/browsejobs");
+          navigate("/student/browse-jobs");
           return user.name;
         })(),
         {
@@ -590,6 +596,37 @@ const StudentRegistration = () => {
           )}
         </div>
       </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="phoneNumber" className="text-sm sm:text-base">
+          Phone Number
+        </Label>
+        <Input
+          id="phoneNumber"
+          type="tel"
+          placeholder="e.g. +66912345678"
+          value={formData.phoneNumber}
+          onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+          className={`h-11 sm:h-12 ${
+            errors.phoneNumber ? "border-destructive" : ""
+          }`}
+          aria-invalid={!!errors.phoneNumber}
+          aria-describedby={
+            errors.phoneNumber ? "phoneNumber-error" : undefined
+          }
+          required
+        />
+        {errors.phoneNumber && (
+          <p
+            id="phoneNumber-error"
+            className="text-sm text-destructive"
+            role="alert"
+          >
+            {errors.phoneNumber}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="address" className="text-sm sm:text-base">
           Address
