@@ -193,6 +193,16 @@ const buildJobDetail = (job: MockJob) => ({
 // ---------------------------------------------------
 const mockJobs: any[] = [];
 
+type RegisteredEmployer = {
+  id: string;
+  name: string;
+  surname: string;
+  email: string;
+  password: string;
+};
+
+let registeredEmployers: Record<string, RegisteredEmployer> = {};
+
 const createJobApplicants = (): Record<string, any[]> => ({
   'job-mock-1': [
     {
@@ -233,10 +243,69 @@ export const test = base.extend({
   page: async ({ page }, use) => {
     employerJobs = createEmployerJobs();
     jobApplicants = createJobApplicants();
+    registeredEmployers = {};
     await page.route('**/api/**', async (route, request) => {
       const url = new URL(request.url());
       const pathname = url.pathname;
       const method = request.method().toUpperCase();
+
+      // ---------------------------------------------------
+      // EMPLOYER REGISTRATION: POST /register/enterprise
+      // ---------------------------------------------------
+      if (method === 'POST' && pathname.endsWith('/register/enterprise')) {
+        const body = (request.postDataJSON?.() ?? {}) as {
+          name?: string;
+          surname?: string;
+          email?: string;
+          password?: string;
+          companyName?: string;
+          address?: string;
+          phoneNumber?: string;
+        };
+
+        if (!body.email || !body.password) {
+          await route.fulfill({
+            status: 400,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: false,
+              message: 'Email and password are required',
+            }),
+          });
+          return;
+        }
+
+        const emailKey = body.email.toLowerCase();
+        const newEmployer: RegisteredEmployer = {
+          id: `registered-employer-${Date.now()}`,
+          name: body.name ?? 'Employer',
+          surname: body.surname ?? 'User',
+          email: body.email,
+          password: body.password,
+        };
+        registeredEmployers[emailKey] = newEmployer;
+
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            message: 'Registration submitted! Awaiting verification.',
+            data: {
+              user: {
+                id: newEmployer.id,
+                name: newEmployer.name,
+                surname: newEmployer.surname,
+                email: newEmployer.email,
+                role: 'EMPLOYER',
+                status: 'PENDING',
+                verified: false,
+              },
+            },
+          }),
+        });
+        return;
+      }
 
       // ---------------------------------------------------
       // LOGIN: POST /api/login
@@ -246,6 +315,34 @@ export const test = base.extend({
           email?: string;
           password?: string;
         };
+
+        const normalizedEmail = body.email?.toLowerCase();
+
+        const registered = normalizedEmail
+          ? registeredEmployers[normalizedEmail]
+          : undefined;
+        if (registered && body.password === registered.password) {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: true,
+              message: 'Login successful',
+              data: {
+                user: {
+                  id: registered.id,
+                  name: registered.name,
+                  surname: registered.surname,
+                  email: registered.email,
+                  role: 'EMPLOYER',
+                  status: 'PENDING',
+                  verified: false,
+                },
+              },
+            }),
+          });
+          return;
+        }
 
         const isEmployer =
           body.email === 'hr1@company.com' &&
