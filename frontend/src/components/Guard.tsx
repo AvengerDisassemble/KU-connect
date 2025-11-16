@@ -4,10 +4,15 @@ import { useAuth, type Role } from "@/hooks/useAuth";
 
 interface GuardProps {
   role?: Role;
+  unauthorizedPath?: string;
   children: React.ReactNode;
 }
 
-export const Guard: React.FC<GuardProps> = ({ role, children }) => {
+export const Guard: React.FC<GuardProps> = ({
+  role,
+  unauthorizedPath = "/403",
+  children,
+}) => {
   const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
@@ -15,7 +20,7 @@ export const Guard: React.FC<GuardProps> = ({ role, children }) => {
   }
 
   if (role && user?.role !== role) {
-    return <Navigate to="/403" replace />;
+    return <Navigate to={unauthorizedPath} replace />;
   }
 
   return children;

@@ -6,27 +6,32 @@ KU-Connect is a job board platform for Kasetsart University students and employe
 - Features: Role-based dashboards, login with KU Gmail (OAuth), job posting, application, saved jobs, moderation.
 - Frontend Goal: Clean, responsive UI connected to backend APIs, with consistent structure and maintainable code.
 
+Current Objective
+- Stabilize the student browse-jobs experience (quick filters, advanced sheet, tabs).
+- Keep job application dialog in sync with backend resume storage-key validation and metadata.
+- Maintain smooth Radix sheet/tab animations and consistent button theming.
+
+Recent Wins
+- Advanced filter sheet extracted to `components/advanced-filters/AdvancedFiltersSheet.tsx` with forced-mount portal to stop flicker.
+- `JobFilterBar.tsx` now coordinates keyword search, quick filters, and advanced sheet state in one place.
+- Resume chooser dialog accepts both profile resumes and uploaded storage keys without validator conflicts.
+
 Tech Stack
 - Vite + React + TypeScript
-- Tailwind v4 + shadcn/ui
+- Tailwind v4 + shadcn/ui (Radix primitives)
 - React Router
+- TanStack Query for data fetching/caching
 - ESLint + Prettier
 - Alias: @ → src
 
 Folder Structure
-src/
-    ├─ assets/
-    ├─ components/
-    │   ├─ ui/         # shared UI (Header, Footer, Guard)
-    │   └─ hooks/      # custom hooks
-    ├─ lib/            # helpers
-    ├─ pages/          # grouped by role
-    │   ├─ admin/ employer/ professor/ student/ public/
-    ├─ services/       # api.ts
-    ├─ styles/         # global.css
-    ├─ utils/
-    ├─ App.tsx
-    └─ main.tsx
+- `src/components/` shared layout/auth pieces (Header, Guard, Footer, upload widgets) alongside `ui/` primitives.
+- `src/components/ui/` wraps Radix primitives (sheet, tabs, button, etc.) with Tailwind + cva variants.
+- `src/pages/student/browse-jobs/` holds the page shell, `components/` (filter bar, advanced sheet, job list/detail, application dialog), `types/`, and `utils/`.
+- `src/hooks/` houses global hooks like `useAuth`; page-specific hooks stay co-located when scoped.
+- `src/services/` typed API helpers (`jobs.ts`, resumes, auth); no direct network calls elsewhere.
+- `src/lib/` shared utilities (`cn`, query helpers); `src/utils/` small constants/helpers shared across pages.
+- `src/styles/` Tailwind globals (`global.css`, `lovable.css`); `App.tsx` wires routes; `main.tsx` bootstraps React.
 
 Naming Conventions
 - Components: PascalCase .tsx
@@ -78,6 +83,30 @@ UI Components
 - Prefer shadcn/ui
 - Shared UI in components/ui/
 - Reuse before creating new
+
+Key Surfaces
+- `src/pages/student/browse-jobs/` page orchestrates data fetching, tab state, and renders filter/application components.
+- `components/AdvancedFiltersSheet.tsx` memoizes the sheet, forces mount, and relies on `SheetClose` for exits.
+- `components/JobFilterBar.tsx` is the single source of truth for keyword input, quick filters, and advanced sheet toggling.
+- `components/JobApplicationDialog.tsx` handles resume selection; ensure storage-key values flow to submit handler unchanged.
+- Filter buttons override shadcn variants via Tailwind; avoid conflicting hover/active states when tweaking colors.
+
+Active Constraints
+- No direct `fetch`; all data via `services/api.ts` with typed helpers.
+- Keep animations glitch-free: sheet should not unmount between openings and tabs should ease without layout jumps.
+- Preserve accessibility on interactive elements (aria labels, focus trapping in sheets/dialogs).
+- Match backend resume validation (storage keys shaped like `resume:student:{id}:{uuid}`) and expose helpful errors.
+
+Animation Notes
+- `src/components/ui/sheet.tsx` augments Radix dialogs with `data-[state]` slide/fade classes and 300–500 ms easing.
+- `AdvancedFiltersSheet` keeps `SheetPortal` forced-mounted to avoid close/open flicker and preserve exit animations.
+- Tab and filter interactions rely on Tailwind transitions (`transition-all duration-200`) and CSS variables for brand colors.
+- Mobile job detail sheet reuses the same Radix animation hooks; new sheets must respect `data-[state=open|closed]` classes.
+
+Open Risks / TODOs
+- Manually verify advanced sheet close/open cycle after every major filter change.
+- Revisit quick filter button palette once design team finalizes brand colors.
+- Add UI tests around resume selection edge cases (no profile resume, multiple uploads) when time permits.
 
 Testing
 - Vitest + React Testing Library
