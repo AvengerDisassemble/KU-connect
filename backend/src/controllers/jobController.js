@@ -3,8 +3,9 @@
  * @description Controller for Job Posting feature (with authentication + role-based access)
  */
 
-const prisma = require("../models/prisma");
-const jobService = require("../services/jobService");
+const prisma = require('../models/prisma')
+const jobService = require('../services/jobService')
+const notificationService = require('../services/notificationService')
 
 /**
  * List jobs with pagination (public)
@@ -194,11 +195,18 @@ async function applyToJob(req, res) {
     const jobId = req.params.id;
     const { resumeLink } = req.body;
 
-    const application = await jobService.applyToJob(
-      jobId,
-      student.id,
-      resumeLink,
-    );
+    const application = await jobService.applyToJob(jobId, student.id, resumeLink)
+
+    // Send notification to employer (don't fail if notification fails)
+    try {
+      await notificationService.notifyEmployerOfApplication({
+        studentUserId: userId,
+        jobId
+      })
+    } catch (notificationError) {
+      console.error('Failed to send employer notification:', notificationError.message)
+      // Continue - application was successful even if notification failed
+    }
 
     res.status(201).json({
       success: true,
@@ -293,8 +301,34 @@ async function manageApplication(req, res) {
     if (!result) {
       return res.status(404).json({
         success: false,
-        message: "Application not found or unauthorized",
-      });
+        message: 'Application not found or unauthorized'
+      })
+    }
+
+    // Send notification to student (don't fail if notification fails)
+    try {
+      // Resolve student user ID from application
+      const application = await prisma.application.findUnique({
+        where: { id: applicationId },
+        include: {
+          student: {
+            select: { userId: true }
+          }
+        }
+      })
+
+      if (application && application.student) {
+        await notificationService.notifyStudentOfApproval({
+          employerUserId: userId,
+          studentUserId: application.student.userId,
+          jobId,
+          status,
+          applicationId
+        })
+      }
+    } catch (notificationError) {
+      console.error('Failed to send student notification:', notificationError.message)
+      // Continue - application status was updated successfully
     }
 
     res.status(200).json({
