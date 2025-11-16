@@ -408,7 +408,22 @@ async function getApplicants(jobId, hrId) {
   return prisma.application.findMany({
     where: { jobId },
     include: {
-      student: { include: { degreeType: true, user: true } },
+      student: {
+        include: {
+          degreeType: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              surname: true,
+              email: true,
+              verified: true,
+              createdAt: true,
+              updatedAt: true,
+            },
+          },
+        },
+      },
       resume: true,
     },
     orderBy: { createdAt: "desc" },

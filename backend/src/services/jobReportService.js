@@ -95,7 +95,16 @@ async function listReports() {
   return prisma.jobReport.findMany({
     include: {
       job: { include: { hr: true } },
-      user: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          email: true,
+          verified: true,
+          createdAt: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -111,7 +120,16 @@ async function deleteReport(reportId) {
     where: { id: reportId },
     include: {
       job: { include: { hr: true } },
-      user: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          email: true,
+          verified: true,
+          createdAt: true,
+        },
+      },
     },
   });
 }
