@@ -33,7 +33,10 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     await page.getByRole('textbox', { name: 'Work Email *' }).fill('arthit.srinakarin@siamma.com');
     await page.getByRole('textbox', { name: 'Password *' }).fill('SiammA123!');
     await page.getByRole('textbox', { name: 'Confirm Password' }).fill('SiammA123!');
+    await page.getByRole('button', { name: 'Continue' }).scrollIntoViewIfNeeded();
     await page.getByRole('button', { name: 'Continue' }).click();
+    const companyNameInput = page.getByRole('textbox', { name: 'Company Name *' });
+    await companyNameInput.waitFor({ state: 'visible', timeout: 15000 });
 
     // Step 2: company info
     await page.getByRole('textbox', { name: 'Company Name *' }).fill('Siam Manufacturing Co., Ltd.');
@@ -43,7 +46,11 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     await page.getByRole('option', { name: 'IT Services' }).click();
     await page.getByRole('combobox', { name: 'Company Size' }).click();
     await page.getByRole('option', { name: '-50 employees' }).click();
+    await page.getByRole('button', { name: 'Continue' }).scrollIntoViewIfNeeded();
     await page.getByRole('button', { name: 'Continue' }).click();
+    await page
+      .getByRole('button', { name: 'Submit for Verification' })
+      .waitFor({ state: 'visible', timeout: 15000 });
 
     // Step 3: contact info
     await page.getByRole('textbox', { name: 'Phone Number *' }).fill('+66 86 555 1122');
