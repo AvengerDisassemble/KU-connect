@@ -1,14 +1,15 @@
-// frontend/tests/employer/employer-create-job-validation.spec.ts
 import { test, expect } from '../fixtures/employer.fixture';
 
 /**
  * Scenario: EMP-TS-007 – Create Job Validation
+ * Area: Job Posting
  * Priority: P0
+ * Tags: @negative
  */
-test.describe('EMP-TS-007 Employer Create Job Validation', () => {
-  // ----------------------------------------
-  // Helper: login + go to create job page
-  // ----------------------------------------
+test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
+  /**
+   * Helper: login as Employer and navigate to create job form
+   */
   const gotoCreateJobPage = async (page: any) => {
     await page.goto('http://localhost:5173/');
     await page.getByRole('button', { name: 'Login' }).click();
@@ -19,43 +20,17 @@ test.describe('EMP-TS-007 Employer Create Job Validation', () => {
 
     await page.goto('http://localhost:5173/employer/job-postings/create');
     await page.waitForLoadState('networkidle');
+    await expect(
+      page.getByRole('textbox', { name: 'Job Title *' })
+    ).toBeVisible({ timeout: 10000 });
   };
 
-  // ----------------------------------------
-  // TC01: Invalid phone number
-  // ----------------------------------------
-  // test('EMP-TS-007-TC01: invalid phone number shows validation toast', async ({
-  //   page,
-  // }) => {
-  //   await gotoCreateJobPage(page);
-
-  //   // Fill required fields (valid)
-  //   await page.getByRole('textbox', { name: 'Job Title *' }).fill('Backend Intern');
-  //   await page.getByRole('combobox', { name: 'Job Type *' }).click();
-  //   await page.getByRole('option', { name: 'Internship' }).click();
-  //   await page.getByRole('combobox', { name: 'Work Arrangement *' }).click();
-  //   await page.getByRole('option', { name: 'Hybrid' }).click();
-  //   await page.getByRole('textbox', { name: 'Location *' }).fill('Bangkok');
-  //   await page.getByRole('textbox', { name: 'Duration *' }).fill('3 months');
-  //   await page.getByRole('textbox', { name: 'Job Description *' }).fill('Valid job description');
-  //   await page.getByRole('textbox', { name: '10000' }).fill('10000');
-  //   await page.getByRole('textbox', { name: '15000' }).fill('15000');
-  //   await page.getByRole('textbox', { name: 'Application Deadline *' }).fill('2025-11-30');
-
-  //   // Invalid phone number
-  //   await page.getByRole('textbox', { name: 'Phone *' }).fill('123');
-
-  //   // Submit
-  //   await page.getByRole('button', { name: 'Post Job' }).click();
-  //   await page.getByRole('button', { name: 'Confirm' }).click();
-
-  //   // Expect toast
-  //   await expect(page.getByText('Invalid phone number', { exact: false })).toBeVisible();
-  // });
-
-  // ----------------------------------------
-  // TC02: Salary validation
-  // ----------------------------------------
+  /**
+   * EMP-TS-007-TC01: salary validation triggers toast
+   * Expected result:
+   *  - Min salary > Max salary shows toast error
+   *  - Form stays on page without posting
+   */
   test('EMP-TS-007-TC02: salary validation toasts appear', async ({ page }) => {
     await gotoCreateJobPage(page);
 
@@ -85,9 +60,12 @@ test.describe('EMP-TS-007 Employer Create Job Validation', () => {
     ).toBeVisible();
   });
 
-  // ----------------------------------------
-  // TC03: Text length validation
-  // ----------------------------------------
+  /**
+   * EMP-TS-007-TC02: text length validation appears
+   * Expected result:
+   *  - Very short title/description/location cause toast errors
+   *  - API mock returns validation failures
+   */
   test('EMP-TS-007-TC03: text length validation appears in toast', async ({
     page,
   }) => {

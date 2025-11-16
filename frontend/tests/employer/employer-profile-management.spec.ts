@@ -1,4 +1,3 @@
-// frontend/tests/employer/employer-profile-management.spec.ts
 import { test, expect } from '../fixtures/employer.fixture';
 
 /**

@@ -1,4 +1,3 @@
-// frontend/tests/employer/employer-login.spec.ts
 import { test, expect } from '../fixtures/employer.fixture';
 
 /**

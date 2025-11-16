@@ -1,9 +1,8 @@
-// frontend/tests/employer/employer-create-job.spec.ts
 import { test, expect } from '../fixtures/employer.fixture';
 
 /**
  * Scenario: EMP-TS-006 – Create Job (Happy Path)
- * Area: Employer Job Posting
+ * Area: Job Posting
  * Priority: P0
  * Tags: @smoke
  */
@@ -31,7 +30,9 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
     await page.waitForLoadState('networkidle');
 
     // Company header should show the employer’s company (from mock profile)
-    await expect(page.getByRole('heading', { name: 'Test Company Ltd.' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Test Company Ltd.' })
+    ).toBeVisible({ timeout: 10000 });
   };
 
   /**
