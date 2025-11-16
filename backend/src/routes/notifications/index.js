@@ -1,30 +1,50 @@
 /**
- * @file src/routes/notifications/index.js
- * @description Routes for user notification retrieval and management
+ * @module routes/notifications/index
+ * @description User notification routes (main listing and read operations)
  */
 
 const express = require('express')
 const router = express.Router()
-
-const { authMiddleware } = require('../../middlewares/authMiddleware')
-const {
-  getUserNotificationsHandler,
-  markNotificationReadHandler
-} = require('../../controllers/announcementController')
+const notificationController = require('../../controllers/notificationController')
+const { authMiddleware, verifiedUserMiddleware } = require('../../middlewares/authMiddleware')
+const { strictLimiter } = require('../../middlewares/rateLimitMiddleware')
 
 // All notification routes require authentication
 router.use(authMiddleware)
 
 /**
  * GET /api/notifications
- * Fetch notifications for the authenticated user
+ * Get current user's notifications with pagination
+ * @access Authenticated and verified users
  */
-router.get('/', getUserNotificationsHandler)
+router.get(
+  '/',
+  strictLimiter,
+  verifiedUserMiddleware,
+  notificationController.getUserNotifications
+)
+
+/**
+ * GET /api/notifications/unread/count
+ * Get unread notification count for current user
+ * MUST COME BEFORE /:id routes
+ * @access Authenticated and verified users
+ */
+router.get(
+  '/unread/count',
+  verifiedUserMiddleware,
+  notificationController.getUnreadCount
+)
 
 /**
  * PATCH /api/notifications/:id/read
- * Mark a single notification as read
+ * Mark a notification as read
+ * @access Authenticated and verified users (recipient only)
  */
-router.patch('/:id/read', markNotificationReadHandler)
+router.patch(
+  '/:id/read',
+  verifiedUserMiddleware,
+  notificationController.markAsRead
+)
 
 module.exports = router
