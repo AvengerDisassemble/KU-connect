@@ -163,7 +163,7 @@ const StudentAnalyticsContent = () => {
       return;
     }
     if (!filteredStudents.length) {
-      toast.info("ไม่มีนักศึกษาให้ export ตาม filter ตอนนี้");
+      toast.info("No students to export with current filters");
       return;
     }
 
