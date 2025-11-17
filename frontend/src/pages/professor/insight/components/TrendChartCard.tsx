@@ -46,8 +46,12 @@ const withAlpha = (color: string, alpha: number, fallback = "rgba(178,187,30,0.2
     const b = parseInt(hex.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
-  if (color.startsWith("rgb")) {
-    return color.replace("rgb", "rgba").replace(")", `, ${alpha})`);
+  if (color.startsWith("rgba")) {
+    // Replace the alpha channel with the new value
+    return color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\)/, (_, r, g, b) => `rgba(${r}, ${g}, ${b}, ${alpha})`);
+  }
+  if (color.startsWith("rgb(")) {
+    return color.replace("rgb(", "rgba(").replace(")", `, ${alpha})`);
   }
   return fallback;
 };
