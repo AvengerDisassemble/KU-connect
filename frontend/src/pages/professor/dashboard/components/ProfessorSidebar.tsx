@@ -11,10 +11,10 @@ interface ProfessorSidebarProps {
   onNavigate?: () => void;
 }
 
-const secondaryNavItems = [
-  { label: "Analytics Dashboard" },
-  { label: "Settings" },
-] as const;
+const navItems = [
+  { label: "Student Analytics Dashboard", to: "/professor" },
+  { label: "Student Analytics Insights", to: "/professor/analytics" },
+];
 
 const ProfessorSidebar: React.FC<ProfessorSidebarProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
@@ -35,52 +35,45 @@ const ProfessorSidebar: React.FC<ProfessorSidebarProps> = ({ onNavigate }) => {
 
   return (
     <aside className="flex min-h-screen w-full max-w-[280px] flex-col border-r border-border bg-card max-[390px]:max-w-[240px] md:w-60">
-      <div className="border-b border-border p-8 pt-9 text-left max-[390px]:p-6">
-        <div className="flex items-center gap-3">
+      <div className="border-border border-b p-8 pt-8 text-center max-[390px]:p-6">
+        <div className="flex items-center justify-center">
           <img
             src={Logo}
             alt="KU Connect Logo"
-            className="h-12 w-auto select-none object-contain"
+            className="ml-12 block h-12 w-auto max-w-[260px] select-none object-contain max-[390px]:ml-0"
             draggable={false}
           />
+        </div>
+        <div className="text-sm font-medium text-accent max-[390px]:text-xs">
+          for professors
         </div>
       </div>
 
       <nav className="flex-1 space-y-2 py-5 text-sm">
-        <NavLink
-          to="/professor"
-          end
-          onClick={() => {
-            onNavigate?.();
-          }}
-          className={({ isActive }) =>
-            cn(
-              "block border-l-[3px] px-8 py-4 font-medium transition-colors max-[390px]:px-6 max-[390px]:py-3",
-              isActive
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "border-l-transparent text-muted-foreground hover:bg-muted/60",
-            )
-          }
-          style={({ isActive }) => ({
-            borderLeftColor: isActive ? "var(--color-accent)" : "transparent",
-          })}
-        >
-          Student Analytics
-        </NavLink>
-
-        {secondaryNavItems.map((item) => (
-          <div
-            key={item.label}
-            className="px-8 py-4 text-sm font-semibold text-muted-foreground/70 max-[390px]:px-6 max-[390px]:py-3"
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/professor"}
+            onClick={() => {
+              onNavigate?.();
+            }}
+            className={({ isActive }) =>
+              cn(
+                "block border-l-[3px] px-8 py-4 font-medium transition-colors max-[390px]:px-6 max-[390px]:py-3",
+                isActive
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "border-l-transparent text-muted-foreground hover:bg-muted/60",
+              )
+            }
+            style={({ isActive }) => ({
+              borderLeftColor: isActive ? "var(--color-accent)" : "transparent",
+            })}
           >
-            <div className="rounded-lg border border-dashed border-border/70 bg-muted/40 px-4 py-2 text-muted-foreground/80">
-              {item.label}
-              <span className="ml-2 text-xs font-normal text-muted-foreground">
-                (coming soon)
-              </span>
-            </div>
-          </div>
+            {item.label}
+          </NavLink>
         ))}
+
       </nav>
 
       <div className="px-6 pb-6">
