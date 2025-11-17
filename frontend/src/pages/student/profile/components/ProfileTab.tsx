@@ -1,4 +1,4 @@
-import { Edit, Download, MoreHorizontal, Save, X } from "lucide-react";
+import { Edit, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -31,19 +31,13 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getProfile, updateProfile } from "@/services/profile";
 import { fetchDegreeTypes, type DegreeType } from "@/services/degree";
+import { phoneSchema } from "@/pages/public/register/components/phoneSchema";
+import ResumeSection from "./ResumeSection";
 
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
   surname: z.string().min(1, "Last name is required").max(50),
-  // phoneNumber: z.preprocess(
-  //   (v) => (v === "" ? undefined : v),
-  //   z
-  //     .string()
-  //     .regex(/^[0-9]+$/, "Phone number must contain only digits")
-  //     .min(9, "Phone number must be at least 9 digits")
-  //     .max(15, "Phone number must not exceed 15 digits")
-  //     .optional()
-  // ),
+  phoneNumber: phoneSchema,
   address: z.string().min(1),
   gpa: z.preprocess(
     (v) => (v === "" ? undefined : v),
@@ -108,7 +102,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
     defaultValues: {
       name: "",
       surname: "",
-      // phoneNumber: undefined,
+      phoneNumber: "",
       address: "",
       gpa: undefined,
       expectedGraduationYear: undefined,
@@ -141,7 +135,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
       form.reset({
         name: profile.name || "",
         surname: profile.surname || "",
-        // phoneNumber: profile.phoneNumber || "",
+        phoneNumber: profile.phoneNumber ?? "",
         address: profile.student?.address || "",
         gpa: profile.student?.gpa,
         expectedGraduationYear: profile.student?.expectedGraduationYear,
@@ -160,12 +154,13 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
       gpa?: number;
       degreeTypeId?: string;
       expectedGraduationYear?: number;
-      // phoneNumber?: string;
+      phoneNumber: string;
     } = {
       userId: userId!,
       name: data.name.trim(),
       surname: data.surname.trim(),
       address: data.address,
+      phoneNumber: data.phoneNumber.trim(),
     };
 
     if (typeof data.gpa === "number" && !Number.isNaN(data.gpa)) {
@@ -180,10 +175,6 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
     ) {
       payload.expectedGraduationYear = data.expectedGraduationYear;
     }
-    // if (data.phoneNumber && data.phoneNumber.trim().length > 0) {
-    //   payload.phoneNumber = data.phoneNumber.trim();
-    // }
-
     mutation.mutate(payload);
   };
 
@@ -326,7 +317,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                     </FormItem>
                   )}
                 />
-                {/* <FormField
+                <FormField
                   control={form.control}
                   name="phoneNumber"
                   render={({ field }) => (
@@ -339,12 +330,15 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                           {...field}
                           className="bg-background border-border"
                           readOnly={!isEditing}
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="e.g. +66912345678"
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
-                /> */}
+                />
               </div>
 
               {/* Row 2: Address & Degree Type */}
@@ -491,35 +485,11 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
         </CardContent>
       </Card>
 
-      {/* Resume Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Resume</CardTitle>
-          <CardDescription>
-            Add a resume to save time and autofill certain job applications. You
-            can also share it to hear from employers about openings.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent>
-          <div className="flex items-center gap-4 p-4 border border-border rounded-lg bg-background">
-            <div className="w-10 h-10 bg-primary rounded flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">📄</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-foreground">Resume.pdf</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Download className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ResumeSection
+        userId={userId}
+        resumeKey={profile?.student?.resumeKey ?? null}
+        updatedAt={profile?.student?.updatedAt ?? profile?.updatedAt ?? null}
+      />
     </div>
   );
 };
