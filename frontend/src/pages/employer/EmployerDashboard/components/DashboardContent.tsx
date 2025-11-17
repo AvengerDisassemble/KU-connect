@@ -129,7 +129,7 @@ const formatRelativeDate = (iso: string, now = new Date()): string => {
 };
 
 const mapJobToViewModel = (
-  job: JobListResponse["items"][number],
+  job: EmployerDashboardJobPosting,
   applicantsCache: JobApplication[] | undefined,
 ): JobCardViewModel => {
   const total = applicantsCache?.length ?? 0;
@@ -141,11 +141,15 @@ const mapJobToViewModel = (
       ? "open"
       : "closed";
 
+  const postedDate = job.createdAt
+    ? formatRelativeDate(job.createdAt)
+    : "recently";
+
   return {
     id: job.id,
     title: job.title,
     location: job.location,
-    postedDate: formatRelativeDate(job.createdAt),
+    postedDate,
     status: isOpen,
     applicants: total,
     shortlisted,
