@@ -145,7 +145,7 @@ const StudentAnalyticsContent = () => {
         subtitle: "Qualified students",
       },
     ];
-  }, [activeStudents, analytics, filteredCount, totalStudents]);
+  }, [activeStudents, analytics, totalStudents]);
 
   const isLoading = analyticsLoading || studentsLoading;
 
