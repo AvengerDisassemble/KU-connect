@@ -12,7 +12,7 @@ import StudentProfilePage from "@/pages/student/profile/ProfilePage";
 import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
-import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
+import ProfessorDashboardPage from "@/pages/professor/dashboard/DashboardPage";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 import JobEditPage from "@/pages/employer/JobPosting/JobEditPage";
 
