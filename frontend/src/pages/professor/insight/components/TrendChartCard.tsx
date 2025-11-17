@@ -140,7 +140,7 @@ const TrendChartCard: React.FC<TrendChartCardProps> = ({ data, isLoading }) => {
   );
 
   return (
-    <Card className="lg:col-span-2">
+    <Card className="md:col-span-2 lg:col-span-2">
       <CardHeader>
         <CardTitle>Application Trends</CardTitle>
       </CardHeader>

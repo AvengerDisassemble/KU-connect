@@ -116,10 +116,10 @@ const SuccessDonutCard: React.FC<SuccessDonutCardProps> = ({
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         {isLoading ? (
-          <Skeleton className="h-[220px] w-[220px] rounded-full" />
+          <Skeleton className="h-36 w-36 rounded-full sm:h-44 sm:w-44" />
         ) : (
           <div className="flex flex-col items-center gap-4">
-            <div className="relative h-40 w-40">
+            <div className="relative h-36 w-36 sm:h-40 sm:w-40">
               <Doughnut data={donutChartData} options={donutOptions} />
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold text-primary">{total}%</span>

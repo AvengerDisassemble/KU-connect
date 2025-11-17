@@ -106,8 +106,13 @@ const ProfessorPageShell: React.FC<ProfessorPageShellProps> = ({
 
         <div className={cn("md:hidden", mobileBarHeight)} aria-hidden="true" />
 
-        <main className={cn("flex-1 p-4 sm:p-6", contentClassName)}>
-          {children}
+        <main
+          className={cn(
+            "flex-1 px-4 py-6 sm:px-6 sm:py-8",
+            contentClassName,
+          )}
+        >
+          <div className="mx-auto w-full max-w-5xl">{children}</div>
         </main>
       </div>
     </div>

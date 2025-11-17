@@ -30,7 +30,7 @@ const ProfessorAnalyticsPage = () => {
 
   return (
     <ProfessorPageShell title="Student Analytics Insights">
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-0 sm:px-2 md:px-0">
         <div className="space-y-1">
           <h1 className="font-poppins text-3xl font-semibold text-black py-2">
             Student Analytics Insights
@@ -47,7 +47,7 @@ const ProfessorAnalyticsPage = () => {
           </Alert>
         ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <TrendChartCard data={dailyTrend} isLoading={isLoading} />
           <SuccessDonutCard
             byStatus={data?.applicationMetrics.byStatus}

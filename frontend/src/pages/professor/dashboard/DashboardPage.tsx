@@ -227,7 +227,7 @@ const StudentAnalyticsContent = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
       <div className="space-y-1">
         <h1 className="font-poppins text-3xl font-semibold text-black py-2">
           Student Analytics Dashboard
@@ -246,10 +246,10 @@ const StudentAnalyticsContent = () => {
         </Alert>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         {statCards.map((card) =>
           isLoading ? (
-            <Skeleton key={card.id} className="h-40 rounded-2xl" />
+    <Skeleton key={card.id} className="h-36 rounded-2xl" />
           ) : (
             <ProfessorStatCard
               key={card.id}
