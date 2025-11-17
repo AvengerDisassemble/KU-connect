@@ -1,104 +1,29 @@
 /**
  * @module controllers/notificationController
- * @description Controller for user-to-user notifications
+ * @description Controller for unified notification system
  */
 
 const notificationService = require('../services/notificationService')
 
 /**
- * Internal trigger: Notify employer of new application
- * @route POST /api/notifications/employer/application
- * @access Internal/Admin only (protected by route middleware)
- */
-async function notifyEmployerOfApplication(req, res, next) {
-  try {
-    const { studentUserId, jobId } = req.body
-
-    if (!studentUserId || !jobId) {
-      return res.status(400).json({
-        success: false,
-        message: 'Student user ID and job ID are required'
-      })
-    }
-
-    const notification = await notificationService.notifyEmployerOfApplication({
-      studentUserId,
-      jobId
-    })
-
-    res.status(201).json({
-      success: true,
-      message: 'Employer notification created successfully',
-      data: notification
-    })
-  } catch (error) {
-    console.error('Notify employer error:', error.message)
-    res.status(error.status || 500).json({
-      success: false,
-      message: error.message || 'Failed to notify employer'
-    })
-  }
-}
-
-/**
- * Internal trigger: Notify student of application status update
- * @route POST /api/notifications/student/approval
- * @access Internal/Admin only (protected by route middleware)
- */
-async function notifyStudentOfApproval(req, res, next) {
-  try {
-    const { employerUserId, studentUserId, jobId, status, applicationId } = req.body
-
-    if (!employerUserId || !studentUserId || !jobId || !status) {
-      return res.status(400).json({
-        success: false,
-        message: 'Employer user ID, student user ID, job ID, and status are required'
-      })
-    }
-
-    if (!['QUALIFIED', 'REJECTED'].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Status must be either QUALIFIED or REJECTED'
-      })
-    }
-
-    const notification = await notificationService.notifyStudentOfApproval({
-      employerUserId,
-      studentUserId,
-      jobId,
-      status,
-      applicationId
-    })
-
-    res.status(201).json({
-      success: true,
-      message: 'Student notification created successfully',
-      data: notification
-    })
-  } catch (error) {
-    console.error('Notify student error:', error.message)
-    res.status(error.status || 500).json({
-      success: false,
-      message: error.message || 'Failed to notify student'
-    })
-  }
-}
-
-/**
  * Get current user's notifications
  * @route GET /api/notifications
+ * @query {string} [type] - Filter by type (ANNOUNCEMENT, APPLICATION_STATUS, EMPLOYER_APPLICATION)
+ * @query {boolean} [unreadOnly] - Get only unread notifications
+ * @query {number} [page=1] - Page number
+ * @query {number} [limit=20] - Results per page
  * @access Authenticated users
  */
 async function getUserNotifications(req, res) {
   try {
     const userId = req.user.id
-    const page = parseInt(req.query.page) || 1
-    const limit = parseInt(req.query.limit) || 20
+    const { type, unreadOnly, page, limit } = req.query
 
-    const result = await notificationService.getNotificationsForUser(userId, {
-      page,
-      limit
+    const result = await notificationService.getNotifications(userId, {
+      type,
+      unreadOnly: unreadOnly === 'true',
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20
     })
 
     res.status(200).json({
@@ -125,10 +50,7 @@ async function markAsRead(req, res) {
     const userId = req.user.id
     const notificationId = req.params.id
 
-    const notification = await notificationService.markAsRead({
-      id: notificationId,
-      userId
-    })
+    const notification = await notificationService.markAsRead(notificationId, userId)
 
     if (!notification) {
       return res.status(404).json({
@@ -152,14 +74,44 @@ async function markAsRead(req, res) {
 }
 
 /**
+ * Mark all notifications as read
+ * @route PATCH /api/notifications/read-all
+ * @query {string} [type] - Optional: only mark specific type as read
+ * @access Authenticated users
+ */
+async function markAllAsRead(req, res) {
+  try {
+    const userId = req.user.id
+    const { type } = req.query
+
+    const count = await notificationService.markAllAsRead(userId, type)
+
+    res.status(200).json({
+      success: true,
+      message: `Marked ${count} notification(s) as read`,
+      data: { count }
+    })
+  } catch (error) {
+    console.error('Mark all as read error:', error.message)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark all notifications as read'
+    })
+  }
+}
+
+/**
  * Get unread notification count
  * @route GET /api/notifications/unread/count
+ * @query {string} [type] - Optional: count only specific type
  * @access Authenticated users
  */
 async function getUnreadCount(req, res) {
   try {
     const userId = req.user.id
-    const count = await notificationService.getUnreadCount(userId)
+    const { type } = req.query
+
+    const count = await notificationService.getUnreadCount(userId, type)
 
     res.status(200).json({
       success: true,
@@ -175,10 +127,69 @@ async function getUnreadCount(req, res) {
   }
 }
 
+/**
+ * Delete a notification
+ * @route DELETE /api/notifications/:id
+ * @access Authenticated users (recipient only)
+ */
+async function deleteNotification(req, res) {
+  try {
+    const userId = req.user.id
+    const notificationId = req.params.id
+
+    const notification = await notificationService.deleteNotification(notificationId, userId)
+
+    if (!notification) {
+      return res.status(404).json({
+        success: false,
+        message: 'Notification not found or unauthorized'
+      })
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification deleted successfully',
+      data: notification
+    })
+  } catch (error) {
+    console.error('Delete notification error:', error.message)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete notification'
+    })
+  }
+}
+
+/**
+ * Get notification statistics
+ * @route GET /api/notifications/stats
+ * @access Authenticated users
+ */
+async function getNotificationStats(req, res) {
+  try {
+    const userId = req.user.id
+
+    const stats = await notificationService.getNotificationStats(userId)
+
+    res.status(200).json({
+      success: true,
+      message: 'Notification statistics retrieved successfully',
+      data: stats
+    })
+  } catch (error) {
+    console.error('Get notification stats error:', error.message)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve notification statistics'
+    })
+  }
+}
+
 module.exports = {
-  notifyEmployerOfApplication,
-  notifyStudentOfApproval,
   getUserNotifications,
   markAsRead,
-  getUnreadCount
+  markAllAsRead,
+  getUnreadCount,
+  deleteNotification,
+  getNotificationStats
 }

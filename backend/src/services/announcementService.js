@@ -4,6 +4,7 @@
  */
 
 const prisma = require('../models/prisma')
+const notificationService = require('./notificationService')
 
 /**
  * Create a new announcement
@@ -38,55 +39,15 @@ async function createAnnouncement (announcementData) {
     }
   })
 
-  // Create notifications for targeted users based on audience
-  await createNotificationsForAudience(announcement.id, announcement.audience)
+  // Create notifications for targeted users using unified notification service
+  await notificationService.createAnnouncementNotifications(announcement.id, {
+    title: announcement.title,
+    content: announcement.content,
+    audience: announcement.audience,
+    priority: announcement.priority
+  })
 
   return announcement
-}
-
-/**
- * Create notifications for users based on announcement audience
- * @param {string} announcementId - Announcement ID
- * @param {string} audience - Target audience
- * @private
- */
-async function createNotificationsForAudience (announcementId, audience) {
-  let targetUsers = []
-
-  if (audience === 'ALL') {
-    // Get all users
-    targetUsers = await prisma.user.findMany({
-      where: { status: 'APPROVED' },
-      select: { id: true }
-    })
-  } else {
-    // Map audience to role
-    const roleMapping = {
-      STUDENTS: 'STUDENT',
-      EMPLOYERS: 'EMPLOYER',
-      PROFESSORS: 'PROFESSOR',
-      ADMINS: 'ADMIN'
-    }
-
-    const targetRole = roleMapping[audience]
-    targetUsers = await prisma.user.findMany({
-      where: {
-        role: targetRole,
-        status: 'APPROVED'
-      },
-      select: { id: true }
-    })
-  }
-
-  // Create notifications in bulk
-  if (targetUsers.length > 0) {
-    await prisma.notification.createMany({
-      data: targetUsers.map(user => ({
-        announcementId,
-        userId: user.id
-      }))
-    })
-  }
 }
 
 /**
@@ -226,53 +187,7 @@ async function deleteAnnouncement (announcementId) {
   return announcement
 }
 
-/**
- * Get user notifications
- * @param {string} userId - User ID
- * @param {boolean} unreadOnly - Get only unread notifications
- * @returns {Promise<Array>} List of notifications
- */
-async function getUserNotifications (userId, unreadOnly = false) {
-  const where = { userId }
 
-  if (unreadOnly) {
-    where.isRead = false
-  }
-
-  const notifications = await prisma.notification.findMany({
-    where,
-    include: {
-      announcement: {
-        select: {
-          id: true,
-          title: true,
-          content: true,
-          priority: true,
-          createdAt: true
-        }
-      }
-    },
-    orderBy: {
-      createdAt: 'desc'
-    }
-  })
-
-  return notifications
-}
-
-/**
- * Mark notification as read
- * @param {string} notificationId - Notification ID
- * @returns {Promise<Object>} Updated notification
- */
-async function markNotificationAsRead (notificationId) {
-  const notification = await prisma.notification.update({
-    where: { id: notificationId },
-    data: { isRead: true }
-  })
-
-  return notification
-}
 
 /**
  * Search announcements with comprehensive filters and pagination (Admin use)
@@ -395,8 +310,6 @@ module.exports = {
   getAnnouncementById,
   updateAnnouncement,
   deleteAnnouncement,
-  getUserNotifications,
-  markNotificationAsRead,
   searchAnnouncements,
   getAnnouncementsForRole
 }
