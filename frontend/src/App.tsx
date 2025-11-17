@@ -13,6 +13,7 @@ import EmployerPageShell from "@/components/EmployerPageShell";
 // import { AdminLayout } from "@/components/admin/AdminLayout";
 import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
+import EmployerNotificationsPage from "@/pages/employer/notifications/NotificationsPage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
@@ -95,6 +96,14 @@ const App: React.FC = () => {
             element={
               <Guard role="employer">
                 <EmployerDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/employer/notifications"
+            element={
+              <Guard role="employer">
+                <EmployerNotificationsPage />
               </Guard>
             }
           />

@@ -35,7 +35,7 @@ export const NotificationDropdown: FC<NotificationDropdownProps> = ({
   const hasNotifications = notifications.length > 0;
 
   return (
-    <div className="w-[360px] md:w-[380px]">
+    <div className="w-[360px] max-w-full md:w-[380px]">
       <div className="flex items-center justify-between px-4 pt-4 pb-2">
         <div>
           <p className="text-sm font-semibold text-foreground">Notifications</p>

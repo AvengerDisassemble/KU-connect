@@ -3,11 +3,9 @@ import {
   AlertOctagon,
   AlertTriangle,
   Briefcase,
-  Check,
   CheckCircle2,
   ClipboardList,
   Info,
-  Loader2,
   ServerCog,
 } from "lucide-react";
 
@@ -98,49 +96,42 @@ export const NotificationItem: FC<NotificationItemProps> = ({
       </span>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
+        <div className="min-w-0">
+          <p
+            className="text-sm font-medium text-foreground line-clamp-1"
+            title={notification.title}
+          >
+            {notification.title}
+          </p>
+          {notification.message ? (
             <p
-              className="text-sm font-medium text-foreground line-clamp-1"
-              title={notification.title}
+              className="mt-1 break-words text-xs text-muted-foreground line-clamp-3"
+              title={notification.message}
             >
-              {notification.title}
+              {notification.message}
             </p>
-            {notification.message ? (
-              <p
-                className="mt-1 break-words text-xs text-muted-foreground line-clamp-3"
-                title={notification.message}
-              >
-                {notification.message}
-              </p>
-            ) : null}
-          </div>
-
-          {showMarkAsRead ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0 text-muted-foreground"
-              onClick={handleMarkAsRead}
-              disabled={isProcessing}
-              aria-label="Mark notification as read"
-            >
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
-              )}
-            </Button>
           ) : null}
         </div>
 
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>{formatRelativeTime(notification.createdAt)}</span>
           {!notification.isRead ? (
-            <span
-              className="flex h-2 w-2 rounded-full bg-primary"
-              aria-hidden
-            />
+            <div className="flex flex-wrap items-center gap-3 text-right">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto px-0 py-0 text-xs font-semibold text-primary hover:text-primary/80"
+                onClick={handleMarkAsRead}
+                disabled={isProcessing}
+              >
+                {isProcessing ? "Marking..." : "Mark as read"}
+              </Button>
+              <span
+                className="flex h-2 w-2 rounded-full bg-primary"
+                aria-hidden
+              />
+            </div>
           ) : null}
         </div>
       </div>

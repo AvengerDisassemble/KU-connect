@@ -25,7 +25,7 @@ interface UseNotificationsReturn {
   markAsReadMutation: UseMutationResult<
     Notification,
     unknown,
-    string,
+    Notification,
     { previous?: NotificationsResponse }
   >;
 }
@@ -42,9 +42,9 @@ export const useNotifications = (userId?: string): UseNotificationsReturn => {
   });
 
   const markAsReadMutation = useMutation({
-    mutationFn: (notificationId: string) =>
-      markNotificationAsRead(notificationId),
-    onMutate: async (notificationId) => {
+    mutationFn: (notification: Notification) =>
+      markNotificationAsRead(notification),
+    onMutate: async (target) => {
       await queryClient.cancelQueries({
         queryKey: ["notifications", userId ?? "guest"],
       });
@@ -54,6 +54,10 @@ export const useNotifications = (userId?: string): UseNotificationsReturn => {
       ]);
 
       if (previous) {
+        const notificationId = target.id;
+        const wasUnread = previous.notifications.find(
+          (n) => n.id === notificationId && !n.isRead
+        );
         const next: NotificationsResponse = {
           notifications: previous.notifications.map((notification) =>
             notification.id === notificationId
@@ -62,12 +66,7 @@ export const useNotifications = (userId?: string): UseNotificationsReturn => {
           ),
           unreadCount: Math.max(
             0,
-            previous.unreadCount -
-              (previous.notifications.find(
-                (n) => n.id === notificationId && !n.isRead
-              )
-                ? 1
-                : 0)
+            previous.unreadCount - (wasUnread ? 1 : 0)
           ),
         };
         queryClient.setQueryData(["notifications", userId ?? "guest"], next);

@@ -45,11 +45,11 @@ export const NotificationBell = ({
 
   const handleMarkAsRead = (notification: (typeof notifications)[number]) => {
     if (!notification.isRead) {
-      markAsReadMutation.mutate(notification.id);
+      markAsReadMutation.mutate(notification);
     }
   };
 
-  const activeId = markAsReadMutation.variables;
+  const activeId = markAsReadMutation.variables?.id;
 
   return (
     <DropdownMenu>
@@ -79,7 +79,7 @@ export const NotificationBell = ({
           isError={isError}
           onRetry={refetch}
           onMarkAsRead={handleMarkAsRead}
-          processingId={typeof activeId === "string" ? activeId : undefined}
+          processingId={activeId}
         />
       </DropdownMenuContent>
     </DropdownMenu>

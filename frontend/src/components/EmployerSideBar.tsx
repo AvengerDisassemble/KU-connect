@@ -4,6 +4,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { LogOut } from "lucide-react";
 
 import Logo from "@/assets/logo.png";
+import EmployerNotificationPopover from "@/components/employer/EmployerNotificationPopover";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
@@ -84,9 +85,13 @@ export default function EmployerSidebar({ onNavigate }: EmployerSidebarProps) {
             {item.label}
           </NavLink>
         ))}
+
+        <div className="px-8 pt-1">
+          <EmployerNotificationPopover variant="inline" />
+        </div>
       </nav>
 
-      <div className="border-border border-t p-8 max-[390px]:p-6">
+      <div className="p-8 max-[390px]:p-6">
         <Button
           variant="outline"
           className="flex w-full items-center justify-center gap-2"
