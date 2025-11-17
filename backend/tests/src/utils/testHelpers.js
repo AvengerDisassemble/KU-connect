@@ -191,10 +191,7 @@ async function cleanupDatabase(prisma, options = {}) {
     // 5. Delete refresh tokens (they depend on users)
     await prisma.refreshToken.deleteMany()
 
-    // 6. Delete user notifications (they depend on users)
-    await prisma.userNotification.deleteMany()
-
-    // 7. Delete notifications (they depend on announcements and users)
+    // 6. Delete notifications (unified model - depends on users and announcements)
     await prisma.notification.deleteMany()
 
     // 8. Delete announcements (they depend on users)

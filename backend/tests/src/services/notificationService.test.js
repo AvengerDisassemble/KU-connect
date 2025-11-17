@@ -97,7 +97,7 @@ describe('NotificationService', () => {
       })
 
       expect(result).toBeDefined()
-      expect(result.recipientId).toBe(employer.id)
+      expect(result.userId).toBe(employer.id)
       expect(result.senderId).toBe(student.id)
       expect(result.type).toBe('EMPLOYER_APPLICATION')
       expect(result.title).toBe('New Job Application')
@@ -105,11 +105,11 @@ describe('NotificationService', () => {
       expect(result.message).toContain('Backend Developer')
 
       // Verify in database
-      const notification = await prisma.userNotification.findUnique({
+      const notification = await prisma.notification.findUnique({
         where: { id: result.id }
       })
       expect(notification).toBeDefined()
-      expect(notification.read).toBe(false)
+      expect(notification.isRead).toBe(false)
     })
 
     it('should throw error for non-existent job', async () => {
@@ -141,7 +141,7 @@ describe('NotificationService', () => {
       })
 
       expect(result).toBeDefined()
-      expect(result.recipientId).toBe(student.id)
+      expect(result.userId).toBe(student.id)
       expect(result.senderId).toBe(employer.id)
       expect(result.type).toBe('APPLICATION_STATUS')
       expect(result.title).toBe('Application Update')
@@ -198,35 +198,38 @@ describe('NotificationService', () => {
   describe('getNotificationsForUser', () => {
     beforeAll(async () => {
       // Create some notifications
-      await prisma.userNotification.createMany({
+      await prisma.notification.createMany({
         data: [
           {
-            recipientId: student.id,
+            userId: student.id,
             senderId: employer.id,
             type: 'APPLICATION_STATUS',
             title: 'Test 1',
-            message: 'Message 1'
+            message: 'Message 1',
+            priority: 'MEDIUM'
           },
           {
-            recipientId: student.id,
+            userId: student.id,
             senderId: employer.id,
             type: 'APPLICATION_STATUS',
             title: 'Test 2',
-            message: 'Message 2'
+            message: 'Message 2',
+            priority: 'MEDIUM'
           },
           {
-            recipientId: student.id,
+            userId: student.id,
             senderId: employer.id,
             type: 'APPLICATION_STATUS',
             title: 'Test 3',
-            message: 'Message 3'
+            message: 'Message 3',
+            priority: 'MEDIUM'
           }
         ]
       })
     })
 
     it('should return paginated notifications', async () => {
-      const result = await notificationService.getNotificationsForUser(student.id, {
+      const result = await notificationService.getNotifications(student.id, {
         page: 1,
         limit: 2
       })
@@ -239,7 +242,7 @@ describe('NotificationService', () => {
     })
 
     it('should order by createdAt desc', async () => {
-      const result = await notificationService.getNotificationsForUser(student.id)
+      const result = await notificationService.getNotifications(student.id)
 
       const dates = result.notifications.map(n => new Date(n.createdAt).getTime())
       for (let i = 0; i < dates.length - 1; i++) {
@@ -248,7 +251,7 @@ describe('NotificationService', () => {
     })
 
     it('should include sender information', async () => {
-      const result = await notificationService.getNotificationsForUser(student.id)
+      const result = await notificationService.getNotifications(student.id)
 
       expect(result.notifications[0].sender).toBeDefined()
       expect(result.notifications[0].sender.name).toBe('Employer')
@@ -259,54 +262,55 @@ describe('NotificationService', () => {
     let testNotification
 
     beforeEach(async () => {
-      testNotification = await prisma.userNotification.create({
+      testNotification = await prisma.notification.create({
         data: {
-          recipientId: student.id,
+          userId: student.id,
           senderId: employer.id,
           type: 'APPLICATION_STATUS',
           title: 'Test Mark Read',
           message: 'Test message',
-          read: false
+          priority: 'MEDIUM',
+          isRead: false
         }
       })
     })
 
     it('should mark notification as read', async () => {
-      const result = await notificationService.markAsRead({
-        id: testNotification.id,
-        userId: student.id
-      })
+      const result = await notificationService.markAsRead(
+        testNotification.id,
+        student.id
+      )
 
       expect(result).toBeDefined()
-      expect(result.read).toBe(true)
+      expect(result.isRead).toBe(true)
 
       // Verify in database
-      const updated = await prisma.userNotification.findUnique({
+      const updated = await prisma.notification.findUnique({
         where: { id: testNotification.id }
       })
-      expect(updated.read).toBe(true)
+      expect(updated.isRead).toBe(true)
     })
 
     it('should return null if user is not recipient', async () => {
-      const result = await notificationService.markAsRead({
-        id: testNotification.id,
-        userId: employer.id
-      })
+      const result = await notificationService.markAsRead(
+        testNotification.id,
+        employer.id
+      )
 
       expect(result).toBeNull()
 
       // Verify not updated in database
-      const unchanged = await prisma.userNotification.findUnique({
+      const unchanged = await prisma.notification.findUnique({
         where: { id: testNotification.id }
       })
-      expect(unchanged.read).toBe(false)
+      expect(unchanged.isRead).toBe(false)
     })
 
     it('should return null for non-existent notification', async () => {
-      const result = await notificationService.markAsRead({
-        id: 'non-existent-id',
-        userId: student.id
-      })
+      const result = await notificationService.markAsRead(
+        'non-existent-id',
+        student.id
+      )
 
       expect(result).toBeNull()
     })
@@ -320,31 +324,34 @@ describe('NotificationService', () => {
       countBefore = await notificationService.getUnreadCount(employer.id)
       
       // Create mix of read and unread notifications
-      await prisma.userNotification.createMany({
+      await prisma.notification.createMany({
         data: [
           {
-            recipientId: employer.id,
+            userId: employer.id,
             senderId: student.id,
             type: 'EMPLOYER_APPLICATION',
             title: 'Unread 1',
             message: 'Message 1',
-            read: false
+            priority: 'MEDIUM',
+            isRead: false
           },
           {
-            recipientId: employer.id,
+            userId: employer.id,
             senderId: student.id,
             type: 'EMPLOYER_APPLICATION',
             title: 'Unread 2',
             message: 'Message 2',
-            read: false
+            priority: 'MEDIUM',
+            isRead: false
           },
           {
-            recipientId: employer.id,
+            userId: employer.id,
             senderId: student.id,
             type: 'EMPLOYER_APPLICATION',
             title: 'Read',
             message: 'Message 3',
-            read: true
+            priority: 'MEDIUM',
+            isRead: true
           }
         ]
       })
