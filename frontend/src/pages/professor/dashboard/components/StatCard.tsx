@@ -58,7 +58,6 @@ const ProfessorStatCard = ({
         </div>
 
         {/* On sm+ keep the pill on the right like before */}
-  {null}
       </div>
     </Card>
   );
