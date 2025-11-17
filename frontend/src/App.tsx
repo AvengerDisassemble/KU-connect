@@ -13,6 +13,7 @@ import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardP
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import AdminDashboardPage from "@/pages/admin/AdminDashboard/DashboardPage";
 import ProfessorDashboardPage from "@/pages/professor/dashboard/DashboardPage";
+import ProfessorAnalyticsPage from "@/pages/professor/insight/InsightPage";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 import JobEditPage from "@/pages/employer/JobPosting/JobEditPage";
 
@@ -95,6 +96,14 @@ const App: React.FC = () => {
             element={
               <Guard role="professor">
                 <ProfessorDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/professor/analytics"
+            element={
+              <Guard role="professor">
+                <ProfessorAnalyticsPage />
               </Guard>
             }
           />
