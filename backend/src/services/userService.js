@@ -608,8 +608,7 @@ async function searchUsers (filters = {}) {
   // Search by email
   if (search) {
     where.email = {
-      contains: search,
-      mode: 'insensitive'
+      contains: search
     }
   }
 

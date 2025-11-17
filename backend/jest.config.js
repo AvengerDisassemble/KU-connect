@@ -1,6 +1,11 @@
 module.exports = {
   testEnvironment: "node",
-  coveragePathIgnorePatterns: ["/node_modules/"],
+  coveragePathIgnorePatterns: [
+    "/node_modules/",
+    "/tests/",
+    "src/routes/user-profile.js", // Deprecated route
+    "src/services/storage/s3StorageProvider.js", // Cloud service requiring AWS
+  ],
   testMatch: ["**/__tests__/**/*.js", "**/?(*.)+(spec|test).js"],
 
   // Transform ES modules from node_modules

@@ -20,7 +20,11 @@
     "test:performance": "jest --testPathPatterns=\"performance\" --runInBand --verbose",
     "test:reliability": "jest --testPathPatterns=\"reliability\" --runInBand --verbose",
     "test:coverage": "jest --coverage --runInBand",
-    "start": "node server.js"
+    "test:auth": "jest --testPathPatterns=\"auth\" --runInBand --verbose",
+    "load-test": "echo 'Install Artillery: npm install -g artillery' && echo 'Then run: artillery run load-test/artillery.yml'",
+    "load-test:quick": "artillery quick --count 10 --num 50 http://localhost:3000/api/jobs",
+    "start": "node server.js",
+    "start:test": "NODE_ENV=test node server.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.913.0",
