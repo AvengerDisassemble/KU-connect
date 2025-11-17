@@ -96,7 +96,16 @@ describe("jobReportService (unit)", () => {
     expect(prisma.jobReport.findMany).toHaveBeenCalledWith({
       include: {
         job: { include: { hr: true } },
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            email: true,
+            verified: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -117,7 +126,16 @@ describe("jobReportService (unit)", () => {
       where: { id: "report10" },
       include: {
         job: { include: { hr: true } },
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            surname: true,
+            email: true,
+            verified: true,
+            createdAt: true,
+          },
+        },
       },
     });
     expect(res.id).toBe("report10");

@@ -135,6 +135,11 @@ function errorHandler(err, req, res, next) {
     error.message = err.message;
   }
 
+  // Custom status code from service layer (e.g., error.status = 404)
+  if (err.status) {
+    error.statusCode = err.status
+  }
+
   res.status(error.statusCode).json({
     success: false,
     message: error.message,

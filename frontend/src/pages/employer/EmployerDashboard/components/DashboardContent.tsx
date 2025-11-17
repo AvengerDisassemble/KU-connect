@@ -3,11 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,7 +81,7 @@ const isSameThaiDay = (isoDate: string, reference = new Date()): boolean => {
 
 const isThaiDateInCurrentWeek = (
   isoDate: string,
-  reference = new Date(),
+  reference = new Date()
 ): boolean => {
   const created = toBangkokDate(isoDate);
   const ref = toBangkokDate(reference);
@@ -178,7 +174,7 @@ const computeAggregateStats = (records: ApplicantRecord[]): AggregateStats => {
       acc.total += 1;
       return acc;
     },
-    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 },
+    { total: 0, qualified: 0, newToday: 0, newThisWeek: 0 }
   );
 };
 
@@ -187,7 +183,7 @@ const APPLICANTS_PAGE_SIZE = 5;
 const PANEL_HEIGHT_CLASS = "h-[520px]";
 const PANEL_SCROLL_AREA_CLASS = "flex-1 overflow-y-auto";
 const EMPTY_APPLICANTS_MAP: Record<string, JobApplication[]> = Object.freeze(
-  {},
+  {}
 );
 
 const EmployerDashboardContent = () => {
@@ -215,8 +211,7 @@ const EmployerDashboardContent = () => {
     retry: false,
   });
 
-  const hasEmployerAccess =
-    user?.role === "employer" || user?.role === "admin";
+  const hasEmployerAccess = user?.role === "employer" || user?.role === "admin";
   const hrId: string | undefined = profile?.hr?.id;
 
   const {
@@ -246,13 +241,13 @@ const EmployerDashboardContent = () => {
     }
 
     setSelectedJobId((prev) =>
-      prev && loadedJobs.some((job) => job.id === prev) ? prev : null,
+      prev && loadedJobs.some((job) => job.id === prev) ? prev : null
     );
   }, [loadedJobs]);
 
   const jobIds = useMemo(
     () => loadedJobs.map((job) => job.id).sort(),
-    [loadedJobs],
+    [loadedJobs]
   );
 
   const totalJobPages = useMemo(() => {
@@ -297,7 +292,7 @@ const EmployerDashboardContent = () => {
   const handleNextJobsPage = useCallback(() => {
     if (nextJobsDisabled) return;
     setJobPage((prev) =>
-      totalJobPages ? Math.min(prev + 1, totalJobPages) : prev + 1,
+      totalJobPages ? Math.min(prev + 1, totalJobPages) : prev + 1
     );
   }, [nextJobsDisabled, totalJobPages]);
 
@@ -334,7 +329,7 @@ const EmployerDashboardContent = () => {
 
   const applicantsMap = useMemo(
     () => applicantsByJob ?? EMPTY_APPLICANTS_MAP,
-    [applicantsByJob],
+    [applicantsByJob]
   );
 
   const allApplicantRecords = useMemo<ApplicantRecord[]>(() => {
@@ -370,7 +365,7 @@ const EmployerDashboardContent = () => {
     }
 
     return allApplicantRecords.filter(
-      (record) => record.jobId === selectedJobId,
+      (record) => record.jobId === selectedJobId
     );
   }, [allApplicantRecords, selectedJobId]);
 
@@ -412,7 +407,7 @@ const EmployerDashboardContent = () => {
     }
 
     setApplicantPage((prev) =>
-      Math.min(Math.max(prev, 1), totalApplicantPages),
+      Math.min(Math.max(prev, 1), totalApplicantPages)
     );
   }, [totalApplicantPages]);
 
@@ -420,9 +415,9 @@ const EmployerDashboardContent = () => {
     () =>
       filteredApplicants.slice(
         (applicantPage - 1) * APPLICANTS_PAGE_SIZE,
-        applicantPage * APPLICANTS_PAGE_SIZE,
+        applicantPage * APPLICANTS_PAGE_SIZE
       ),
-    [filteredApplicants, applicantPage],
+    [filteredApplicants, applicantPage]
   );
 
   const applicantControlsDisabled = applicantsFetching || applicantsLoadingAll;
@@ -434,20 +429,23 @@ const EmployerDashboardContent = () => {
 
   const applicantPageLabel =
     totalApplicantPages > 0
-      ? `${Math.min(applicantPage, totalApplicantPages)} of ${totalApplicantPages}`
+      ? `${Math.min(
+          applicantPage,
+          totalApplicantPages
+        )} of ${totalApplicantPages}`
       : "0 of 0";
 
   const aggregateStats = useMemo(
     () => computeAggregateStats(allApplicantRecords),
-    [allApplicantRecords],
+    [allApplicantRecords]
   );
 
   const openJobCount = useMemo(
     () =>
       loadedJobs.filter(
-        (job) => new Date(job.application_deadline).getTime() >= Date.now(),
+        (job) => new Date(job.application_deadline).getTime() >= Date.now()
       ).length,
-    [loadedJobs],
+    [loadedJobs]
   );
 
   const stats = {
@@ -459,7 +457,7 @@ const EmployerDashboardContent = () => {
   const jobCards: JobCardViewModel[] = useMemo(
     () =>
       jobPageItems.map((job) => mapJobToViewModel(job, applicantsMap[job.id])),
-    [applicantsMap, jobPageItems],
+    [applicantsMap, jobPageItems]
   );
 
   const handleViewApplicants = (jobId: string): void => {
@@ -473,7 +471,7 @@ const EmployerDashboardContent = () => {
   const handleNextApplicantPage = useCallback(() => {
     if (applicantNextDisabled) return;
     setApplicantPage((prev) =>
-      totalApplicantPages ? Math.min(prev + 1, totalApplicantPages) : prev + 1,
+      totalApplicantPages ? Math.min(prev + 1, totalApplicantPages) : prev + 1
     );
   }, [applicantNextDisabled, totalApplicantPages]);
 
@@ -672,8 +670,8 @@ const EmployerDashboardContent = () => {
                   {hasSearch
                     ? "No applicants match your current filters."
                     : selectedJobId
-                      ? "No applications for this job yet."
-                      : "No applications received yet."}
+                    ? "No applications for this job yet."
+                    : "No applications received yet."}
                 </div>
               ) : (
                 <div className="px-4 pb-6 sm:px-6">

@@ -129,10 +129,18 @@ const getUserNotificationsHandler = asyncErrorHandler(async (req, res) => {
     unreadOnly === 'true'
   )
 
+  const lastFetchedAt = notifications.length > 0
+    ? notifications[0].createdAt
+    : new Date().toISOString()
+
   res.json({
     success: true,
     message: 'Notifications retrieved successfully',
-    data: notifications
+    data: {
+      notifications,
+      hasMore: false,
+      lastFetchedAt
+    }
   })
 })
 

@@ -357,6 +357,16 @@ async function createProfessorUser (data) {
         role: 'PROFESSOR',
         status: 'APPROVED',
         verified: true
+      },
+      select: {
+        id: true,
+        name: true,
+        surname: true,
+        email: true,
+        role: true,
+        status: true,
+        verified: true,
+        createdAt: true
       }
     })
 
@@ -376,16 +386,7 @@ async function createProfessorUser (data) {
 
   // Prepare response data
   const responseData = {
-    user: {
-      id: result.user.id,
-      name: result.user.name,
-      surname: result.user.surname,
-      email: result.user.email,
-      role: result.user.role,
-      status: result.user.status,
-      verified: result.user.verified,
-      createdAt: result.user.createdAt
-    },
+    user: result.user,
     professor: {
       id: result.professor.id,
       userId: result.professor.userId,

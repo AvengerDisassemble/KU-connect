@@ -1,38 +1,68 @@
 const nodemailer = require('nodemailer')
+const { Resend } = require('resend')
 
 /**
  * Create email transporter
- * Uses SMTP configuration from environment variables
- * Falls back to ethereal email for development/testing if no SMTP config
+ * Priority order:
+ * 1. Resend (if RESEND_API_KEY is set) - Recommended, easiest setup
+ * 2. SMTP (if SMTP_HOST/USER/PASS are set) - Traditional email
+ * 3. Ethereal (fallback for testing) - Development only
  */
 async function createTransporter () {
-  // Check if SMTP configuration exists
+  // Option 1: Use Resend (Preferred - Simple API, no complex auth)
+  if (process.env.RESEND_API_KEY) {
+    const fromEmail = process.env.SMTP_FROM || 'onboarding@resend.dev'
+    console.log('📧 Using Resend email service')
+    console.log('   From address:', fromEmail)
+    
+    // Check if using test domain
+    if (fromEmail.includes('onboarding@resend.dev')) {
+      console.log('   ⚠️  TEST MODE: Can only send to your Resend account email')
+      console.log('   💡 To send to anyone, verify your domain at https://resend.com/domains')
+    } else {
+      console.log('   ✅ Using verified domain - can send to any email')
+    }
+    
+    return {
+      type: 'resend',
+      client: new Resend(process.env.RESEND_API_KEY)
+    }
+  }
+
+  // Option 2: Check if SMTP configuration exists
   if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+    console.log('📧 Using SMTP email service')
+    return {
+      type: 'smtp',
+      client: nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      })
+    }
+  }
+
+  // Option 3: Fallback to Ethereal Email for development/testing
+  // This creates a test account that doesn't actually send emails
+  console.warn('⚠️  No email configuration found. Using Ethereal Email (test mode)')
+  const testAccount = await nodemailer.createTestAccount()
+  
+  return {
+    type: 'ethereal',
+    client: nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      secure: false,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: testAccount.user,
+        pass: testAccount.pass
       }
     })
   }
-
-  // Fallback to Ethereal Email for development/testing
-  // This creates a test account that doesn't actually send emails
-  console.warn('⚠️  No SMTP configuration found. Using Ethereal Email (test mode)')
-  const testAccount = await nodemailer.createTestAccount()
-  
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: {
-      user: testAccount.user,
-      pass: testAccount.pass
-    }
-  })
 }
 
 /**
@@ -269,28 +299,20 @@ This is an automated email. Please do not reply to this message.
 © ${new Date().getFullYear()} KU-Connect. All rights reserved.
     `.trim()
 
-    // Send email
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"KU-Connect" <noreply@ku-connect.com>',
+    // Send email using the unified sendEmail function
+    const success = await sendEmail({
       to: email,
       subject,
       text: textContent,
       html: htmlContent
     })
 
-    // Log success
-    console.log('✅ Professor welcome email sent successfully')
-    console.log('   To:', email)
-    console.log('   Message ID:', info.messageId)
-
-    // If using Ethereal, provide preview URL
-    if (info.messageId && !process.env.SMTP_HOST) {
-      const previewUrl = nodemailer.getTestMessageUrl(info)
-      console.log('   Preview URL:', previewUrl)
-      console.log('   ℹ️  Note: Email not actually sent (test mode). Use preview URL to view.')
+    if (success) {
+      console.log('✅ Professor welcome email sent successfully')
+      console.log('   To:', email)
     }
 
-    return true
+    return success
   } catch (error) {
     console.error('❌ Failed to send professor welcome email:', error.message)
     console.error('   Recipient:', email)
@@ -305,7 +327,7 @@ This is an automated email. Please do not reply to this message.
 
 /**
  * Send generic email
- * Can be used for other email types in the future
+ * Supports Resend, SMTP, or Ethereal
  * 
  * @param {Object} options - Email options
  * @param {string} options.to - Recipient email
@@ -319,29 +341,68 @@ async function sendEmail (options) {
 
   try {
     const transporter = await createTransporter()
+    const fromEmail = process.env.SMTP_FROM || 'onboarding@resend.dev' // Resend's verified domain
 
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"KU-Connect" <noreply@ku-connect.com>',
-      to,
-      subject,
-      text,
-      html: html || text
-    })
+    if (transporter.type === 'resend') {
+      // Use Resend API
+      const { data, error } = await transporter.client.emails.send({
+        from: fromEmail,
+        to: [to],
+        subject,
+        text,
+        html: html || text
+      })
 
-    console.log('✅ Email sent successfully')
-    console.log('   To:', to)
-    console.log('   Subject:', subject)
-    console.log('   Message ID:', info.messageId)
+      if (error) {
+        throw error
+      }
 
-    if (info.messageId && !process.env.SMTP_HOST) {
-      const previewUrl = nodemailer.getTestMessageUrl(info)
-      console.log('   Preview URL:', previewUrl)
+      console.log('✅ Email sent successfully via Resend')
+      console.log('   To:', to)
+      console.log('   Subject:', subject)
+      console.log('   Message ID:', data.id)
+      
+      return true
+    } else {
+      // Use nodemailer (SMTP or Ethereal)
+      const info = await transporter.client.sendMail({
+        from: fromEmail,
+        to,
+        subject,
+        text,
+        html: html || text
+      })
+
+      console.log(`✅ Email sent successfully via ${transporter.type.toUpperCase()}`)
+      console.log('   To:', to)
+      console.log('   Subject:', subject)
+      console.log('   Message ID:', info.messageId)
+
+      if (transporter.type === 'ethereal') {
+        const previewUrl = nodemailer.getTestMessageUrl(info)
+        console.log('   Preview URL:', previewUrl)
+        console.log('   ℹ️  Note: Email not actually sent (test mode). Use preview URL to view.')
+      }
+
+      return true
     }
-
-    return true
   } catch (error) {
     console.error('❌ Failed to send email:', error.message)
     console.error('   Recipient:', to)
+    if (error.statusCode) {
+      console.error('   Status:', error.statusCode)
+    }
+    
+    // Provide helpful context for common Resend errors
+    if (error.statusCode === 403 && error.message?.includes('domain')) {
+      console.error('   💡 Domain not verified. Options:')
+      console.error('      1. Verify your domain at https://resend.com/domains')
+      console.error('      2. Or use SMTP_FROM="KU-Connect <onboarding@resend.dev>" for testing')
+    } else if (error.statusCode === 403 && error.message?.includes('own email')) {
+      console.error('   💡 Test mode: Can only send to your Resend account email')
+      console.error('      To send to anyone, verify domain at https://resend.com/domains')
+    }
+    
     return false
   }
 }

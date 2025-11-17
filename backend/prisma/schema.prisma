@@ -86,28 +86,30 @@ enum NotificationPriority {
 // ------------------------------
 
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  surname       String
-  password      String?
-  email         String         @unique
-  username      String?        @unique
-  role          Role
-  status        UserStatus     @default(PENDING)
-  verified      Boolean        @default(false)
-  avatarKey     String?        // Storage key for user avatar image
-  phoneNumber   String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  professor     Professor?
-  admin         Admin?
-  student       Student?
-  hr            HR?
-  refreshTokens RefreshToken[]
-  accounts      Account[]
-  reports       JobReport[]
-  announcements Announcement[]
-  notifications Notification[]
+  id                      String             @id @default(cuid())
+  name                    String
+  surname                 String
+  password                String?
+  email                   String             @unique
+  username                String?            @unique
+  role                    Role
+  status                  UserStatus         @default(PENDING)
+  verified                Boolean            @default(false)
+  avatarKey               String?            // Storage key for user avatar image
+  phoneNumber             String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  professor               Professor?
+  admin                   Admin?
+  student                 Student?
+  hr                      HR?
+  refreshTokens           RefreshToken[]
+  accounts                Account[]
+  reports                 JobReport[]
+  announcements           Announcement[]
+  notifications           Notification[]
+  sentNotifications       UserNotification[] @relation("NotificationSender")
+  receivedNotifications   UserNotification[] @relation("NotificationRecipient")
   // Back-relation to saved jobs — allows querying what this user saved
   savedJobs     SavedJob[]
 }
@@ -160,10 +162,10 @@ model Admin {
 }
 
 model Student {
-  id                     String            @id @default(cuid())
-  userId                 String            @unique
-  user                   User              @relation(fields: [userId], references: [id])
-  degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  user                   User               @relation(fields: [userId], references: [id])
+  degreeType             DegreeType         @relation(fields: [degreeTypeId], references: [id])
   degreeTypeId           String
   address                String
   gpa                    Float?
@@ -174,8 +176,9 @@ model Student {
   interests              StudentInterest[]
   resumes                Resume[]
   applications           Application[]
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
+  preference             StudentPreference?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 }
 
 model HR {
@@ -364,4 +367,41 @@ model Notification {
   createdAt      DateTime     @default(now())
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ------------------------------
+//  USER-TO-USER NOTIFICATION MODEL
+// ------------------------------
+
+model UserNotification {
+  id            String   @id @default(cuid())
+  recipientId   String
+  senderId      String?
+  type          String   // e.g. 'EMPLOYER_APPLICATION', 'APPLICATION_STATUS'
+  title         String
+  message       String
+  read          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  // Optional linking for future deep queries
+  jobId         String?
+  applicationId String?
+
+  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  sender    User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([recipientId, createdAt])
+  @@index([recipientId, read])
+}
+
+model StudentPreference {
+  id              String    @id @default(cuid())
+  studentId       String    @unique
+  desiredLocation String?
+  minSalary       Int?
+  industry        Industry? // preferred company industry
+  jobType         String?   // internship, part-time, full-time, contract
+  remoteWork      String?   // on-site, remote, hybrid
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }

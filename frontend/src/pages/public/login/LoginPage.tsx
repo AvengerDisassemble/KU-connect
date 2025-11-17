@@ -266,7 +266,7 @@ function getRoleDestination(role?: string, userId?: string) {
     typeof role === "string" ? role.toUpperCase() : undefined;
   switch (normalizedRole) {
     case "STUDENT":
-      return "/student";
+      return "/student/browse-jobs";
     case "EMPLOYER":
       return userId ? `/employer/profile/${userId}` : "/employer";
     case "ADMIN":

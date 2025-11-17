@@ -189,21 +189,24 @@ async function cleanupDatabase(prisma, options = {}) {
     await prisma.resume.deleteMany();
 
     // 5. Delete refresh tokens (they depend on users)
-    await prisma.refreshToken.deleteMany();
+    await prisma.refreshToken.deleteMany()
 
-    // 6. Delete notifications (they depend on announcements and users)
+    // 6. Delete user notifications (they depend on users)
+    await prisma.userNotification.deleteMany()
+
+    // 7. Delete notifications (they depend on announcements and users)
     await prisma.notification.deleteMany()
 
-    // 7. Delete announcements (they depend on users)
+    // 8. Delete announcements (they depend on users)
     await prisma.announcement.deleteMany()
 
-    // 8. Delete role-specific records (they depend on users)
+    // 9. Delete role-specific records (they depend on users)
     await prisma.student.deleteMany()
     await prisma.professor.deleteMany()
     await prisma.admin.deleteMany()
     await prisma.hR.deleteMany()
 
-    // 9. Delete users
+    // 10. Delete users
     await prisma.user.deleteMany({
       where: {
         email: {
@@ -212,11 +215,11 @@ async function cleanupDatabase(prisma, options = {}) {
       },
     });
 
-    // 8. Delete tags
-    await prisma.tag.deleteMany();
+    // 11. Delete tags
+    await prisma.tag.deleteMany()
 
-    // 9. Delete degree types
-    await prisma.degreeType.deleteMany();
+    // 12. Delete degree types
+    await prisma.degreeType.deleteMany()
 
     if (logSuccess) {
       console.log("Complete database cleanup completed successfully");
