@@ -40,17 +40,21 @@ const StudentTable = ({
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed divide-y divide-border text-sm">
+          <table className="w-full table-auto divide-y divide-border text-sm">
             <thead className="bg-muted/40 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="w-[28%] px-6 py-3 text-left">Student</th>
-                <th className="w-[20%] px-6 py-3 text-left">Degree / Graduation</th>
-                <th className="w-[8%] px-6 py-3 text-left">GPA</th>
-                <th className="w-[10%] px-6 py-3 text-left">Applications</th>
-                <th className="w-[8%] px-6 py-3 text-left">Pending</th>
-                <th className="w-[8%] px-6 py-3 text-left">Qualified</th>
-                <th className="w-[8%] px-6 py-3 text-left">Rejected</th>
-                <th className="w-[10%] px-6 py-3 text-left">Success Rate</th>
+                <th className="w-[25%] px-6 py-3 text-left align-bottom whitespace-normal leading-tight">
+                  Student
+                </th>
+                <th className="w-[17%] px-6 py-3 text-left align-bottom whitespace-normal leading-tight">
+                  Degree / Graduation
+                </th>
+                <th className="px-4 py-3 text-center align-bottom">GPA</th>
+                <th className="px-6 py-3 text-center align-bottom">Applications</th>
+                <th className="px-6 py-3 text-center align-bottom">Pending</th>
+                <th className="px-6 py-3 text-center align-bottom">Qualified</th>
+                <th className="px-6 py-3 text-center align-bottom">Rejected</th>
+                <th className="px-6 py-3 text-center align-bottom">Success Rate</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-card">
@@ -66,22 +70,22 @@ const StudentTable = ({
                       <Skeleton className="mt-2 h-3 w-24" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="mx-auto h-4 w-10" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="mx-auto h-4 w-10" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="mx-auto h-4 w-10" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="mx-auto h-4 w-10" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-10" />
+                      <Skeleton className="mx-auto h-4 w-10" />
                     </td>
                     <td className="px-6 py-4">
-                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="mx-auto h-4 w-12" />
                     </td>
                   </tr>
                 ))
@@ -89,15 +93,34 @@ const StudentTable = ({
                 students.map((student) => {
                   return (
                     <tr key={student.studentId} className="hover:bg-muted/60">
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-foreground">
-                          {student.fullName || `${student.name} ${student.surname}`}
+                      <td className="px-6 py-4 text-left">
+                        <div className="font-semibold leading-tight text-foreground">
+                          {(() => {
+                            const baseName =
+                              student.fullName?.trim() ||
+                              `${student.name ?? ""} ${student.surname ?? ""}`.trim();
+                            if (!baseName) {
+                              return "—";
+                            }
+                            const lastSpace = baseName.lastIndexOf(" ");
+                            if (lastSpace === -1) {
+                              return baseName;
+                            }
+                            const first = baseName.slice(0, lastSpace).trim();
+                            const last = baseName.slice(lastSpace + 1).trim();
+                            return (
+                              <>
+                                <span>{first}</span>
+                                {last ? <span className="block">{last}</span> : null}
+                              </>
+                            );
+                          })()}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {student.email}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 text-left">
                         <div className="font-medium text-foreground">
                           {student.degreeType?.name ?? "—"}
                         </div>
@@ -105,24 +128,24 @@ const StudentTable = ({
                         {deriveGraduationLabel(student)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">
+                    <td className="px-6 py-4 text-center align-middle text-muted-foreground">
                       {typeof student.gpa === "number"
                         ? student.gpa.toFixed(2)
                         : "—"}
                     </td>
-                      <td className="px-6 py-4 font-semibold text-foreground">
+                      <td className="px-6 py-4 text-center align-middle font-semibold text-foreground">
                         {student.applicationStats.total}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">
+                      <td className="px-6 py-4 text-center align-middle text-muted-foreground">
                         {student.applicationStats.pending}
                       </td>
-                      <td className="px-6 py-4 text-primary">
+                      <td className="px-6 py-4 text-center align-middle text-primary">
                         {student.applicationStats.qualified}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground">
+                      <td className="px-6 py-4 text-center align-middle text-muted-foreground">
                         {student.applicationStats.rejected}
                       </td>
-                      <td className="px-6 py-4 font-semibold">
+                      <td className="px-6 py-4 text-center align-middle font-semibold">
                         {formatSuccessRate(student.applicationStats.qualifiedRate)}
                       </td>
                     </tr>
