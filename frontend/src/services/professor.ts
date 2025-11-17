@@ -69,6 +69,9 @@ const requestApi = async <T>(path: string, init?: RequestInit): Promise<T> => {
     throw new Error(body.message || "Request failed");
   }
 
+  if (body.data === undefined || body.data === null) {
+    throw new Error("API response missing data");
+  }
   return body.data;
 };
 
