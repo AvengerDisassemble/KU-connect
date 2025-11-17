@@ -264,12 +264,9 @@ interface OAuthMessageEventData {
 function getRoleDestination(role?: string, userId?: string) {
   const normalizedRole =
     typeof role === "string" ? role.toUpperCase() : undefined;
-  if (normalizedRole === "PROFESSOR" && userId) {
-    return `/employer/profile/${userId}`;
-  }
   switch (normalizedRole) {
     case "STUDENT":
-      return "/student/dashboard";
+      return "/student";
     case "EMPLOYER":
       return userId ? `/employer/profile/${userId}` : "/employer";
     case "ADMIN":
