@@ -1,4 +1,5 @@
-import { type FC } from "react";
+import { type FC, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertOctagon,
   AlertTriangle,
@@ -65,6 +66,7 @@ export const NotificationItem: FC<NotificationItemProps> = ({
   onMarkAsRead,
   isProcessing = false,
 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const config = categoryConfig[notification.type] ?? categoryConfig.info;
   const Icon = config.icon;
 
@@ -76,16 +78,24 @@ export const NotificationItem: FC<NotificationItemProps> = ({
     }
   };
 
+  const toggleExpanded = () => setIsExpanded((prev) => !prev);
+
   return (
     <div
       role="listitem"
       aria-live="polite"
       className={cn(
-        "flex gap-3 rounded-lg border border-transparent p-3 transition-colors",
+        "rounded-lg border border-transparent p-3 transition-colors",
         notification.isRead ? "bg-card" : "bg-muted/40",
         "hover:border-border hover:bg-muted/60"
       )}
     >
+      <button
+        type="button"
+        className="flex w-full gap-3 text-left"
+        onClick={toggleExpanded}
+        aria-expanded={isExpanded}
+      >
       <span
         aria-hidden
         className={cn(
@@ -106,14 +116,6 @@ export const NotificationItem: FC<NotificationItemProps> = ({
             >
               {notification.title}
             </p>
-            {notification.message ? (
-              <p
-                className="mt-1 break-words text-xs text-muted-foreground line-clamp-3"
-                title={notification.message}
-              >
-                {notification.message}
-              </p>
-            ) : null}
           </div>
 
           {showMarkAsRead ? (
@@ -133,9 +135,27 @@ export const NotificationItem: FC<NotificationItemProps> = ({
             </Button>
           ) : null}
         </div>
+      </button>
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>{formatRelativeTime(notification.createdAt)}</span>
+      <AnimatePresence initial={false}>
+        {notification.message ? (
+          <motion.div
+            key="message"
+            initial={false}
+            animate={{ height: isExpanded ? "auto" : 0, opacity: isExpanded ? 1 : 0 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
+          >
+            <p className="mt-2 break-words text-sm text-muted-foreground">
+              {notification.message}
+            </p>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>{formatRelativeTime(notification.createdAt)}</span>
           {!notification.isRead ? (
             <span
               className="flex h-2 w-2 rounded-full bg-primary"
