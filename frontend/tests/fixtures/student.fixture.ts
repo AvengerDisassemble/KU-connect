@@ -18,6 +18,7 @@ type StudentProfile = {
   email: string;
   verified: boolean;
   phoneNumber: string;
+  updatedAt?: string;
   student: {
     id: string;
     userId: string;
@@ -26,6 +27,8 @@ type StudentProfile = {
     gpa?: number;
     expectedGraduationYear?: number;
     degreeType?: { id: string; name: string };
+    resumeKey?: string | null;
+    updatedAt?: string | null;
   };
 };
 
@@ -42,6 +45,12 @@ let studentNotifications: Record<
   { id: string; title: string; content: string; isRead: boolean; createdAt: string }[]
 > = {};
 let savedJobIds: Set<string> = new Set();
+let studentResume: {
+  filename: string;
+  contentType: string;
+  content: string;
+  updatedAt: string;
+} | null = null;
 
 const bootstrapState = () => {
   const baseAccount: StudentAccount = {
@@ -59,6 +68,8 @@ const bootstrapState = () => {
     [baseAccount.email.toLowerCase()]: baseAccount,
   };
 
+  const initialTimestamp = new Date('2025-01-10T08:00:00Z').toISOString();
+
   studentProfiles = {
     [baseAccount.id]: {
       id: baseAccount.id,
@@ -66,7 +77,8 @@ const bootstrapState = () => {
       surname: baseAccount.surname,
       email: baseAccount.email,
       verified: true,
-      phoneNumber: '+66 81 234 5678',
+      phoneNumber: '+66812345678',
+      updatedAt: initialTimestamp,
       student: {
         id: 'student-profile-1',
         userId: baseAccount.id,
@@ -75,6 +87,8 @@ const bootstrapState = () => {
         gpa: 3.45,
         expectedGraduationYear: 2026,
         degreeType: degreeOptions[0],
+        resumeKey: null,
+        updatedAt: initialTimestamp,
       },
     },
   };
@@ -92,6 +106,7 @@ const bootstrapState = () => {
   };
 
   savedJobIds = new Set(['job-mock-1']);
+  studentResume = null;
 };
 
 export const test = base.extend({
@@ -421,6 +436,75 @@ export const test = base.extend({
           body: '',
         });
         return;
+      }
+
+      /**
+       * Resume upload & download
+       */
+      if (method === 'POST' && pathname.endsWith('/documents/resume')) {
+        const targetProfile = studentProfiles['student-1'];
+        const timestamp = new Date().toISOString();
+        studentResume = {
+          filename: 'student-profile-resume.pdf',
+          contentType: 'application/pdf',
+          content: 'Mock resume content for automated tests.',
+          updatedAt: timestamp,
+        };
+        if (targetProfile) {
+          targetProfile.student.resumeKey = 'student-profile-resume.pdf';
+          targetProfile.student.updatedAt = timestamp;
+          targetProfile.updatedAt = timestamp;
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            message: 'Resume uploaded successfully',
+          }),
+        });
+        return;
+      }
+
+      const resumeDownloadMatch = pathname.match(/\/documents\/resume\/([^/]+)\/download$/);
+      if (resumeDownloadMatch) {
+        if (!studentResume) {
+          await route.fulfill({
+            status: 404,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: false,
+              message: 'Resume not found',
+            }),
+          });
+          return;
+        }
+
+        const headers: Record<string, string> = {
+          'Content-Type': studentResume.contentType,
+          'Content-Length': String(studentResume.content.length),
+          'Content-Disposition': `attachment; filename="${studentResume.filename}"`,
+          'Last-Modified': studentResume.updatedAt,
+        };
+
+        if (method === 'HEAD') {
+          await route.fulfill({
+            status: 200,
+            headers,
+            body: '',
+          });
+          return;
+        }
+
+        if (method === 'GET') {
+          await route.fulfill({
+            status: 200,
+            headers,
+            body: studentResume.content,
+          });
+          return;
+        }
       }
 
       /**
