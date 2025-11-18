@@ -258,8 +258,8 @@ interface EmployerDashboardResponse {
 
 export const getEmployerDashboard = async (): Promise<EmployerDashboardResponse> => {
   const res = await requestWithPolicies({
-    key: `GET /user-profile/dashboard`,
-    execute: () => authorizedFetch(`${BASE_URL}/user-profile/dashboard`),
+    key: `GET /profile/dashboard`,
+    execute: () => authorizedFetch(`${BASE_URL}/profile/dashboard`),
   });
 
   const body = await readJson(res) as ApiResponse<EmployerDashboardResponse> | null;
