@@ -197,10 +197,7 @@ const JobList = ({
                   </div>
                 )}
                 <div className="py-2">
-                  <div
-                    ref={loadMoreRef ?? undefined}
-                    className="h-1 w-full"
-                  />
+                  <div ref={loadMoreRef ?? undefined} className="h-1 w-full" />
                 </div>
               </>
             )}
@@ -228,7 +225,6 @@ const JobList = ({
           </div>
         )}
       </div>
-
     </div>
   );
 };
