@@ -1,4 +1,4 @@
-import { type FC, useState } from "react";
+import { type FC, useState, type KeyboardEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertOctagon,
@@ -80,6 +80,15 @@ export const NotificationItem: FC<NotificationItemProps> = ({
 
   const toggleExpanded = () => setIsExpanded((prev) => !prev);
 
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLDivElement>
+  ) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleExpanded();
+    }
+  };
+
   return (
     <div
       role="listitem"
@@ -90,52 +99,57 @@ export const NotificationItem: FC<NotificationItemProps> = ({
         "hover:border-border hover:bg-muted/60"
       )}
     >
-      <button
-        type="button"
-        className="flex w-full gap-3 text-left"
-        onClick={toggleExpanded}
-        aria-expanded={isExpanded}
-      >
-      <span
-        aria-hidden
-        className={cn(
-          "mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-          config.containerClass,
-          notification.isRead && "opacity-80"
-        )}
-      >
-        <Icon className="h-4 w-4" />
-      </span>
+      <div className="flex items-start gap-3">
+        <div
+          className="flex w-full cursor-pointer gap-3 text-left"
+          onClick={toggleExpanded}
+          onKeyDown={handleKeyDown}
+          role="button"
+          tabIndex={0}
+          aria-expanded={isExpanded}
+        >
+          <span
+            aria-hidden
+            className={cn(
+              "mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+              config.containerClass,
+              notification.isRead && "opacity-80"
+            )}
+          >
+            <Icon className="h-4 w-4" />
+          </span>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p
-              className="text-sm font-medium text-foreground line-clamp-1"
-              title={notification.title}
-            >
-              {notification.title}
-            </p>
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p
+                  className="text-sm font-medium text-foreground line-clamp-1"
+                  title={notification.title}
+                >
+                  {notification.title}
+                </p>
+              </div>
+            </div>
           </div>
-
-          {showMarkAsRead ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 shrink-0 text-muted-foreground"
-              onClick={handleMarkAsRead}
-              disabled={isProcessing}
-              aria-label="Mark notification as read"
-            >
-              {isProcessing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4" />
-              )}
-            </Button>
-          ) : null}
         </div>
-      </button>
+
+        {showMarkAsRead ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 shrink-0 text-muted-foreground"
+            onClick={handleMarkAsRead}
+            disabled={isProcessing}
+            aria-label="Mark notification as read"
+          >
+            {isProcessing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check className="h-4 w-4" />
+            )}
+          </Button>
+        ) : null}
+      </div>
 
       <AnimatePresence initial={false}>
         {notification.message ? (
@@ -156,13 +170,9 @@ export const NotificationItem: FC<NotificationItemProps> = ({
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{formatRelativeTime(notification.createdAt)}</span>
-          {!notification.isRead ? (
-            <span
-              className="flex h-2 w-2 rounded-full bg-primary"
-              aria-hidden
-            />
-          ) : null}
-        </div>
+        {!notification.isRead ? (
+          <span className="flex h-2 w-2 rounded-full bg-primary" aria-hidden />
+        ) : null}
       </div>
     </div>
   );

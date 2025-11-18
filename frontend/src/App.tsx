@@ -20,6 +20,7 @@ import AdminDashboardPage from "@/pages/admin/dashboard/AdminDashboardPage";
 import UserManagementPage from "@/pages/admin/user-management/UserManagementPage";
 import AnnouncementManagementPage from "@/pages/admin/announcement-management/AnnouncementPage";
 import ReportManagementPage from "@/pages/admin/report-management/ReportManagementPage";
+import { FloatingNotificationButton } from "@/components/notifications";
 const EmployerBrowseJobsRoute: React.FC = () => (
   <EmployerLayout title="Browse Jobs">
     <BrowseJobsPage />
@@ -168,6 +169,7 @@ const App: React.FC = () => {
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
+      <FloatingNotificationButton />
     </div>
   );
 };
