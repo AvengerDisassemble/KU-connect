@@ -20,6 +20,7 @@ import { validateResumeFile } from "@/services/resume";
 import { applyToJob } from "@/services/jobs";
 import { upsertJobResume, type JobResumePayload } from "@/services/jobResumes";
 import type { Job } from "../types";
+import { STUDENT_DASHBOARD_QUERY_KEY } from "@/pages/student/dashboard/queryKeys";
 
 type ResumeMode = "profile" | "upload";
 
@@ -155,6 +156,7 @@ const JobApplicationDialog = ({
       toast.success("Application submitted successfully.");
       queryClient.invalidateQueries({ queryKey: ["jobs", "list"] });
       queryClient.invalidateQueries({ queryKey: ["jobs", "saved"] });
+      queryClient.invalidateQueries({ queryKey: STUDENT_DASHBOARD_QUERY_KEY });
       onApplied(job.id);
       closeDialog(false);
     } catch (error) {

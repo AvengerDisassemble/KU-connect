@@ -15,8 +15,7 @@ import {
   StatsSummary,
   WelcomeHeader,
 } from "./components";
-
-const STUDENT_DASHBOARD_QUERY_KEY = ["dashboard", "student"] as const;
+import { STUDENT_DASHBOARD_QUERY_KEY } from "./queryKeys";
 
 const StudentDashboardPage = () => {
   const { user } = useAuth();

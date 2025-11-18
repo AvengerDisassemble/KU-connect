@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Bookmark,
   BookmarkCheck,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +30,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Job, JobDetail } from "@/services/jobs";
+import { deleteJob as deleteJobPosting, type Job, type JobDetail } from "@/services/jobs";
 import { ReportJobDialog } from "./ReportJobDialog";
 import {
   formatSalary,
@@ -37,6 +38,8 @@ import {
   getJobTypeColor,
   isJobApplicationClosed,
 } from "../utils";
+import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 interface JobDetailViewProps {
   job: (Job | JobDetail) | null;
@@ -53,6 +56,7 @@ interface JobActionsMenuProps {
   jobId: string;
   jobTitle: string;
   companyName: string;
+  canDelete?: boolean;
 }
 
 type DetailEntry = {
@@ -87,13 +91,42 @@ const JobActionsMenu = ({
   jobId,
   jobTitle,
   companyName,
+  canDelete = false,
 }: JobActionsMenuProps) => {
   const [isReportOpen, setReportOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleReportClick = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setReportOpen(true);
+  };
+
+  const handleDelete = async (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!canDelete || isDeleting) return;
+
+    const confirmed = window.confirm(
+      `Delete "${jobTitle}" posted by ${companyName}? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteJobPosting(jobId);
+      toast.success("Job deleted successfully.");
+      // let parent decide refresh; fallback reload to reflect removal
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to delete job.";
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -112,11 +145,21 @@ const JobActionsMenu = ({
         <DropdownMenuContent align="end" className="w-44">
           <DropdownMenuItem
             onClick={handleReportClick}
-            className="text-red-600 focus:text-red-600"
+            className="text-red-600 hover:bg-muted focus:bg-muted focus:text-red-600"
           >
             <Flag className="mr-2 h-4 w-4" />
             Report job
           </DropdownMenuItem>
+          {canDelete ? (
+            <DropdownMenuItem
+              onClick={handleDelete}
+              className="text-destructive hover:bg-muted focus:bg-muted focus:text-destructive"
+              disabled={isDeleting}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {isDeleting ? "Deleting…" : "Delete job"}
+            </DropdownMenuItem>
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -141,6 +184,8 @@ const JobDetailView = ({
   isSaving = false,
   isLoadingDetail = false,
 }: JobDetailViewProps) => {
+  const { user } = useAuth();
+  const canDeleteJob = user?.role === "admin";
   if (!job) {
     return (
       <div className="flex h-full flex-col overflow-hidden">
@@ -310,6 +355,7 @@ const JobDetailView = ({
                 jobId={job.id}
                 jobTitle={job.title || "Untitled role"}
                 companyName={job.companyName || "Company name unavailable"}
+                canDelete={canDeleteJob}
               />
             </div>
 
