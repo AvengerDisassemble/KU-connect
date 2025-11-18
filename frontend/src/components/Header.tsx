@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Search, Menu, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { useAvatar } from "@/hooks/useAvatar";
 import { getInitials } from "@/utils/getInitials";
 import Logo from "@/assets/logo.png";
 import { NotificationBell } from "@/components/notifications";
+import { useAppHeaderHeight } from "@/hooks/useAppHeaderHeight";
 
 const Header = () => {
   const { user, isAuthenticated } = useAuth();
@@ -19,6 +21,9 @@ const Header = () => {
     isLoading: isAvatarLoading,
     isFetching: isAvatarFetching,
   } = useAvatar(user?.id);
+  const headerRef = useRef<HTMLElement | null>(null);
+
+  useAppHeaderHeight(headerRef);
 
   const handleLogout = async () => {
     try {
@@ -36,9 +41,13 @@ const Header = () => {
   }
 
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-6">
+    <header
+      ref={headerRef}
+      data-app-header="true"
+      className="h-16 bg-card border-b border-border flex items-center justify-between px-6"
+    >
       {/* Left: Logo */}
-      <Link to="/" className="flex items-center gap-2">
+      <Link to="/student" className="flex items-center gap-2">
         <img src={Logo} alt="KU Connect Logo" className="h-12 w-auto" />
       </Link>
 
