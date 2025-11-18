@@ -59,6 +59,18 @@ export interface LoginResponse {
   };
 }
 
+export interface CurrentUserResponse {
+  success: boolean;
+  data: {
+    user: {
+      id: string;
+      name?: string | null;
+      surname?: string | null;
+      role: string;
+    };
+  };
+}
+
 export interface RegisterData {
   name: string;
   surname: string;
@@ -248,6 +260,27 @@ export async function refreshAccessToken(): Promise<LoginResponse> {
     return await refreshPromise;
   } finally {
     refreshPromise = null;
+  }
+}
+
+export async function fetchCurrentUser(): Promise<
+  CurrentUserResponse["data"]["user"] | null
+> {
+  const response = await fetch(`${BASE_URL}/auth/me`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  try {
+    const data = (await response.json()) as CurrentUserResponse;
+    return data?.data?.user ?? null;
+  } catch (error) {
+    console.error("Failed to parse /auth/me response", error);
+    return null;
   }
 }
 
