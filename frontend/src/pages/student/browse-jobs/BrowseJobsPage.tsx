@@ -45,9 +45,10 @@ const BrowseJobs = () => {
   const isStudent = user?.role === "student";
   const [searchParams, setSearchParams] = useSearchParams();
   const jobIdFromParams = searchParams.get("job");
+  const searchParamValue = searchParams.get("search") ?? "";
 
   const [activeTab, setActiveTab] = useState<TabKey>("search");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQueryState] = useState(searchParamValue);
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [workArrangementFilter, setWorkArrangementFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
@@ -76,6 +77,12 @@ const BrowseJobs = () => {
     value?.toLowerCase().replace(/[^a-z]/g, "") ?? "";
 
   const emptySetRef = useMemo(() => new Set<string>(), []);
+
+  useEffect(() => {
+    setSearchQueryState((prev) =>
+      prev === searchParamValue ? prev : searchParamValue
+    );
+  }, [searchParamValue]);
 
   const jobFilters = useMemo<JobFiltersPayload>(() => {
     const filters: JobFiltersPayload = {};
@@ -499,6 +506,22 @@ const BrowseJobs = () => {
     [setSearchParams]
   );
 
+  const handleSearchQueryChange = useCallback(
+    (value: string) => {
+      setSearchQueryState(value);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) {
+          next.set("search", value);
+        } else {
+          next.delete("search");
+        }
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
+
   const handleLoadMoreRef = useCallback((node: HTMLDivElement | null) => {
     loadMoreRef.current = node;
     setSentinelNode(node);
@@ -628,12 +651,12 @@ const BrowseJobs = () => {
   );
 
   const handleClearFilters = useCallback(() => {
-    setSearchQuery("");
+    handleSearchQueryChange("");
     setJobTypeFilter("all");
     setWorkArrangementFilter("all");
     setLocationFilter("all");
     setSortBy("latest");
-  }, []);
+  }, [handleSearchQueryChange]);
 
   const handleToggleSave = useCallback(
     async (jobId: string) => {
@@ -907,7 +930,7 @@ const BrowseJobs = () => {
             locationOptions={locationOptions}
             savedCount={savedCount}
             onTabChange={handleTabChange}
-            onSearchChange={setSearchQuery}
+            onSearchChange={handleSearchQueryChange}
             onJobTypeFilterChange={setJobTypeFilter}
             onLocationFilterChange={setLocationFilter}
             onWorkArrangementFilterChange={setWorkArrangementFilter}

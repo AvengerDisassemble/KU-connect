@@ -362,7 +362,7 @@ const normalizeDashboardPayload = (
 };
 
 export const getDashboardData = async (): Promise<DashboardData> => {
-  const raw = await requestApi<RawDashboardData>("/user-profile/dashboard");
+  const raw = await requestApi<RawDashboardData>("/profile/dashboard");
 
   return {
     userRole: raw.userRole,
