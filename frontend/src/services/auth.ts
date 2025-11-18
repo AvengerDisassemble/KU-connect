@@ -8,6 +8,15 @@ export interface AuthSessionPayload {
   user?: unknown | null;
 }
 
+const ACCESS_TOKEN_KEYS = ["accessToken", "access_token"];
+const REFRESH_TOKEN_KEYS = ["refreshToken", "refresh_token"];
+
+function removeStoredKeys(keys: string[]) {
+  for (const key of keys) {
+    localStorage.removeItem(key);
+  }
+}
+
 export function setAuthSession({
   accessToken,
   refreshToken,
@@ -18,15 +27,17 @@ export function setAuthSession({
   }
 
   if (typeof accessToken === "string") {
+    removeStoredKeys(ACCESS_TOKEN_KEYS);
     localStorage.setItem("accessToken", accessToken);
   } else if (accessToken === null) {
-    localStorage.removeItem("accessToken");
+    removeStoredKeys(ACCESS_TOKEN_KEYS);
   }
 
   if (typeof refreshToken === "string") {
+    removeStoredKeys(REFRESH_TOKEN_KEYS);
     localStorage.setItem("refreshToken", refreshToken);
   } else if (refreshToken === null) {
-    localStorage.removeItem("refreshToken");
+    removeStoredKeys(REFRESH_TOKEN_KEYS);
   }
 
   if (user && typeof user === "object") {
@@ -124,14 +135,16 @@ export async function login(
 
   if (data.success) {
     const { accessToken, refreshToken, user } = data.data ?? {};
-    const sessionPayload: AuthSessionPayload = {};
-
-    if (typeof accessToken === "string") {
-      sessionPayload.accessToken = accessToken;
-    }
-    if (typeof refreshToken === "string") {
-      sessionPayload.refreshToken = refreshToken;
-    }
+    const sessionPayload: AuthSessionPayload = {
+      accessToken:
+        typeof accessToken === "string" && accessToken.length > 0
+          ? accessToken
+          : null,
+      refreshToken:
+        typeof refreshToken === "string" && refreshToken.length > 0
+          ? refreshToken
+          : null,
+    };
     if (user) {
       sessionPayload.user = user;
     }
@@ -151,20 +164,22 @@ export async function logout(): Promise<void> {
   }
 
   const refreshToken = localStorage.getItem("refreshToken");
+  const hasRefreshToken =
+    typeof refreshToken === "string" && refreshToken.length > 0;
 
-  if (refreshToken) {
-    try {
-      await fetch(`${BASE_URL}/logout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ refreshToken }),
-      });
-    } catch (error) {
-      console.error("Logout request failed:", error);
-    }
+  try {
+    await fetch(`${BASE_URL}/logout`, {
+      method: "POST",
+      headers: hasRefreshToken
+        ? {
+            "Content-Type": "application/json",
+          }
+        : undefined,
+      credentials: "include",
+      body: hasRefreshToken ? JSON.stringify({ refreshToken }) : undefined,
+    });
+  } catch (error) {
+    console.error("Logout request failed:", error);
   }
 
   clearAuthSession();

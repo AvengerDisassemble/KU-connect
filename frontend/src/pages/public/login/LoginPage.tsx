@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import {
   fetchCurrentUser,
   login,
+  logout,
   setAuthSession,
   type AuthSessionPayload,
 } from "@/services/auth";
@@ -94,6 +95,7 @@ const LoginPage = () => {
     (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
       setOauthError(null);
+      void logout();
 
       const width = 500;
       const height = 600;
