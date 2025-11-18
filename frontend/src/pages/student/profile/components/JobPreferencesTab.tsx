@@ -1,51 +1,215 @@
-import { useState } from "react";
-import { Edit, Download, MoreHorizontal, Check, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Edit,
+  Download,
+  MoreHorizontal,
+  Check,
+  X,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  fetchStudentPreferences,
+  updateStudentPreferences,
+  type StudentPreference,
+  type StudentPreferenceUpdatePayload,
+} from "@/services/studentPreferences";
+
+const NO_PREFERENCE = "none";
+
+const INDUSTRY_OPTIONS = [
+  { value: NO_PREFERENCE, label: "No preference" },
+  { value: "IT_SOFTWARE", label: "IT Software" },
+  { value: "IT_SERVICES", label: "IT Services" },
+  { value: "IT_HARDWARE_AND_DEVICES", label: "IT Hardware & Devices" },
+  { value: "NETWORK_SERVICES", label: "Network Services" },
+  { value: "EMERGING_TECH", label: "Emerging Tech" },
+  { value: "E_COMMERCE", label: "E-Commerce" },
+  { value: "OTHER", label: "Other" },
+];
+
+const JOB_TYPE_OPTIONS = [
+  { value: NO_PREFERENCE, label: "No preference" },
+  { value: "internship", label: "Internship" },
+  { value: "part-time", label: "Part-time" },
+  { value: "full-time", label: "Full-time" },
+  { value: "contract", label: "Contract" },
+];
+
+const REMOTE_WORK_OPTIONS = [
+  { value: NO_PREFERENCE, label: "No preference" },
+  { value: "on-site", label: "On-site" },
+  { value: "remote", label: "Remote" },
+  { value: "hybrid", label: "Hybrid" },
+];
 
 const jobPreferencesSchema = z.object({
-  minSalary: z.string().optional(),
-  currency: z.string(),
-  payPeriod: z.string(),
-  desiredLocation: z.string(),
-  remoteWork: z.string(),
+  minSalary: z
+    .string()
+    .optional()
+    .refine(
+      (value) => !value || /^\d+$/g.test(value.trim()),
+      "Minimum salary must be a valid number"
+    ),
+  desiredLocation: z
+    .string()
+    .max(255, "Desired location cannot exceed 255 characters")
+    .optional(),
+  industry: z.union([
+    z.literal(NO_PREFERENCE),
+    z.enum([
+      "IT_SOFTWARE",
+      "IT_SERVICES",
+      "IT_HARDWARE_AND_DEVICES",
+      "NETWORK_SERVICES",
+      "EMERGING_TECH",
+      "E_COMMERCE",
+      "OTHER",
+    ]),
+  ]),
+  jobType: z.union([
+    z.literal(NO_PREFERENCE),
+    z.enum(["internship", "part-time", "full-time", "contract"]),
+  ]),
+  remoteWork: z.union([
+    z.literal(NO_PREFERENCE),
+    z.enum(["on-site", "remote", "hybrid"]),
+  ]),
+});
+
+const PREFERENCES_QUERY_KEY = ["student", "preferences"] as const;
+
+const mapPreferenceToFormValues = (
+  preference?: StudentPreference | null
+): z.infer<typeof jobPreferencesSchema> => ({
+  minSalary:
+    typeof preference?.minSalary === "number"
+      ? String(preference.minSalary)
+      : "",
+  desiredLocation: preference?.desiredLocation ?? "",
+  industry: preference?.industry ?? NO_PREFERENCE,
+  jobType: preference?.jobType ?? NO_PREFERENCE,
+  remoteWork: preference?.remoteWork ?? NO_PREFERENCE,
 });
 
 const JobPreferencesTab = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const queryClient = useQueryClient();
+  const {
+    data: preferences,
+    isLoading: isLoadingPreferences,
+    isError,
+    error,
+  } = useQuery<StudentPreference | null, Error>({
+    queryKey: PREFERENCES_QUERY_KEY,
+    queryFn: fetchStudentPreferences,
+    staleTime: 2 * 60 * 1000,
+  });
   
   const form = useForm<z.infer<typeof jobPreferencesSchema>>({
     resolver: zodResolver(jobPreferencesSchema),
     defaultValues: {
       minSalary: "",
-      currency: "thb",
-      payPeriod: "monthly",
-      desiredLocation: "Bangkok, Thailand",
-      remoteWork: "yes",
+      desiredLocation: "",
+      industry: NO_PREFERENCE,
+      jobType: NO_PREFERENCE,
+      remoteWork: NO_PREFERENCE,
+    },
+  });
+
+  useEffect(() => {
+    if (isLoadingPreferences) return;
+    form.reset(mapPreferenceToFormValues(preferences));
+  }, [preferences, isLoadingPreferences, form]);
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: (payload: StudentPreferenceUpdatePayload) =>
+      updateStudentPreferences(payload),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(PREFERENCES_QUERY_KEY, updated);
+      form.reset(mapPreferenceToFormValues(updated));
+      setIsEditing(false);
+      toast.success("Job preferences saved.");
+    },
+    onError: (mutationError: unknown) => {
+      const message =
+        mutationError instanceof Error
+          ? mutationError.message
+          : "Failed to save preferences.";
+      toast.error(message);
     },
   });
 
   const onSubmit = (values: z.infer<typeof jobPreferencesSchema>) => {
-    console.log(values);
-    setIsEditing(false);
+    const payload: StudentPreferenceUpdatePayload = {
+      minSalary: values.minSalary
+        ? Number(values.minSalary.trim())
+        : null,
+      desiredLocation: values.desiredLocation?.trim()
+        ? values.desiredLocation.trim()
+        : null,
+      industry: values.industry === NO_PREFERENCE ? null : values.industry,
+      jobType: values.jobType === NO_PREFERENCE ? null : values.jobType,
+      remoteWork:
+        values.remoteWork === NO_PREFERENCE ? null : values.remoteWork,
+    };
+
+    updatePreferencesMutation.mutate(payload);
   };
 
   const handleCancel = () => {
-    form.reset();
+    form.reset(mapPreferenceToFormValues(preferences));
     setIsEditing(false);
   };
+
+  const isFormDisabled =
+    !isEditing || updatePreferencesMutation.isPending || isLoadingPreferences;
+
+  const errorMessage = isError
+    ? error?.message || "Failed to load job preferences."
+    : null;
 
   return (
     <div className="max-w-4xl">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-foreground">Job preferences</h1>
+        {isLoadingPreferences ? (
+          <p className="text-sm text-muted-foreground mt-2">
+            Loading your preferences…
+          </p>
+        ) : null}
+        {errorMessage ? (
+          <p className="text-sm text-destructive mt-2">{errorMessage}</p>
+        ) : null}
       </div>
 
       {/* Job Goals Section */}
@@ -59,6 +223,7 @@ const JobPreferencesTab = () => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsEditing(true)}
+                  disabled={isLoadingPreferences}
                   className="h-6 w-6"
                 >
                   <Edit className="w-4 h-4 text-muted-foreground" />
@@ -72,6 +237,7 @@ const JobPreferencesTab = () => {
                   size="sm"
                   onClick={handleCancel}
                   className="text-muted-foreground hover:text-foreground"
+                  disabled={updatePreferencesMutation.isPending}
                 >
                   <X className="w-4 h-4 mr-1" />
                   Cancel
@@ -80,9 +246,14 @@ const JobPreferencesTab = () => {
                   size="sm"
                   onClick={form.handleSubmit(onSubmit)}
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={updatePreferencesMutation.isPending}
                 >
-                  <Check className="w-4 h-4 mr-1" />
-                  Save
+                  {updatePreferencesMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4 mr-1" />
+                  )}
+                  {updatePreferencesMutation.isPending ? "Saving…" : "Save"}
                 </Button>
               </div>
             )}
@@ -108,9 +279,10 @@ const JobPreferencesTab = () => {
                           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">$</span>
                           <Input 
                             {...field}
-                            disabled={!isEditing}
+                            value={field.value ?? ""}
+                            disabled={isFormDisabled}
                             className="pl-7 bg-background border-border"
-                            placeholder="Enter amount"
+                            placeholder="Desired minimum salary"
                           />
                         </div>
                       </FormControl>
@@ -121,24 +293,26 @@ const JobPreferencesTab = () => {
                 
                 <FormField
                   control={form.control}
-                  name="currency"
+                  name="industry"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Currency</FormLabel>
+                      <FormLabel>Preferred industry</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={!isEditing}
+                        value={field.value}
+                        disabled={isFormDisabled}
                       >
                         <FormControl>
                           <SelectTrigger className="bg-background border-border">
-                            <SelectValue />
+                            <SelectValue placeholder="Select industry" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="thb">Bath (THB)</SelectItem>
-                          <SelectItem value="usd">US Dollar (USD)</SelectItem>
-                          <SelectItem value="eur">Euro (EUR)</SelectItem>
+                          {INDUSTRY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -148,24 +322,26 @@ const JobPreferencesTab = () => {
                 
                 <FormField
                   control={form.control}
-                  name="payPeriod"
+                  name="jobType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Pay period</FormLabel>
+                      <FormLabel>Job type</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={!isEditing}
+                        value={field.value}
+                        disabled={isFormDisabled}
                       >
                         <FormControl>
                           <SelectTrigger className="bg-background border-border">
-                            <SelectValue />
+                            <SelectValue placeholder="Select job type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                          <SelectItem value="yearly">Yearly</SelectItem>
-                          <SelectItem value="hourly">Hourly</SelectItem>
+                          {JOB_TYPE_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -185,8 +361,10 @@ const JobPreferencesTab = () => {
                       <FormControl>
                         <Input 
                           {...field}
-                          disabled={!isEditing}
+                          value={field.value ?? ""}
+                          disabled={isFormDisabled}
                           className="bg-background border-border"
+                          placeholder="e.g. Bangkok, Thailand"
                         />
                       </FormControl>
                       <FormMessage />
@@ -202,18 +380,20 @@ const JobPreferencesTab = () => {
                       <FormLabel>Open to remote work</FormLabel>
                       <Select 
                         onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                        disabled={!isEditing}
+                        value={field.value}
+                        disabled={isFormDisabled}
                       >
                         <FormControl>
                           <SelectTrigger className="bg-background border-border">
-                            <SelectValue />
+                            <SelectValue placeholder="Select preference" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="yes">Yes</SelectItem>
-                          <SelectItem value="no">No</SelectItem>
-                          <SelectItem value="hybrid">Hybrid</SelectItem>
+                          {REMOTE_WORK_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
