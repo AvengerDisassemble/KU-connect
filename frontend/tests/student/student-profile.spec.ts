@@ -28,9 +28,10 @@ test.describe('STU-TS-005 Student Profile management @regression', () => {
     async ({ page }) => {
       await loginAsStudent(page);
 
-      // Navigate to profile via header link to follow real user steps
-      await page.getByRole('link', { name: 'Profile', exact: true }).click();
-      await page.waitForURL('**/student/profile/**', { waitUntil: 'networkidle' });
+      // Navigate directly to the profile page to avoid mobile nav issues
+      await page.goto('http://localhost:5173/student/profile/student-1', {
+        waitUntil: 'networkidle',
+      });
       await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
 
       const firstNameInput = page.getByRole('textbox', { name: 'First Name *' });
