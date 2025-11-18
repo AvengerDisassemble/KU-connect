@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { login, setAuthSession } from "@/services/auth";
+import {
+  fetchCurrentUser,
+  login,
+  setAuthSession,
+  type AuthSessionPayload,
+} from "@/services/auth";
 import { API_BASE } from "@/services/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,9 +53,29 @@ const LoginPage = () => {
       if (type !== "oauth" || !payload) return;
 
       const { accessToken, refreshToken, user } = payload;
-      if (!accessToken || !refreshToken || !user) return;
+      if (!user) return;
 
-      setAuthSession({ accessToken, refreshToken, user });
+      const sessionPayload: AuthSessionPayload = { user };
+      if (typeof accessToken === "string" && accessToken.length > 0) {
+        sessionPayload.accessToken = accessToken;
+      }
+      if (typeof refreshToken === "string" && refreshToken.length > 0) {
+        sessionPayload.refreshToken = refreshToken;
+      }
+
+      setAuthSession(sessionPayload);
+
+      if (!sessionPayload.accessToken || !sessionPayload.refreshToken) {
+        void fetchCurrentUser()
+          .then((current) => {
+            if (current) {
+              setAuthSession({ user: current });
+            }
+          })
+          .catch((error) => {
+            console.warn("Failed to hydrate session after OAuth", error);
+          });
+      }
       setIsPopupOpen(false);
       setOauthError(null);
 
