@@ -3,7 +3,6 @@ import {
   MapPin,
   Banknote,
   Calendar,
-  Building2,
   Briefcase,
   CalendarClock,
   Clock,
@@ -144,15 +143,17 @@ const JobDetailView = ({
 }: JobDetailViewProps) => {
   if (!job) {
     return (
-      <div className="flex items-center justify-center h-full p-8">
-        <div className="text-center">
-          <Briefcase className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
-          <h3 className="text-lg font-medium text-foreground mb-2">
-            Select a job to view details
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            Choose a job from the list to see more information
-          </p>
+      <div className="flex h-full flex-col overflow-hidden">
+        <div className="flex flex-1 items-center justify-center p-8">
+          <div className="text-center">
+            <Briefcase className="mx-auto mb-4 h-16 w-16 opacity-50 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-medium text-foreground">
+              Select a job to view details
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Choose a job from the list to see more information
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -283,386 +284,397 @@ const JobDetailView = ({
   ];
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="p-8">
-        {isLoadingDetail ? (
-          <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Loading additional job details…</span>
-          </div>
-        ) : null}
-        {/* Header */}
-        <div className="mb-6">
-          <div className="mb-4 flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4 flex-1 min-w-0">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                <Building2 className="h-8 w-8 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h1 className="mb-2 text-3xl font-bold text-foreground line-clamp-2">
-                  {job.title || "Untitled role"}
-                </h1>
-                <p className="text-lg text-muted-foreground">
-                  {job.companyName || "Company name unavailable"}
-                </p>
-              </div>
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="px-6 pt-6 pb-6">
+          {isLoadingDetail ? (
+            <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading additional job details…</span>
             </div>
-            <JobActionsMenu
-              jobId={job.id}
-              jobTitle={job.title || "Untitled role"}
-              companyName={job.companyName || "Company name unavailable"}
-            />
-          </div>
+          ) : null}
+          {/* Header */}
+          <div className="mb-6">
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div className="flex items-start gap-4 flex-1 min-w-0">
+                <div className="min-w-0">
+                  <h1 className="mb-2 text-3xl font-bold text-foreground line-clamp-2">
+                    {job.title || "Untitled role"}
+                  </h1>
+                  <p className="text-lg text-muted-foreground">
+                    {job.companyName || "Company name unavailable"}
+                  </p>
+                </div>
+              </div>
+              <JobActionsMenu
+                jobId={job.id}
+                jobTitle={job.title || "Untitled role"}
+                companyName={job.companyName || "Company name unavailable"}
+              />
+            </div>
 
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Badge variant="outline" className={getJobTypeColor(job.jobType)}>
-              {job.jobType ?? "Job type"}
-            </Badge>
-            <Badge
-              variant="outline"
-              className={getWorkArrangementColor(job.workArrangement)}
-            >
-              {job.workArrangement ?? "Work arrangement"}
-            </Badge>
-            {applicationsClosed ? (
-              <Badge variant="destructive" className="uppercase tracking-wide">
-                Applications closed
+            <div className="mb-4 flex flex-wrap gap-2">
+              <Badge variant="outline" className={getJobTypeColor(job.jobType)}>
+                {job.jobType ?? "Job type"}
               </Badge>
+              <Badge
+                variant="outline"
+                className={getWorkArrangementColor(job.workArrangement)}
+              >
+                {job.workArrangement ?? "Work arrangement"}
+              </Badge>
+              {applicationsClosed ? (
+                <Badge
+                  variant="destructive"
+                  className="uppercase tracking-wide"
+                >
+                  Applications closed
+                </Badge>
+              ) : null}
+            </div>
+
+            <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span>{formatPostedDate(job.createdAt)}</span>
+            </div>
+
+            {showApplyButton || showSaveButton ? (
+              <div className="flex flex-wrap gap-2">
+                {showApplyButton ? (
+                  <Button
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
+                    disabled={
+                      !onApply || isApplied || isApplying || applicationsClosed
+                    }
+                    onClick={() => {
+                      if (
+                        !job ||
+                        !onApply ||
+                        isApplied ||
+                        isApplying ||
+                        applicationsClosed
+                      ) {
+                        return;
+                      }
+                      onApply(job.id);
+                    }}
+                  >
+                    {isApplying ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Applying…
+                      </span>
+                    ) : isApplied ? (
+                      "Applied"
+                    ) : applicationsClosed ? (
+                      "Applications Closed"
+                    ) : (
+                      "Apply Now"
+                    )}
+                  </Button>
+                ) : null}
+                {showSaveButton ? (
+                  <Button
+                    variant="outline"
+                    className={`border-border hover:bg-secondary flex-1 sm:flex-none min-w-[140px] ${
+                      isSaved ? "bg-secondary text-secondary-foreground" : ""
+                    }`}
+                    disabled={!onToggleSave || isSaving}
+                    onClick={() => {
+                      if (!job || !onToggleSave || isSaving) return;
+                      onToggleSave(job.id);
+                    }}
+                  >
+                    {isSaving ? (
+                      <span className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving…
+                      </span>
+                    ) : isSaved ? (
+                      <span className="flex items-center gap-2">
+                        <BookmarkCheck className="h-4 w-4" />
+                        Saved
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Bookmark className="h-4 w-4" />
+                        Save Job
+                      </span>
+                    )}
+                  </Button>
+                ) : null}
+              </div>
             ) : null}
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-            <Clock className="h-4 w-4" />
-            <span>{formatPostedDate(job.createdAt)}</span>
+          <Separator className="my-6" />
+
+          {/* Key Information */}
+          <div className="space-y-4 mb-6">
+            <div className="flex items-start gap-3">
+              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">Location</p>
+                <p className="text-muted-foreground">
+                  {job.location || "Location not specified"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Banknote className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">Salary Range</p>
+                <p className="text-primary font-semibold">
+                  {formatSalary(job.minSalary, job.maxSalary)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Calendar className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">
+                  Application Deadline
+                </p>
+                <p className="text-muted-foreground">
+                  {formatDeadline(job.application_deadline)}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {showApplyButton || showSaveButton ? (
-            <div className="flex flex-wrap gap-2">
-              {showApplyButton ? (
-                <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
-                  disabled={
-                    !onApply || isApplied || isApplying || applicationsClosed
-                  }
-                  onClick={() => {
-                    if (
-                      !job ||
-                      !onApply ||
-                      isApplied ||
-                      isApplying ||
-                      applicationsClosed
-                    ) {
-                      return;
-                    }
-                    onApply(job.id);
-                  }}
-                >
-                  {isApplying ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Applying…
-                    </span>
-                  ) : isApplied ? (
-                    "Applied"
-                  ) : applicationsClosed ? (
-                    "Applications Closed"
-                  ) : (
-                    "Apply Now"
-                  )}
-                </Button>
-              ) : null}
-              {showSaveButton ? (
-                <Button
-                  variant="outline"
-                  className={`border-border hover:bg-secondary flex-1 sm:flex-none min-w-[140px] ${
-                    isSaved ? "bg-secondary text-secondary-foreground" : ""
-                  }`}
-                  disabled={!onToggleSave || isSaving}
-                  onClick={() => {
-                    if (!job || !onToggleSave || isSaving) return;
-                    onToggleSave(job.id);
-                  }}
-                >
-                  {isSaving ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving…
-                    </span>
-                  ) : isSaved ? (
-                    <span className="flex items-center gap-2">
-                      <BookmarkCheck className="h-4 w-4" />
-                      Saved
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Bookmark className="h-4 w-4" />
-                      Save Job
-                    </span>
-                  )}
-                </Button>
+          <Separator className="my-6" />
+
+          {/* Role Details */}
+          <div className="space-y-4 mb-6">
+            <h2 className="text-xl font-semibold text-foreground">
+              Role Details
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex items-start gap-3">
+                <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">Position Type</p>
+                  <p className="text-muted-foreground">
+                    {job.jobType || "Not specified"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Home className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">
+                    Work Arrangement
+                  </p>
+                  <p className="text-muted-foreground">
+                    {job.workArrangement || "Not specified"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <CalendarClock className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">Duration</p>
+                  <p className="text-muted-foreground">
+                    {job.duration || "Not specified"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground">Company</p>
+                  <p className="text-muted-foreground">
+                    {job.companyName || "Not specified"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* Job Description */}
+          <div>
+            <h2 className="text-xl font-semibold text-foreground mb-4">
+              Job Description
+            </h2>
+            <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
+              <p>{job.description || "No description provided."}</p>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {tags.length ? (
+            <div className="mb-6 space-y-3">
+              <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                <Tag className="h-5 w-5 text-muted-foreground" />
+                Key Skills & Tags
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="rounded-full px-3 py-1"
+                  >
+                    #{tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {hrProfile ? (
+            <div className="mb-6 rounded-xl border border-border/80 bg-muted/40 p-6 shadow-inner">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm uppercase tracking-wide text-muted-foreground">
+                    About the employer
+                  </p>
+                  <h3 className="text-2xl font-semibold text-foreground">
+                    {companyDisplayName}
+                  </h3>
+                </div>
+                {hrWebsite ? (
+                  <Button asChild variant="outline" size="sm" className="gap-2">
+                    <a href={hrWebsite} target="_blank" rel="noreferrer">
+                      Visit site
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Button>
+                ) : null}
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {readableIndustry ? (
+                  <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                    <Globe className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-foreground">Industry</p>
+                      <p>{readableIndustry}</p>
+                    </div>
+                  </div>
+                ) : null}
+                {hrCompanySize ? (
+                  <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                    <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-foreground">
+                        Company size
+                      </p>
+                      <p>{hrCompanySize}</p>
+                    </div>
+                  </div>
+                ) : null}
+                {hrAddress ? (
+                  <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                    <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-foreground">Address</p>
+                      <p>{hrAddress}</p>
+                    </div>
+                  </div>
+                ) : null}
+                {hrPhone ? (
+                  <div className="flex items-start gap-3 text-sm text-muted-foreground">
+                    <Phone className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium text-foreground">HQ phone</p>
+                      <p>{hrPhone}</p>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+              {hrProfile.description ? (
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                  {hrProfile.description}
+                </p>
               ) : null}
             </div>
           ) : null}
-        </div>
 
-        <Separator className="my-6" />
-
-        {/* Key Information */}
-        <div className="space-y-4 mb-6">
-          <div className="flex items-start gap-3">
-            <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-foreground">Location</p>
-              <p className="text-muted-foreground">
-                {job.location || "Location not specified"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Banknote className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-foreground">Salary Range</p>
-              <p className="text-primary font-semibold">
-                {formatSalary(job.minSalary, job.maxSalary)}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <Calendar className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-medium text-foreground">
-                Application Deadline
-              </p>
-              <p className="text-muted-foreground">
-                {formatDeadline(job.application_deadline)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-6" />
-
-        {/* Role Details */}
-        <div className="space-y-4 mb-6">
-          <h2 className="text-xl font-semibold text-foreground">
-            Role Details
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="flex items-start gap-3">
-              <Briefcase className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-foreground">Position Type</p>
-                <p className="text-muted-foreground">
-                  {job.jobType || "Not specified"}
-                </p>
+          {/* Role Expectations */}
+          <div className="space-y-6 mb-6">
+            {detailSections.map(({ key, title, items, empty }) => (
+              <div key={key} className="space-y-3">
+                <h2 className="text-xl font-semibold text-foreground">
+                  {title}
+                </h2>
+                {items.length ? (
+                  <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
+                    {items.map((item) => (
+                      <li key={item.id}>{item.text}</li>
+                    ))}
+                  </ul>
+                ) : isLoadingDetail ? (
+                  <div className="space-y-2">
+                    <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">{empty}</p>
+                )}
               </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Home className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-foreground">Work Arrangement</p>
-                <p className="text-muted-foreground">
-                  {job.workArrangement || "Not specified"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <CalendarClock className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-foreground">Duration</p>
-                <p className="text-muted-foreground">
-                  {job.duration || "Not specified"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-foreground">Company</p>
-                <p className="text-muted-foreground">
-                  {job.companyName || "Not specified"}
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
-        </div>
 
-        <Separator className="my-6" />
+          <Separator className="my-6" />
 
-        {/* Job Description */}
-        <div>
-          <h2 className="text-xl font-semibold text-foreground mb-4">
-            Job Description
-          </h2>
-          <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
-            <p>{job.description || "No description provided."}</p>
-          </div>
-        </div>
-
-        <Separator className="my-6" />
-
-        {tags.length ? (
-          <div className="mb-6 space-y-3">
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <Tag className="h-5 w-5 text-muted-foreground" />
-              Key Skills & Tags
+          {/* Contact Information */}
+          <div className="space-y-4 mb-6">
+            <h2 className="text-xl font-semibold text-foreground">
+              Contact Information
             </h2>
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="secondary"
-                  className="rounded-full px-3 py-1"
-                >
-                  #{tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        ) : null}
-
-        {hrProfile ? (
-          <div className="mb-6 rounded-xl border border-border/80 bg-muted/40 p-6 shadow-inner">
-            <div className="mb-4 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm uppercase tracking-wide text-muted-foreground">
-                  About the employer
-                </p>
-                <h3 className="text-2xl font-semibold text-foreground">
-                  {companyDisplayName}
-                </h3>
+            {contactEmail || contactPhone || contactOther ? (
+              <div className="space-y-3 text-sm text-muted-foreground">
+                {contactEmail ? (
+                  <div className="flex items-start gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <a
+                      href={`mailto:${contactEmail}`}
+                      className="text-foreground underline-offset-4 hover:underline"
+                    >
+                      {contactEmail}
+                    </a>
+                  </div>
+                ) : null}
+                {contactPhone ? (
+                  <div className="flex items-start gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <a
+                      href={`tel:${contactPhone}`}
+                      className="text-foreground underline-offset-4 hover:underline"
+                    >
+                      {contactPhone}
+                    </a>
+                  </div>
+                ) : null}
+                {contactOther ? (
+                  <div className="flex items-start gap-3">
+                    <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <p className="whitespace-pre-wrap">{contactOther}</p>
+                  </div>
+                ) : null}
               </div>
-              {hrWebsite ? (
-                <Button asChild variant="outline" size="sm" className="gap-2">
-                  <a href={hrWebsite} target="_blank" rel="noreferrer">
-                    Visit site
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                </Button>
-              ) : null}
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {readableIndustry ? (
-                <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <Globe className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-foreground">Industry</p>
-                    <p>{readableIndustry}</p>
-                  </div>
-                </div>
-              ) : null}
-              {hrCompanySize ? (
-                <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-foreground">Company size</p>
-                    <p>{hrCompanySize}</p>
-                  </div>
-                </div>
-              ) : null}
-              {hrAddress ? (
-                <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-foreground">Address</p>
-                    <p>{hrAddress}</p>
-                  </div>
-                </div>
-              ) : null}
-              {hrPhone ? (
-                <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                  <Phone className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium text-foreground">HQ phone</p>
-                    <p>{hrPhone}</p>
-                  </div>
-                </div>
-              ) : null}
-            </div>
-            {hrProfile.description ? (
-              <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-                {hrProfile.description}
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Contact details will be shared once your application is
+                submitted.
               </p>
-            ) : null}
+            )}
           </div>
-        ) : null}
 
-        {/* Role Expectations */}
-        <div className="space-y-6 mb-6">
-          {detailSections.map(({ key, title, items, empty }) => (
-            <div key={key} className="space-y-3">
-              <h2 className="text-xl font-semibold text-foreground">{title}</h2>
-              {items.length ? (
-                <ul className="list-disc space-y-2 pl-5 text-muted-foreground">
-                  {items.map((item) => (
-                    <li key={item.id}>{item.text}</li>
-                  ))}
-                </ul>
-              ) : isLoadingDetail ? (
-                <div className="space-y-2">
-                  <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
-                  <div className="h-3 w-3/5 animate-pulse rounded bg-muted" />
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">{empty}</p>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <Separator className="my-6" />
-
-        {/* Contact Information */}
-        <div className="space-y-4 mb-6">
-          <h2 className="text-xl font-semibold text-foreground">
-            Contact Information
-          </h2>
-          {contactEmail || contactPhone || contactOther ? (
-            <div className="space-y-3 text-sm text-muted-foreground">
-              {contactEmail ? (
-                <div className="flex items-start gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <a
-                    href={`mailto:${contactEmail}`}
-                    className="text-foreground underline-offset-4 hover:underline"
-                  >
-                    {contactEmail}
-                  </a>
-                </div>
-              ) : null}
-              {contactPhone ? (
-                <div className="flex items-start gap-3">
-                  <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <a
-                    href={`tel:${contactPhone}`}
-                    className="text-foreground underline-offset-4 hover:underline"
-                  >
-                    {contactPhone}
-                  </a>
-                </div>
-              ) : null}
-              {contactOther ? (
-                <div className="flex items-start gap-3">
-                  <Info className="h-4 w-4 text-muted-foreground mt-0.5" />
-                  <p className="whitespace-pre-wrap">{contactOther}</p>
-                </div>
-              ) : null}
-            </div>
-          ) : (
+          <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
+            <h3 className="font-medium text-foreground mb-2">
+              About this role
+            </h3>
             <p className="text-sm text-muted-foreground">
-              Contact details will be shared once your application is submitted.
+              This position is posted by {job.companyName || "the employer"}.{" "}
+              {applicationStatusMessage}
             </p>
-          )}
-        </div>
-
-        <div className="mt-8 p-4 rounded-lg bg-muted/50 border border-border">
-          <h3 className="font-medium text-foreground mb-2">About this role</h3>
-          <p className="text-sm text-muted-foreground">
-            This position is posted by {job.companyName || "the employer"}.{" "}
-            {applicationStatusMessage}
-          </p>
+          </div>
         </div>
       </div>
     </div>

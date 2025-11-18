@@ -473,7 +473,6 @@ const BrowseJobs = () => {
 
     legacyMediaQuery.addListener?.(handleChange);
     return () => legacyMediaQuery.removeListener?.(handleChange);
-
   }, []);
 
   useEffect(() => {
@@ -611,8 +610,7 @@ const BrowseJobs = () => {
   const searchResultsCount = totalAvailableFromApi || browseJobs.length;
   const totalResults =
     activeTab === "saved" ? displayedJobs.length : searchResultsCount;
-  const spinnerVisible =
-    activeTab === "search" && showInfiniteSpinner;
+  const spinnerVisible = activeTab === "search" && showInfiniteSpinner;
 
   const resultText =
     activeTab === "saved"
