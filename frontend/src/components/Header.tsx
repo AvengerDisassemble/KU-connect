@@ -1,9 +1,9 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, Menu, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { logout } from "@/services/auth";
 import { useAvatar } from "@/hooks/useAvatar";
@@ -16,6 +16,8 @@ const Header = () => {
   const { user, isAuthenticated } = useAuth();
   const isStudent = user?.role === "student";
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState("");
   const {
     avatarUrl,
     isLoading: isAvatarLoading,
@@ -24,6 +26,18 @@ const Header = () => {
   const headerRef = useRef<HTMLElement | null>(null);
 
   useAppHeaderHeight(headerRef);
+
+  useEffect(() => {
+    if (!isStudent) {
+      setSearchTerm("");
+      return;
+    }
+
+    if (location.pathname.startsWith("/student/browse-jobs")) {
+      const params = new URLSearchParams(location.search);
+      setSearchTerm(params.get("search") ?? "");
+    }
+  }, [isStudent, location.pathname, location.search]);
 
   const handleLogout = async () => {
     try {
@@ -83,6 +97,22 @@ const Header = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  const query = searchTerm.trim();
+                  const params = new URLSearchParams();
+                  if (query) {
+                    params.set("search", query);
+                  }
+                  navigate({
+                    pathname: "/student/browse-jobs",
+                    search: params.toString() ? `?${params.toString()}` : "",
+                  });
+                }
+              }}
               className="pl-10 w-64 bg-muted border-0"
             />
           </div>
