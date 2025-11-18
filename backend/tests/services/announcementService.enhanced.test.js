@@ -8,7 +8,6 @@ describe('AnnouncementService - Enhanced Coverage', () => {
 
   beforeAll(async () => {
     // Clean up ALL data before starting these tests
-    await prisma.userNotification.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.announcement.deleteMany({});
     await prisma.jobReport.deleteMany({});
@@ -26,6 +25,11 @@ describe('AnnouncementService - Enhanced Coverage', () => {
   });
 
   beforeEach(async () => {
+    // Clean up first to prevent unique constraint violations
+    await prisma.notification.deleteMany({});
+    await prisma.announcement.deleteMany({});
+    await prisma.user.deleteMany({});
+
     // Create test users
     adminUser = await prisma.user.create({
       data: {
@@ -62,7 +66,6 @@ describe('AnnouncementService - Enhanced Coverage', () => {
   });
 
   afterEach(async () => {
-    await prisma.userNotification.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.announcement.deleteMany({});
     await prisma.user.deleteMany({});
@@ -255,7 +258,10 @@ describe('AnnouncementService - Enhanced Coverage', () => {
       await prisma.notification.create({
         data: {
           announcementId: announcement.id,
-          userId: studentUser.id
+          userId: studentUser.id,
+          type: 'ANNOUNCEMENT',
+          title: 'Test Announcement',
+          message: 'This is a test notification'
         }
       });
 

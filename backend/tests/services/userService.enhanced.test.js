@@ -4,7 +4,6 @@ const prisma = require('../../src/models/prisma');
 describe('UserService - Enhanced Coverage', () => {
   beforeAll(async () => {
     // Clean up ALL data before starting these tests
-    await prisma.userNotification.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.announcement.deleteMany({});
     await prisma.jobReport.deleteMany({});

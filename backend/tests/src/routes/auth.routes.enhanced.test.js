@@ -14,7 +14,6 @@ process.env.FRONTEND_URL = "http://localhost:5173";
 async function cleanDatabase() {
   // Delete in order respecting foreign key constraints
   await prisma.refreshToken.deleteMany({});
-  await prisma.userNotification.deleteMany({});
   await prisma.application.deleteMany({});
   await prisma.savedJob.deleteMany({});
   await prisma.jobReport.deleteMany({});

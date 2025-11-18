@@ -11,7 +11,6 @@ jest.mock('../../src/utils/emailUtils', () => ({
 describe('AdminService - Enhanced Coverage', () => {
   beforeAll(async () => {
     // Clean up ALL data before starting these tests
-    await prisma.userNotification.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.announcement.deleteMany({});
     await prisma.jobReport.deleteMany({});
@@ -34,7 +33,6 @@ describe('AdminService - Enhanced Coverage', () => {
 
   afterEach(async () => {
     // Clean up test data - respect foreign key constraints
-    await prisma.userNotification.deleteMany({});
     await prisma.notification.deleteMany({});
     await prisma.announcement.deleteMany({});
     await prisma.jobReport.deleteMany({});
