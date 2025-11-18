@@ -18,6 +18,10 @@ type QuickActionLabel =
 
 interface QuickActionGridProps {
   quickActions?: string[];
+  browseJobsPath?: string;
+  profilePath?: string;
+  resumePath?: string;
+  applicationsPath?: string;
 }
 
 interface QuickActionConfig {
@@ -27,51 +31,60 @@ interface QuickActionConfig {
   icon: LucideIcon;
 }
 
-const QUICK_ACTIONS: Record<QuickActionLabel, QuickActionConfig> = {
-  "Browse Jobs": {
-    label: "Browse Jobs",
-    description: "Discover internships and roles that match you",
-    to: "/student/browse-jobs",
-    icon: Briefcase,
-  },
-  "Update Profile": {
-    label: "Update Profile",
-    description: "Keep your student profile fresh",
-    to: "/student/profile",
-    icon: UserRound,
-  },
-  "Upload Resume": {
-    label: "Upload Resume",
-    description: "Share your latest resume with employers",
-    to: "/student/resume",
-    icon: UploadCloud,
-  },
-  "View Applications": {
-    label: "View Applications",
-    description: "Check application statuses in one place",
-    to: "/student/applications",
-    icon: ClipboardList,
-  },
-};
+const QuickActionGrid = ({
+  quickActions,
+  browseJobsPath = "/student/browse-jobs",
+  profilePath = "/student/profile",
+  resumePath = "/student/profile#resume",
+  applicationsPath = "/student#applications",
+}: QuickActionGridProps) => {
+  const quickActionMap = useMemo<Record<QuickActionLabel, QuickActionConfig>>(
+    () => ({
+      "Browse Jobs": {
+        label: "Browse Jobs",
+        description: "Discover internships and roles that match you",
+        to: browseJobsPath,
+        icon: Briefcase,
+      },
+      "Update Profile": {
+        label: "Update Profile",
+        description: "Keep your student profile fresh",
+        to: profilePath,
+        icon: UserRound,
+      },
+      "Upload Resume": {
+        label: "Upload Resume",
+        description: "Share your latest resume with employers",
+        to: resumePath,
+        icon: UploadCloud,
+      },
+      "View Applications": {
+        label: "View Applications",
+        description: "Check application statuses in one place",
+        to: applicationsPath,
+        icon: ClipboardList,
+      },
+    }),
+    [applicationsPath, browseJobsPath, profilePath, resumePath]
+  );
 
-const QuickActionGrid = ({ quickActions }: QuickActionGridProps) => {
   const actions = useMemo(() => {
     const availableLabels = quickActions?.length
       ? Array.from(
           new Set(
             quickActions.filter((label): label is QuickActionLabel =>
-              Object.prototype.hasOwnProperty.call(QUICK_ACTIONS, label)
+              Object.prototype.hasOwnProperty.call(quickActionMap, label)
             )
           )
         )
-      : (Object.keys(QUICK_ACTIONS) as QuickActionLabel[]);
+      : (Object.keys(quickActionMap) as QuickActionLabel[]);
 
     if (!availableLabels.length) {
-      return Object.values(QUICK_ACTIONS);
+      return Object.values(quickActionMap);
     }
 
-    return availableLabels.map((label) => QUICK_ACTIONS[label]);
-  }, [quickActions]);
+    return availableLabels.map((label) => quickActionMap[label]);
+  }, [quickActions, quickActionMap]);
 
   return (
     <Card className="border-border/80 bg-card shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">

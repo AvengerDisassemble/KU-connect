@@ -32,7 +32,10 @@ const MyApplicationsCard = ({ applications }: MyApplicationsCardProps) => {
 
   if (rows.length === 0) {
     return (
-      <Card className="h-full border-border/80 bg-card shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <Card
+        id="applications"
+        className="h-full border-border/80 bg-card shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80"
+      >
         <CardHeader className="space-y-1">
           <CardTitle className="text-lg font-semibold text-foreground">
             My applications
@@ -60,7 +63,10 @@ const MyApplicationsCard = ({ applications }: MyApplicationsCardProps) => {
   }
 
   return (
-    <Card className="h-full border-border/80 bg-card shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80">
+    <Card
+      id="applications"
+      className="h-full border-border/80 bg-card shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/80"
+    >
       <CardHeader className="space-y-1">
         <CardTitle className="text-lg font-semibold text-foreground">
           My applications
@@ -112,7 +118,7 @@ const MyApplicationsCard = ({ applications }: MyApplicationsCardProps) => {
           className="w-full justify-between text-primary"
           asChild
         >
-          <Link to="/student/applications">
+          <Link to="/student#applications">
             View applications
             <ArrowRight className="h-4 w-4" />
           </Link>

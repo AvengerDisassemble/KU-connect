@@ -1,7 +1,6 @@
 import {
   BriefcaseBusiness,
   ClipboardList,
-  Gauge,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -16,7 +15,6 @@ const formatter = new Intl.NumberFormat();
 const StatsSummary = ({
   recentJobs,
   applications,
-  quickActions,
 }: StatsSummaryProps) => {
   const stats = [
     {
@@ -33,19 +31,12 @@ const StatsSummary = ({
       description: "Track where you have applied",
       icon: ClipboardList,
     },
-    {
-      id: "quick-actions",
-      label: "Quick actions",
-      value: formatter.format(Math.max(0, quickActions)),
-      description: "Shortcuts to keep momentum",
-      icon: Gauge,
-    },
   ];
 
   return (
     <section
       aria-label="Dashboard stats"
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2"
     >
       {stats.map((stat) => {
         const Icon = stat.icon;

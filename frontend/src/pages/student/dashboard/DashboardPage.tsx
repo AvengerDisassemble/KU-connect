@@ -78,7 +78,13 @@ const StudentDashboardPage = () => {
 
   const recentJobs = dashboard.recentJobs ?? [];
   const applications = dashboard.myApplications ?? [];
-  const quickActions = dashboard.quickActions ?? [];
+
+  const profilePath = user?.id
+    ? `/student/profile/${user.id}`
+    : "/student/profile";
+  const resumePath = `${profilePath}#resume`;
+  const applicationsPath = "/student#applications";
+  const browseJobsPath = "/student/browse-jobs";
 
   return (
     <div className="relative min-h-[calc(100vh-var(--app-header-height,0px))]">
@@ -98,10 +104,14 @@ const StudentDashboardPage = () => {
         <StatsSummary
           recentJobs={recentJobs.length}
           applications={applications.length}
-          quickActions={quickActions.length || 4}
         />
 
-        <QuickActionGrid quickActions={quickActions} />
+        <QuickActionGrid
+          profilePath={profilePath}
+          resumePath={resumePath}
+          applicationsPath={applicationsPath}
+          browseJobsPath={browseJobsPath}
+        />
 
         <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
           <RecentJobCard jobs={recentJobs} />

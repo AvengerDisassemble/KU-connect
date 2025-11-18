@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Edit,
-  Download,
-  MoreHorizontal,
   Check,
   X,
   Loader2,
