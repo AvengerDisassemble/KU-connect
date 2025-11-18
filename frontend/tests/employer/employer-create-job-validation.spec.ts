@@ -19,10 +19,22 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
     await page.waitForLoadState('networkidle');
 
     await page.goto('http://localhost:5173/employer/job-postings/create');
-    await page.waitForLoadState('networkidle');
+    await page.waitForURL('**/employer/job-postings/create', {
+      waitUntil: 'networkidle',
+    });
+    await expect(page.getByRole('heading', { name: 'Post a Job' })).toBeVisible({
+      timeout: 15000,
+    });
     await expect(
       page.getByRole('textbox', { name: 'Job Title *' })
     ).toBeVisible({ timeout: 10000 });
+  };
+
+  const confirmPostJob = async (page: any) => {
+    await page.getByRole('button', { name: 'Post Job' }).click();
+    const confirmButton = page.getByRole('button', { name: /^Confirm$/ });
+    await expect(confirmButton).toBeVisible({ timeout: 5000 });
+    await confirmButton.click();
   };
 
   /**
@@ -50,8 +62,7 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
     await page.getByRole('textbox', { name: '10000' }).fill('20000');
     await page.getByRole('textbox', { name: '15000' }).fill('10000');
 
-    await page.getByRole('button', { name: 'Post Job' }).click();
-    await page.getByRole('button', { name: 'Confirm' }).click();
+    await confirmPostJob(page);
 
     await expect(
       page.getByText('Min Salary must be less than or equal to Max Salary', {
@@ -87,8 +98,7 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
     await page.getByRole('textbox', { name: '10000' }).fill('1000');
     await page.getByRole('textbox', { name: '15000' }).fill('2000');
 
-    await page.getByRole('button', { name: 'Post Job' }).click();
-    await page.getByRole('button', { name: 'Confirm' }).click();
+    await confirmPostJob(page);
 
     await expect(
       page.getByText('Failed to post job', { exact: false })

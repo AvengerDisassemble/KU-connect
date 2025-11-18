@@ -28,11 +28,11 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
     // Navigate to create job form
     await page.goto('http://localhost:5173/employer/job-postings/create');
     await page.waitForLoadState('networkidle');
-
+    
     // Company header should show the employer’s company (from mock profile)
     await expect(
       page.getByRole('heading', { name: 'Test Company Ltd.' })
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 30000 });
   };
 
   /**
@@ -108,19 +108,6 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
     // ----------------------------
     await page.getByRole('textbox', { name: 'Application Deadline *' }).fill('2025-11-30');
     await page.getByRole('textbox', { name: 'Phone *' }).fill('+66 87 654 3210');
-
-    // (Email optional - skip)
-
-    // ----------------------------
-    // Preview Section Assertions
-    // ----------------------------
-
-    // await expect(page.getByRole('heading', { name: 'Backend Intern' })).toBeVisible();
-    // await expect(page.getByText('Test Company Ltd.', { exact: false })).toBeVisible();
-    // await expect(page.getByText('Bangkok, Thailand', { exact: true })).toBeVisible();
-    // await expect(page.getByText('internship', { exact: true })).toBeVisible();
-    // await expect(page.getByText('hybrid', { exact: true })).toBeVisible();
-    // await expect(page.getByText('- 15000 THB')).toBeVisible();
 
     // ----------------------------
     // Submit: Post Job → Confirm

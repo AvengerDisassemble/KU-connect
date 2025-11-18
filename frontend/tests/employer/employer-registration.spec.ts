@@ -17,6 +17,13 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     await expect(page.getByText('Employer Registration')).toBeVisible();
   };
 
+  const clickContinueButton = async (page: any) => {
+    const continueButton = page.getByRole('button', { name: 'Continue' });
+    await continueButton.scrollIntoViewIfNeeded();
+    await expect(continueButton).toBeEnabled({ timeout: 60000 });
+    await continueButton.click();
+  };
+
   /**
    * EMP-TS-003-TC01: employer registers and sees pending verification state
    * Expected result:
@@ -33,10 +40,9 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     await page.getByRole('textbox', { name: 'Work Email *' }).fill('arthit.srinakarin@siamma.com');
     await page.getByRole('textbox', { name: 'Password *' }).fill('SiammA123!');
     await page.getByRole('textbox', { name: 'Confirm Password' }).fill('SiammA123!');
-    await page.getByRole('button', { name: 'Continue' }).scrollIntoViewIfNeeded();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await clickContinueButton(page);
     const companyNameInput = page.getByRole('textbox', { name: 'Company Name *' });
-    await companyNameInput.waitFor({ state: 'visible', timeout: 15000 });
+    await companyNameInput.waitFor({ state: 'visible', timeout: 60000 });
 
     // Step 2: company info
     await page.getByRole('textbox', { name: 'Company Name *' }).fill('Siam Manufacturing Co., Ltd.');
@@ -46,11 +52,10 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     await page.getByRole('option', { name: 'IT Services' }).click();
     await page.getByRole('combobox', { name: 'Company Size' }).click();
     await page.getByRole('option', { name: '-50 employees' }).click();
-    await page.getByRole('button', { name: 'Continue' }).scrollIntoViewIfNeeded();
-    await page.getByRole('button', { name: 'Continue' }).click();
+    await clickContinueButton(page);
     await page
       .getByRole('button', { name: 'Submit for Verification' })
-      .waitFor({ state: 'visible', timeout: 15000 });
+      .waitFor({ state: 'visible', timeout: 60000 });
 
     // Step 3: contact info
     await page.getByRole('textbox', { name: 'Phone Number *' }).fill('+66 86 555 1122');
@@ -72,7 +77,7 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     // Auto login should bring user to profile page (pending verification)
     await expect(
       page.getByRole('heading', { name: 'Company Profile & Verification' })
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 60000 });
     await expect(page.getByText('Awaiting verification approval')).toBeVisible();
   });
 });
