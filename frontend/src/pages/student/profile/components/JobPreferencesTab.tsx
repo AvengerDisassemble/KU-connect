@@ -406,34 +406,8 @@ const JobPreferencesTab = () => {
         </CardContent>
       </Card>
 
-      {/* Resume Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Resume</CardTitle>
-          <CardDescription>
-            Add a resume to save time and autofill certain job applications. You can also share it to hear from employers about openings.
-          </CardDescription>
-        </CardHeader>
         
-        <CardContent>
-          <div className="flex items-center gap-4 p-4 border border-border rounded-lg bg-background">
-            <div className="w-10 h-10 bg-primary rounded flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">📄</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-foreground">Resume.pdf</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Download className="w-4 h-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   );
 };
