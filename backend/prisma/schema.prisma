@@ -81,6 +81,12 @@ enum NotificationPriority {
   HIGH
 }
 
+enum NotificationType {
+  ANNOUNCEMENT          // Admin broadcast to role-based audience
+  APPLICATION_STATUS    // Student: application accepted/rejected
+  EMPLOYER_APPLICATION  // Employer: new application received
+}
+
 // ------------------------------
 //  MODELS
 // ------------------------------
@@ -107,9 +113,8 @@ model User {
   accounts                Account[]
   reports                 JobReport[]
   announcements           Announcement[]
-  notifications           Notification[]
-  sentNotifications       UserNotification[] @relation("NotificationSender")
-  receivedNotifications   UserNotification[] @relation("NotificationRecipient")
+  notifications           Notification[]       @relation("NotificationRecipient")
+  sentNotifications       Notification[]       @relation("NotificationSender")
   // Back-relation to saved jobs — allows querying what this user saved
   savedJobs     SavedJob[]
 }
@@ -356,41 +361,41 @@ model Announcement {
   creator       User                 @relation(fields: [createdBy], references: [id])
   createdAt     DateTime             @default(now())
   expiresAt     DateTime?
-  notifications Notification[]
+  notifications Notification[]       // Notifications generated from this announcement
 }
+
+// ------------------------------
+//  UNIFIED NOTIFICATION MODEL
+// ------------------------------
 
 model Notification {
-  id             String       @id @default(cuid())
-  announcementId String
-  userId         String
-  isRead         Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// ------------------------------
-//  USER-TO-USER NOTIFICATION MODEL
-// ------------------------------
-
-model UserNotification {
-  id            String   @id @default(cuid())
-  recipientId   String
-  senderId      String?
-  type          String   // e.g. 'EMPLOYER_APPLICATION', 'APPLICATION_STATUS'
-  title         String
-  message       String
-  read          Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  // Optional linking for future deep queries
-  jobId         String?
-  applicationId String?
-
-  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
-  sender    User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
-
-  @@index([recipientId, createdAt])
-  @@index([recipientId, read])
+  id             String           @id @default(cuid())
+  userId         String           // Recipient
+  type           NotificationType // Type of notification
+  
+  // Content
+  title          String
+  message        String
+  priority       NotificationPriority @default(MEDIUM)
+  
+  // Status
+  isRead         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  
+  // Optional metadata (used based on type)
+  senderId       String?          // For user-to-user notifications
+  announcementId String?          // Link to announcement (for ANNOUNCEMENT type)
+  jobId          String?          // Link to job (for application notifications)
+  applicationId  String?          // Link to application
+  
+  // Relations
+  user           User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  sender         User?            @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  announcement   Announcement?    @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, createdAt])
+  @@index([userId, isRead])
+  @@index([userId, type])
 }
 
 model StudentPreference {

@@ -132,28 +132,30 @@ describe('Notification Routes (Integration)', () => {
       }
     })
 
-    // Create some notifications for student1
-    notification1 = await prisma.userNotification.create({
+    // Create some notifications for student1 using unified model
+    notification1 = await prisma.notification.create({
       data: {
-        recipientId: student1.id,
+        userId: student1.id,
         senderId: employer.id,
         type: 'APPLICATION_STATUS',
         title: 'Application Update',
         message: 'Your application has been qualified.',
+        priority: 'HIGH',
         jobId: job.id,
-        read: false
+        isRead: false
       }
     })
 
-    notification2 = await prisma.userNotification.create({
+    notification2 = await prisma.notification.create({
       data: {
-        recipientId: student1.id,
+        userId: student1.id,
         senderId: employer.id,
         type: 'APPLICATION_STATUS',
         title: 'Another Update',
         message: 'Another message.',
+        priority: 'MEDIUM',
         jobId: job.id,
-        read: true
+        isRead: true
       }
     })
   })
@@ -262,13 +264,13 @@ describe('Notification Routes (Integration)', () => {
         .expect(200)
 
       expect(res.body.success).toBe(true)
-      expect(res.body.data.read).toBe(true)
+      expect(res.body.data.isRead).toBe(true)
 
       // Verify in database
-      const updated = await prisma.userNotification.findUnique({
+      const updated = await prisma.notification.findUnique({
         where: { id: notification1.id }
       })
-      expect(updated.read).toBe(true)
+      expect(updated.isRead).toBe(true)
     })
 
     it('should not allow marking others notifications as read', async () => {
@@ -286,7 +288,9 @@ describe('Notification Routes (Integration)', () => {
     })
   })
 
-  describe('POST /api/notifications/employer/application', () => {
+  // Notifications are now created automatically by job application flow
+  // These manual trigger endpoints have been removed
+  describe.skip('POST /api/notifications/employer/application (DEPRECATED)', () => {
     it('should create employer notification (admin only)', async () => {
       const res = await request(app)
         .post('/api/notifications/employer/application')
@@ -298,7 +302,7 @@ describe('Notification Routes (Integration)', () => {
         .expect(201)
 
       expect(res.body.success).toBe(true)
-      expect(res.body.data.recipientId).toBe(employer.id)
+      expect(res.body.data.userId).toBe(employer.id)
       expect(res.body.data.type).toBe('EMPLOYER_APPLICATION')
       expect(res.body.message).toContain('created successfully')
     })
@@ -337,7 +341,7 @@ describe('Notification Routes (Integration)', () => {
     })
   })
 
-  describe('POST /api/notifications/student/approval', () => {
+  describe.skip('POST /api/notifications/student/approval (DEPRECATED)', () => {
     it('should create student notification (admin only)', async () => {
       const res = await request(app)
         .post('/api/notifications/student/approval')
@@ -351,7 +355,7 @@ describe('Notification Routes (Integration)', () => {
         .expect(201)
 
       expect(res.body.success).toBe(true)
-      expect(res.body.data.recipientId).toBe(student1.id)
+      expect(res.body.data.userId).toBe(student1.id)
       expect(res.body.data.type).toBe('APPLICATION_STATUS')
       expect(res.body.data.message).toContain('qualified')
     })

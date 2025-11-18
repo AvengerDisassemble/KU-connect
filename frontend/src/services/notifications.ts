@@ -13,23 +13,44 @@ interface ApiResponse<T> {
   data: T;
 }
 
+type NotificationType = 'ANNOUNCEMENT' | 'APPLICATION_STATUS' | 'EMPLOYER_APPLICATION';
+
 type BackendNotification = {
   id: string;
-  announcementId: string | null;
   userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  priority: string;
   isRead: boolean;
   createdAt: string;
+  senderId?: string | null;
+  announcementId?: string | null;
+  jobId?: string | null;
+  applicationId?: string | null;
+  sender?: {
+    id: string;
+    name: string;
+    surname: string;
+    role: string;
+  } | null;
   announcement?: {
     id: string;
     title: string;
     content: string;
     priority?: string | null;
-    createdAt: string;
+    audience?: string | null;
   } | null;
 };
 
 type BackendNotificationPayload = {
   notifications: BackendNotification[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
   hasMore?: boolean;
   lastFetchedAt?: string;
 };
@@ -141,9 +162,11 @@ const mapPriorityToCategory = (
 };
 
 const transformNotification = (entry: BackendNotification): Notification => {
-  const title = entry.announcement?.title ?? "Notification";
-  const message = entry.announcement?.content ?? "";
-  const type = mapPriorityToCategory(entry.announcement?.priority);
+  // For announcement-type notifications, use announcement data if available
+  const title = entry.announcement?.title || entry.title;
+  const message = entry.announcement?.content || entry.message;
+  const priority = entry.announcement?.priority || entry.priority;
+  const type = mapPriorityToCategory(priority);
 
   return {
     id: entry.id,
@@ -153,8 +176,13 @@ const transformNotification = (entry: BackendNotification): Notification => {
     isRead: entry.isRead,
     createdAt: entry.createdAt,
     announcementId: entry.announcementId,
+    notificationType: entry.type, // Add notification type for frontend logic
     data: {
-      announcementId: entry.announcement?.id,
+      announcementId: entry.announcement?.id || entry.announcementId,
+      jobId: entry.jobId,
+      applicationId: entry.applicationId,
+      senderId: entry.senderId,
+      sender: entry.sender,
     },
   };
 };

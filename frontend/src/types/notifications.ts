@@ -7,10 +7,23 @@ export type NotificationCategory =
   | "job_update"
   | "system";
 
+export type NotificationType =
+  | "ANNOUNCEMENT"
+  | "APPLICATION_STATUS"
+  | "EMPLOYER_APPLICATION";
+
 export interface NotificationData {
   applicationId?: string;
   jobId?: string;
   status?: string;
+  announcementId?: string | null;
+  senderId?: string | null;
+  sender?: {
+    id: string;
+    name: string;
+    surname: string;
+    role: string;
+  } | null;
   [key: string]: unknown;
 }
 
@@ -22,6 +35,7 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
   announcementId?: string | null;
+  notificationType?: NotificationType;
   data?: NotificationData;
 }
 
