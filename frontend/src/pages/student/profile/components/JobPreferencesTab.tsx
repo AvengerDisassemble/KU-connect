@@ -52,7 +52,7 @@ const INDUSTRY_OPTIONS = [
   { value: "EMERGING_TECH", label: "Emerging Tech" },
   { value: "E_COMMERCE", label: "E-Commerce" },
   { value: "OTHER", label: "Other" },
-];
+] as const;
 
 const JOB_TYPE_OPTIONS = [
   { value: NO_PREFERENCE, label: "No preference" },
@@ -60,14 +60,30 @@ const JOB_TYPE_OPTIONS = [
   { value: "part-time", label: "Part-time" },
   { value: "full-time", label: "Full-time" },
   { value: "contract", label: "Contract" },
-];
+] as const;
 
 const REMOTE_WORK_OPTIONS = [
   { value: NO_PREFERENCE, label: "No preference" },
   { value: "on-site", label: "On-site" },
   { value: "remote", label: "Remote" },
   { value: "hybrid", label: "Hybrid" },
-];
+] as const;
+
+type IndustryValue = (typeof INDUSTRY_OPTIONS)[number]["value"];
+type JobTypeValue = (typeof JOB_TYPE_OPTIONS)[number]["value"];
+type RemoteWorkValue = (typeof REMOTE_WORK_OPTIONS)[number]["value"];
+
+const isIndustryValue = (value: unknown): value is IndustryValue =>
+  typeof value === "string" &&
+  INDUSTRY_OPTIONS.some((option) => option.value === value);
+
+const isJobTypeValue = (value: unknown): value is JobTypeValue =>
+  typeof value === "string" &&
+  JOB_TYPE_OPTIONS.some((option) => option.value === value);
+
+const isRemoteWorkValue = (value: unknown): value is RemoteWorkValue =>
+  typeof value === "string" &&
+  REMOTE_WORK_OPTIONS.some((option) => option.value === value);
 
 const jobPreferencesSchema = z.object({
   minSalary: z
@@ -107,16 +123,22 @@ const PREFERENCES_QUERY_KEY = ["student", "preferences"] as const;
 
 const mapPreferenceToFormValues = (
   preference?: StudentPreference | null
-): z.infer<typeof jobPreferencesSchema> => ({
-  minSalary:
-    typeof preference?.minSalary === "number"
-      ? String(preference.minSalary)
-      : "",
-  desiredLocation: preference?.desiredLocation ?? "",
-  industry: preference?.industry ?? NO_PREFERENCE,
-  jobType: preference?.jobType ?? NO_PREFERENCE,
-  remoteWork: preference?.remoteWork ?? NO_PREFERENCE,
-});
+): z.infer<typeof jobPreferencesSchema> => {
+  const industry = preference?.industry;
+  const jobType = preference?.jobType;
+  const remoteWork = preference?.remoteWork;
+
+  return {
+    minSalary:
+      typeof preference?.minSalary === "number"
+        ? String(preference.minSalary)
+        : "",
+    desiredLocation: preference?.desiredLocation ?? "",
+    industry: isIndustryValue(industry) ? industry : NO_PREFERENCE,
+    jobType: isJobTypeValue(jobType) ? jobType : NO_PREFERENCE,
+    remoteWork: isRemoteWorkValue(remoteWork) ? remoteWork : NO_PREFERENCE,
+  };
+};
 
 const JobPreferencesTab = () => {
   const [isEditing, setIsEditing] = useState(false);

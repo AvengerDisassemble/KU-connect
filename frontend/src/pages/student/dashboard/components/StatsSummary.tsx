@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface StatsSummaryProps {
   recentJobs: number;
   applications: number;
-  quickActions: number;
 }
 
 const formatter = new Intl.NumberFormat();

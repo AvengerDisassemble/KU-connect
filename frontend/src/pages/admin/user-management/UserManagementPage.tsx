@@ -18,7 +18,6 @@ import type {
   CreateProfessorResponse,
   UserFilters,
   UserListResponse,
-  UserManagementItem,
 } from "@/services/admin";
 import type { RoleFilterValue } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -33,7 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import ProfessorFormDialog from "./components/ProfessorFormDialog";
-import UserFilters from "./components/UserFilters";
+import UserFiltersPanel from "./components/UserFilters";
 import UsersTable from "./components/UsersTable";
 
 type UserTab = "all" | "pending" | "approved" | "suspended";
@@ -363,12 +362,12 @@ const UserManagementPage: React.FC = () => {
     >
       <Card>
         <CardContent className="pt-6">
-          <UserFilters
+          <UserFiltersPanel
             searchTerm={searchTerm}
             onSearchTermChange={setSearchTerm}
             onSearch={handleSearch}
             role={role}
-            onRoleChange={(next) => setRole(next)}
+            onRoleChange={(nextRole: RoleFilterValue) => setRole(nextRole)}
             roleOptions={ROLE_OPTIONS}
             total={resolvedData.total}
             isFetching={isFetching}
@@ -378,7 +377,7 @@ const UserManagementPage: React.FC = () => {
 
       <Tabs
         value={activeTab}
-        onValueChange={(next) => setActiveTab(next as UserTab)}
+        onValueChange={(nextTab: string) => setActiveTab(nextTab as UserTab)}
         className="space-y-6"
       >
         <TabsList className="w-full justify-start overflow-x-auto">

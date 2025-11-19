@@ -79,7 +79,7 @@ function EmployerLayoutContent({
           </header>
         )}
 
-        <section className={cn("relative", contentClassName)}>
+        <section className={cn("relative px-4 py-6 sm:px-6", contentClassName)}>
           {children}
         </section>
       </main>

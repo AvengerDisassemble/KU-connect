@@ -282,27 +282,26 @@ const JobEditPage = () => {
     );
   }
 
+  const headerActions = (
+    <Button variant="outline" onClick={() => navigate("/employer")}>
+      ← Back to dashboard
+    </Button>
+  );
+
   return (
-    <EmployerLayout title="Edit Job">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-8 text-center">
-          <h1 className="mb-8 text-3xl font-bold text-accent">Edit Job</h1>
-          <p className="text-muted-foreground">
-            Update your job information and manage applicants.
-          </p>
-        </div>
+    <EmployerLayout
+      title="Edit Job"
+      description="Update your job information and manage applicants."
+      actions={headerActions}
+    >
+      <div className="mx-auto max-w-4xl space-y-8">
 
         <Card className="rounded-2xl border-none shadow-sm">
           <CardContent className="p-6 sm:p-8">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <Button variant="outline" onClick={() => navigate("/employer")}>
-                  ← Back to dashboard
-                </Button>
-                <h2 className="text-lg font-semibold text-foreground">
-                  Job Information
-                </h2>
-              </div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Job Information
+              </h2>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
