@@ -8,6 +8,7 @@ import RegisterPage from "@/pages/public/register/RegisterPage";
 import NotFoundPage from "@/pages/public/NotFoundPage";
 import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
 import StudentProfilePage from "@/pages/student/profile/ProfilePage";
+import TranscriptUploadPage from "@/pages/student/profile/TranscriptUploadPage";
 import BrowseJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
 import EmployerLayout from "@/components/layout/EmployerLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -77,6 +78,14 @@ const App: React.FC = () => {
             element={
               <Guard role="student">
                 <BrowseJobsPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/student/upload-transcript"
+            element={
+              <Guard role="student">
+                <TranscriptUploadPage />
               </Guard>
             }
           />
