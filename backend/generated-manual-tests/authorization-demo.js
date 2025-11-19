@@ -163,7 +163,7 @@ async function testProfileEndpoints(tokens) {
     try {
       const response = await makeAPICall(
         "GET",
-        "/api/user-profile/me",
+        "/api/profile",
         null,
         false,
         token,
@@ -188,7 +188,7 @@ async function testDashboardEndpoints(tokens) {
     try {
       const response = await makeAPICall(
         "GET",
-        "/api/user-profile/dashboard",
+        "/api/profile/dashboard",
         null,
         false,
         token,
@@ -209,13 +209,13 @@ async function testDashboardEndpoints(tokens) {
 }
 
 async function testRoleBasedAccess(tokens) {
-  // Test admin-only endpoint
+  // Test admin-only endpoint (list all profiles)
   console.log("\n   🔒 Testing Admin-Only Endpoint:");
   for (const [role, token] of Object.entries(tokens)) {
     try {
       await makeAPICall(
         "GET",
-        "/api/user-profile/admin-only",
+        "/api/profile",
         null,
         false,
         token,
@@ -233,13 +233,13 @@ async function testRoleBasedAccess(tokens) {
     }
   }
 
-  // Test employer-only endpoint
-  console.log("\n   🔒 Testing Employer-Only Endpoint:");
+  // Test employer dashboard endpoint
+  console.log("\n   🔒 Testing Employer Dashboard Endpoint:");
   for (const [role, token] of Object.entries(tokens)) {
     try {
       await makeAPICall(
         "GET",
-        "/api/user-profile/employer-only",
+        "/api/profile/dashboard",
         null,
         false,
         token,

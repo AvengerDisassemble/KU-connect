@@ -15,11 +15,11 @@ const ipKeyGenerator = erl.ipKeyGenerator || ((req) => req.ip)
 /**
  * General API rate limiter - Applied to all routes
  * Why: Prevents basic DoS attacks across the entire API
- * Limits: 500 requests per 15 minutes per IP (scaled for 70+ concurrent users)
+ * Limits: 1000 requests per 15 minutes per IP
  */
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // Limit each IP to 500 requests per windowMs (100 → 500 for 70+ users)
+  max: 1000, // Limit each IP to 1000 requests per windowMs
   message: {
     success: false,
     message: "Too many requests from this IP, please try again later.",
@@ -34,7 +34,7 @@ const generalLimiter = rateLimit({
 /**
  * Strict rate limiter for expensive database operations
  * Why: Protects against DoS on routes that perform multiple database queries
- * Limits: 150 requests per 15 minutes per IP (scaled for 70+ concurrent users)
+ * Limits: 300 requests per 15 minutes per IP
  * 
  * Use on routes that:
  * - Perform multiple database joins
@@ -43,7 +43,7 @@ const generalLimiter = rateLimit({
  */
 const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 150, // Limit each IP to 150 requests per windowMs (30 → 150 for 70+ users)
+  max: 300, // Limit each IP to 300 requests per windowMs
   message: {
     success: false,
     message: "Too many requests to this resource. Please try again later.",
@@ -77,11 +77,11 @@ const authLimiter = rateLimit({
 /**
  * Write operation rate limiter - For POST/PATCH/DELETE
  * Why: Prevents spam and resource exhaustion from write operations
- * Limits: 100 requests per 15 minutes per IP (scaled for 70+ concurrent users)
+ * Limits: 100 requests per 15 minutes per IP
  */
 const writeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 write operations per windowMs (20 → 100 for 70+ users)
+  max: 100, // Limit each IP to 100 write operations per windowMs
   message: {
     success: false,
     message: "Too many write operations. Please try again later.",
@@ -95,11 +95,11 @@ const writeLimiter = rateLimit({
 /**
  * Search/Filter rate limiter - For search and filter operations
  * Why: Search operations can be expensive, especially with wildcards
- * Limits: 250 requests per 15 minutes per IP (scaled for 70+ concurrent users)
+ * Limits: 500 requests per 15 minutes per IP
  */
 const searchLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 250, // Limit each IP to 250 search requests per windowMs (50 → 250 for 70+ users)
+  max: 500, // Limit each IP to 500 search requests per windowMs
   message: {
     success: false,
     message: "Too many search requests. Please try again later.",
