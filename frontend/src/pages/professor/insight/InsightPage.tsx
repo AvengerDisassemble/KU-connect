@@ -1,44 +1,77 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
 
 import ProfessorPageShell from "@/pages/professor/dashboard/components/ProfessorPageShell";
-import { getProfessorDashboardAnalytics } from "@/services/professor";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useProfessorDashboardAnalytics } from "@/hooks/useProfessorDashboardAnalytics";
+import KpiCards from "./components/KpiCards";
+import TopCompaniesCard from "./components/TopCompaniesCard";
+import JobTypeChart from "./components/JobTypeChart";
+import TrendsChart from "./components/TrendsChart";
 import TrendChartCard from "./components/TrendChartCard";
 import SuccessDonutCard from "./components/SuccessDonutCard";
 
-const ProfessorAnalyticsPage = () => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["professor-analytics-dashboard"],
-    queryFn: getProfessorDashboardAnalytics,
-    staleTime: 60_000,
-  });
+const ProfessorInsightsPage = () => {
+  const { data, isLoading, error } = useProfessorDashboardAnalytics();
 
-  const dailyTrend = data?.applicationTrends.daily ?? [];
+  const dailyTrend = useMemo(
+    () => data?.applicationTrends.daily ?? [],
+    [data?.applicationTrends.daily],
+  );
+  const monthlyTrend = useMemo(
+    () => data?.applicationTrends.monthly ?? [],
+    [data?.applicationTrends.monthly],
+  );
+  const jobMetrics = data?.jobMetrics;
+
   const qualifiedRateRaw = data?.summary?.qualifiedRate ?? 0;
   const normalizedQualifiedRate =
     qualifiedRateRaw > 1 ? qualifiedRateRaw / 100 : qualifiedRateRaw;
 
   const qualifiedShare = useMemo(() => {
-    const status = data?.applicationMetrics.byStatus;
+    const status = data?.applicationMetrics?.byStatus;
     if (status) {
-      const sum = (status.qualified ?? 0) + (status.rejected ?? 0);
-      if (sum > 0) return (status.qualified ?? 0) / sum;
+      const total = (status.qualified ?? 0) + (status.rejected ?? 0);
+      if (total > 0) {
+        return (status.qualified ?? 0) / total;
+      }
     }
     return normalizedQualifiedRate;
-  }, [data?.applicationMetrics.byStatus, normalizedQualifiedRate]);
+  }, [data?.applicationMetrics?.byStatus, normalizedQualifiedRate]);
+
+  const rechartsDaily = useMemo(
+    () =>
+      dailyTrend.map((point) => ({
+        date: new Date(point.date).toLocaleDateString(undefined, {
+          month: "short",
+          day: "numeric",
+        }),
+        applications: point.applications,
+        newJobs: point.newJobs,
+      })),
+    [dailyTrend],
+  );
+
+  const rechartsMonthly = useMemo(
+    () =>
+      monthlyTrend.map((point) => ({
+        date: point.month,
+        applications: point.applications,
+        newJobs: point.newJobs,
+      })),
+    [monthlyTrend],
+  );
 
   return (
-    <ProfessorPageShell title="Student Analytics Insights">
-      <div className="mx-auto w-full max-w-6xl space-y-6 px-0 sm:px-2 md:px-0">
-        <div className="space-y-1">
-          <h1 className="font-poppins text-3xl font-semibold text-black py-2">
-            Student Analytics Insights
+    <ProfessorPageShell title="Professor Insights">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+        <header className="space-y-1">
+          <h1 className="font-poppins text-3xl font-semibold text-foreground">
+            Professor Insights
           </h1>
-          <p className="text-muted-foreground py-4">
-            Monitor and analyze student job search activities and outcomes in real time.
+          <p className="text-muted-foreground">
+            Track employer demand, student applications, and trend shifts in one dashboard.
           </p>
-        </div>
+        </header>
 
         {error ? (
           <Alert variant="destructive">
@@ -47,17 +80,43 @@ const ProfessorAnalyticsPage = () => {
           </Alert>
         ) : null}
 
+        <KpiCards
+          activeJobPostings={jobMetrics?.activeJobPostings}
+          newJobsThisMonth={jobMetrics?.thisMonth?.newJobs}
+          percentChange={jobMetrics?.thisMonth?.percentChange}
+          trend={jobMetrics?.thisMonth?.trend}
+          isLoading={isLoading}
+        />
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <TrendChartCard data={dailyTrend} isLoading={isLoading} />
           <SuccessDonutCard
-            byStatus={data?.applicationMetrics.byStatus}
+            byStatus={data?.applicationMetrics?.byStatus}
             qualifiedRate={qualifiedShare}
             isLoading={isLoading}
           />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <TrendsChart
+            data={rechartsDaily}
+            title="Daily Applications vs New Jobs"
+            isLoading={isLoading}
+          />
+          <TrendsChart
+            data={rechartsMonthly}
+            title="Monthly Applications vs New Jobs"
+            isLoading={isLoading}
+          />
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          <JobTypeChart jobTypes={jobMetrics?.byJobType} isLoading={isLoading} />
+          <TopCompaniesCard companies={jobMetrics?.topCompanies} isLoading={isLoading} />
         </div>
       </div>
     </ProfessorPageShell>
   );
 };
 
-export default ProfessorAnalyticsPage;
+export default ProfessorInsightsPage;

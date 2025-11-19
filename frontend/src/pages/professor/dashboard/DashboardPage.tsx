@@ -64,7 +64,6 @@ const StudentAnalyticsContent = () => {
 
   const students: ProfessorStudentListItem[] = studentsResponse?.students ?? [];
   const totalStudents = studentsResponse?.summary.totalStudents ?? 0;
-  const filteredCount = studentsResponse?.summary.filteredCount ?? 0;
 
   const degreeOptions = useMemo(() => {
     const map = new Map<string, string>();
