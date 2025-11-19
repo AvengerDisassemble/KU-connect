@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Plus, Search, UsersRound } from "lucide-react";
+import { Plus } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import {
   activateUser,
@@ -21,52 +20,23 @@ import type {
   UserListResponse,
   UserManagementItem,
 } from "@/services/admin";
+import type { RoleFilterValue } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import ProfessorFormDialog from "./components/ProfessorFormDialog";
+import UserFilters from "./components/UserFilters";
+import UsersTable from "./components/UsersTable";
 
 type UserTab = "all" | "pending" | "approved" | "suspended";
-type RoleFilterValue =
-  | "ALL_ROLES"
-  | "STUDENT"
-  | "EMPLOYER"
-  | "PROFESSOR"
-  | "ADMIN";
 
 const TABS: Array<{ key: UserTab; label: string; status?: string }> = [
   { key: "all", label: "All" },
@@ -96,20 +66,6 @@ const parseRoleFilter = (value: string | null): RoleFilterValue => {
 };
 
 const DEFAULT_LIMIT = 20;
-
-const mapStatusVariant = (status: string) => {
-  switch (status) {
-    case "APPROVED":
-      return "secondary" as const;
-    case "PENDING":
-      return "outline" as const;
-    case "SUSPENDED":
-    case "REJECTED":
-      return "destructive" as const;
-    default:
-      return "outline" as const;
-  }
-};
 
 const useUserFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -278,211 +234,6 @@ const useCreateProfessor = () => {
   });
 };
 
-const ProfessorFormDialog: React.FC<{
-  onSubmit: (values: CreateProfessorData) => void;
-  isLoading: boolean;
-}> = ({ onSubmit, isLoading }) => {
-  const form = useForm<CreateProfessorData>({
-    defaultValues: {
-      name: "",
-      surname: "",
-      email: "",
-      department: "",
-      title: "",
-      password: "",
-    },
-  });
-
-  const handleSubmit = form.handleSubmit((values) => {
-    onSubmit(values);
-  });
-
-  return (
-    <Form {...form}>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="name"
-            rules={{ required: "Name is required" }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="First name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="surname"
-            rules={{ required: "Surname is required" }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Surname</FormLabel>
-                <FormControl>
-                  <Input placeholder="Last name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="email"
-          rules={{ required: "Email is required" }}
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="professor@ku.th" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password (optional)</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Leave blank to auto-generate"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="department"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Department</FormLabel>
-                <FormControl>
-                  <Input placeholder="Optional" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="title"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Title</FormLabel>
-                <FormControl>
-                  <Input placeholder="Assistant Professor" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <DialogFooter>
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full sm:w-auto"
-          >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : null}
-            Create Professor
-          </Button>
-        </DialogFooter>
-      </form>
-    </Form>
-  );
-};
-
-const renderUserRow = (
-  user: UserManagementItem,
-  handleApprove: (userId: string) => void,
-  handleReject: (userId: string) => void,
-  handleSuspend: (userId: string) => void,
-  handleActivate: (userId: string) => void,
-  busyUserId: string | null
-) => {
-  const isBusy = busyUserId === user.id;
-  return (
-    <TableRow key={user.id} data-state={isBusy ? "selected" : undefined}>
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <UsersRound className="h-4 w-4 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-semibold text-foreground">
-              {user.name} {user.surname ?? ""}
-            </p>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
-          </div>
-        </div>
-      </TableCell>
-      <TableCell>{user.role}</TableCell>
-      <TableCell>
-        <Badge variant={mapStatusVariant(user.status)}>{user.status}</Badge>
-      </TableCell>
-      <TableCell>{user.verified ? "Yes" : "No"}</TableCell>
-      <TableCell>
-        {new Date(user.createdAt).toLocaleDateString(undefined, {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })}
-      </TableCell>
-      <TableCell>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => handleApprove(user.id)}
-            disabled={isBusy || user.status === "APPROVED"}
-          >
-            Approve
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleReject(user.id)}
-            disabled={isBusy || user.status === "REJECTED"}
-          >
-            Reject
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleSuspend(user.id)}
-            disabled={isBusy || user.status === "SUSPENDED"}
-          >
-            Suspend
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => handleActivate(user.id)}
-            disabled={isBusy || user.status === "APPROVED"}
-          >
-            Activate
-          </Button>
-        </div>
-      </TableCell>
-    </TableRow>
-  );
-};
 
 const UserManagementPage: React.FC = () => {
   const filtersState = useUserFilters();
@@ -612,53 +363,16 @@ const UserManagementPage: React.FC = () => {
     >
       <Card>
         <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-            <div className="grid w-full gap-3 md:grid-cols-3">
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Search
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={searchTerm}
-                    onChange={(event) => setSearchTerm(event.target.value)}
-                    placeholder="Search by name or email"
-                  />
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={handleSearch}
-                  >
-                    <Search className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-              <div className="md:col-span-1">
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Role
-                </label>
-                <Select
-                  value={role}
-                  onValueChange={(value) => setRole(value as RoleFilterValue)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROLE_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              <span>{resolvedData.total} users</span>
-            </div>
-          </div>
+          <UserFilters
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            onSearch={handleSearch}
+            role={role}
+            onRoleChange={(next) => setRole(next)}
+            roleOptions={ROLE_OPTIONS}
+            total={resolvedData.total}
+            isFetching={isFetching}
+          />
         </CardContent>
       </Card>
 
@@ -677,49 +391,15 @@ const UserManagementPage: React.FC = () => {
 
         <TabsContent value={activeTab} className="space-y-4">
           <Card className="overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Verified</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  [...Array(6)].map((_, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell colSpan={6}>
-                        <Skeleton className="h-10 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : users.length > 0 ? (
-                  users.map((user) =>
-                    renderUserRow(
-                      user,
-                      handleApprove,
-                      handleReject,
-                      handleSuspend,
-                      handleActivate,
-                      busyUserId
-                    )
-                  )
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center text-sm text-muted-foreground"
-                    >
-                      No users found for the selected filters.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+            <UsersTable
+              users={users}
+              isLoading={isLoading}
+              busyUserId={busyUserId}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onSuspend={handleSuspend}
+              onActivate={handleActivate}
+            />
           </Card>
 
           <div className="flex items-center justify-between gap-4">
