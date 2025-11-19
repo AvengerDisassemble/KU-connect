@@ -13,6 +13,8 @@ import EmployerLayout from "@/components/layout/EmployerLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardPage";
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
+import ProfessorDashboardPage from "@/pages/professor/dashboard/DashboardPage";
+import ProfessorAnalyticsPage from "@/pages/professor/insight/InsightPage";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 import JobEditPage from "@/pages/employer/JobPosting/JobEditPage";
 import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
@@ -162,6 +164,14 @@ const App: React.FC = () => {
             element={
               <Guard role="professor">
                 <ProfessorDashboardPage />
+              </Guard>
+            }
+          />
+          <Route
+            path="/professor/analytics"
+            element={
+              <Guard role="professor">
+                <ProfessorAnalyticsPage />
               </Guard>
             }
           />
