@@ -229,6 +229,8 @@ export interface UserManagementItem {
   createdAt: string;
   lastLogin?: string | null;
   profileCompleted?: boolean;
+  hasTranscript?: boolean;
+  hasVerificationDoc?: boolean;
 }
 
 export interface UserListResponse {

@@ -1,8 +1,14 @@
-import { UsersRound } from "lucide-react";
+import { Eye, MoreHorizontal, UsersRound } from "lucide-react";
 
 import type { UserManagementItem } from "@/services/admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -35,6 +41,8 @@ interface UsersTableProps {
   onReject: (userId: string) => void;
   onSuspend: (userId: string) => void;
   onActivate: (userId: string) => void;
+  onPreviewTranscript: (userId: string) => void;
+  onPreviewVerification: (userId: string) => void;
 }
 
 export const UsersTable: React.FC<UsersTableProps> = ({
@@ -45,9 +53,83 @@ export const UsersTable: React.FC<UsersTableProps> = ({
   onReject,
   onSuspend,
   onActivate,
+  onPreviewTranscript,
+  onPreviewVerification,
 }) => {
+  const getPrimaryActionKey = (status: string): string => {
+    switch (status) {
+      case "APPROVED":
+        return "suspend";
+      case "SUSPENDED":
+      case "REJECTED":
+        return "activate";
+      case "PENDING":
+      default:
+        return "approve";
+    }
+  };
+
   const renderRow = (user: UserManagementItem) => {
     const isBusy = busyUserId === user.id;
+
+    const actionDefinitions = [
+      {
+        key: "approve",
+        label: "Approve",
+        onClick: () => onApprove(user.id),
+        disabled: isBusy || user.status === "APPROVED",
+      },
+      {
+        key: "reject",
+        label: "Reject",
+        onClick: () => onReject(user.id),
+        disabled: isBusy || user.status === "REJECTED",
+      },
+      {
+        key: "suspend",
+        label: "Suspend",
+        onClick: () => onSuspend(user.id),
+        disabled: isBusy || user.status === "SUSPENDED",
+      },
+      {
+        key: "activate",
+        label: "Activate",
+        onClick: () => onActivate(user.id),
+        disabled: isBusy || user.status === "APPROVED",
+      },
+    ];
+
+    const primaryKey = getPrimaryActionKey(user.status);
+    const primaryAction = actionDefinitions.find(
+      (action) => action.key === primaryKey
+    );
+    const secondaryActions = actionDefinitions.filter(
+      (action) => action.key !== primaryKey
+    );
+
+    const documentActions: Array<{
+      key: string;
+      label: string;
+      onClick: () => void;
+      disabled?: boolean;
+    }> = [];
+    if (user.role === "STUDENT" && user.hasTranscript) {
+      documentActions.push({
+        key: "transcript",
+        label: "Transcript",
+        onClick: () => onPreviewTranscript(user.id),
+        disabled: isBusy,
+      });
+    }
+    if (user.role === "EMPLOYER" && user.hasVerificationDoc) {
+      documentActions.push({
+        key: "verification",
+        label: "Verification",
+        onClick: () => onPreviewVerification(user.id),
+        disabled: isBusy,
+      });
+    }
+
     return (
       <TableRow key={user.id} data-state={isBusy ? "selected" : undefined}>
         <TableCell>
@@ -74,38 +156,67 @@ export const UsersTable: React.FC<UsersTableProps> = ({
           })}
         </TableCell>
         <TableCell>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onApprove(user.id)}
-              disabled={isBusy || user.status === "APPROVED"}
-            >
-              Approve
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onReject(user.id)}
-              disabled={isBusy || user.status === "REJECTED"}
-            >
-              Reject
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onSuspend(user.id)}
-              disabled={isBusy || user.status === "SUSPENDED"}
-            >
-              Suspend
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => onActivate(user.id)}
-              disabled={isBusy || user.status === "APPROVED"}
-            >
-              Activate
-            </Button>
+          <div className="flex flex-col gap-2">
+            {documentActions.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {documentActions.map((action) => (
+                  <Button
+                    key={action.key}
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 border border-dashed"
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                  >
+                    <Eye className="mr-2 h-3.5 w-3.5" />
+                    {action.label}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+            <div className="flex items-center gap-2">
+              {primaryAction ? (
+                <Button
+                  size="sm"
+                  variant={
+                    primaryAction.key === "approve" ? "default" : "secondary"
+                  }
+                  onClick={primaryAction.onClick}
+                  disabled={primaryAction.disabled}
+                >
+                  {primaryAction.label}
+                </Button>
+              ) : null}
+              {secondaryActions.length > 0 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="px-2"
+                      disabled={isBusy}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">More actions</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {secondaryActions.map((action) => (
+                      <DropdownMenuItem
+                        key={action.key}
+                        onSelect={(event) => {
+                          event.preventDefault();
+                          action.onClick();
+                        }}
+                        disabled={action.disabled}
+                      >
+                        {action.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
+            </div>
           </div>
         </TableCell>
       </TableRow>

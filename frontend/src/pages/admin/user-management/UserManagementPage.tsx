@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import {
   activateUser,
@@ -13,6 +13,10 @@ import {
   rejectUser,
   suspendUser,
 } from "@/services/admin";
+import {
+  downloadEmployerVerification,
+  downloadTranscript,
+} from "@/services/documents";
 import type {
   CreateProfessorData,
   CreateProfessorResponse,
@@ -66,6 +70,8 @@ const parseRoleFilter = (value: string | null): RoleFilterValue => {
 };
 
 const DEFAULT_LIMIT = 20;
+
+type DocumentPreviewType = "transcript" | "verification";
 
 const useUserFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -278,6 +284,30 @@ const UserManagementPage: React.FC = () => {
   const { approveMutation, rejectMutation, suspendMutation, activateMutation } =
     useUserMutations();
   const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [previewState, setPreviewState] = useState<{
+    open: boolean;
+    type?: DocumentPreviewType;
+    title?: string;
+    url?: string | null;
+    filename?: string;
+    isLoading: boolean;
+    error?: string | null;
+  }>({ open: false, isLoading: false, url: null, error: null });
+
+  useEffect(() => {
+    return () => {
+      if (previewState.url) {
+        URL.revokeObjectURL(previewState.url);
+      }
+    };
+  }, [previewState.url]);
+
+  const closePreview = () => {
+    if (previewState.url) {
+      URL.revokeObjectURL(previewState.url);
+    }
+    setPreviewState({ open: false, isLoading: false, url: null, error: null });
+  };
 
   const createProfessorMutation = useCreateProfessor();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -312,6 +342,54 @@ const UserManagementPage: React.FC = () => {
     executeAction(suspendMutation, userId);
   const handleActivate = (userId: string) =>
     executeAction(activateMutation, userId);
+  const previewDocument = async (
+    documentType: DocumentPreviewType,
+    userId: string
+  ) => {
+    if (previewState.url) {
+      URL.revokeObjectURL(previewState.url);
+    }
+    const title =
+      documentType === "transcript"
+        ? "Transcript preview"
+        : "Employer verification preview";
+    const downloadFn =
+      documentType === "transcript"
+        ? downloadTranscript
+        : downloadEmployerVerification;
+
+    setPreviewState({
+      open: true,
+      isLoading: true,
+      title,
+      type: documentType,
+      url: null,
+      filename: undefined,
+      error: null,
+    });
+
+    try {
+      const { blob, filename } = await downloadFn(userId);
+      const url = URL.createObjectURL(blob);
+      setPreviewState((prev) => ({
+        ...prev,
+        isLoading: false,
+        url,
+        filename,
+      }));
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to load document preview.";
+      setPreviewState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: message,
+      }));
+      toast.error(message);
+    }
+  };
 
   const totalPages = resolvedData.totalPages ?? 1;
 
@@ -399,6 +477,12 @@ const UserManagementPage: React.FC = () => {
               onReject={handleReject}
               onSuspend={handleSuspend}
               onActivate={handleActivate}
+              onPreviewTranscript={(userId) =>
+                previewDocument("transcript", userId)
+              }
+              onPreviewVerification={(userId) =>
+                previewDocument("verification", userId)
+              }
             />
           </Card>
 
@@ -427,6 +511,65 @@ const UserManagementPage: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={previewState.open} onOpenChange={(open) => {
+        if (!open) {
+          closePreview();
+        }
+      }}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>{previewState.title ?? "Document preview"}</DialogTitle>
+            <DialogDescription>
+              {previewState.filename
+                ? `File: ${previewState.filename}`
+                : "Preview submitted documents before making a decision."}
+            </DialogDescription>
+          </DialogHeader>
+          {previewState.isLoading ? (
+            <div className="flex h-[60vh] items-center justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : previewState.error ? (
+            <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              {previewState.error}
+            </p>
+          ) : previewState.url ? (
+            <iframe
+              title="Document preview"
+              src={previewState.url}
+              className="h-[70vh] w-full rounded-md border"
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Document is unavailable.
+            </p>
+          )}
+          <div className="mt-4 flex items-center justify-between">
+            <Button variant="outline" onClick={closePreview}>
+              Close
+            </Button>
+            {previewState.url ? (
+              <Button
+                onClick={() => {
+                  const anchor = document.createElement("a");
+                  anchor.href = previewState.url ?? "#";
+                  anchor.download =
+                    previewState.filename ??
+                    (previewState.type === "verification"
+                      ? "employer-verification.pdf"
+                      : "transcript.pdf");
+                  document.body.appendChild(anchor);
+                  anchor.click();
+                  document.body.removeChild(anchor);
+                }}
+              >
+                Download PDF
+              </Button>
+            ) : null}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
