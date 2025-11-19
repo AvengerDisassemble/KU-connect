@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MapPin,
   Banknote,
@@ -186,6 +186,31 @@ const JobDetailView = ({
 }: JobDetailViewProps) => {
   const { user } = useAuth();
   const canDeleteJob = user?.role === "admin";
+  const [showStickyActions, setShowStickyActions] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const actionSectionRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!scrollContainerRef.current || !actionSectionRef.current) {
+      setShowStickyActions(false);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyActions(!entry.isIntersecting);
+      },
+      {
+        root: scrollContainerRef.current,
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(actionSectionRef.current);
+
+    return () => observer.disconnect();
+  }, [job?.id]);
+
   if (!job) {
     return (
       <div className="flex h-full flex-col overflow-hidden">
@@ -328,9 +353,55 @@ const JobDetailView = ({
     },
   ];
 
+  const applyDisabled = !onApply || isApplied || isApplying || applicationsClosed;
+  const applyContent = isApplying ? (
+    <span className="flex items-center gap-2">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Applying…
+    </span>
+  ) : isApplied ? (
+    "Applied"
+  ) : applicationsClosed ? (
+    "Applications Closed"
+  ) : (
+    "Apply Now"
+  );
+
+  const handleApplyClick = () => {
+    if (applyDisabled || !job || !onApply) {
+      return;
+    }
+    onApply(job.id);
+  };
+
+  const saveDisabled = !onToggleSave || isSaving;
+  const saveContent = isSaving ? (
+    <span className="flex items-center gap-2">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Saving…
+    </span>
+  ) : isSaved ? (
+    <span className="flex items-center gap-2">
+      <BookmarkCheck className="h-4 w-4" />
+      Saved
+    </span>
+  ) : (
+    <span className="flex items-center gap-2">
+      <Bookmark className="h-4 w-4" />
+      Save Job
+    </span>
+  );
+
+  const handleSaveClick = () => {
+    if (saveDisabled || !job || !onToggleSave) {
+      return;
+    }
+    onToggleSave(job.id);
+  };
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-contain">
         <div className="px-6 pt-6 pb-6">
           {isLoadingDetail ? (
             <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
@@ -385,38 +456,14 @@ const JobDetailView = ({
             </div>
 
             {showApplyButton || showSaveButton ? (
-              <div className="flex flex-wrap gap-2">
+              <div ref={showApplyButton || showSaveButton ? actionSectionRef : null} className="flex flex-wrap gap-2">
                 {showApplyButton ? (
                   <Button
                     className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1 sm:flex-none"
-                    disabled={
-                      !onApply || isApplied || isApplying || applicationsClosed
-                    }
-                    onClick={() => {
-                      if (
-                        !job ||
-                        !onApply ||
-                        isApplied ||
-                        isApplying ||
-                        applicationsClosed
-                      ) {
-                        return;
-                      }
-                      onApply(job.id);
-                    }}
+                    disabled={applyDisabled}
+                    onClick={handleApplyClick}
                   >
-                    {isApplying ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Applying…
-                      </span>
-                    ) : isApplied ? (
-                      "Applied"
-                    ) : applicationsClosed ? (
-                      "Applications Closed"
-                    ) : (
-                      "Apply Now"
-                    )}
+                    {applyContent}
                   </Button>
                 ) : null}
                 {showSaveButton ? (
@@ -425,28 +472,10 @@ const JobDetailView = ({
                     className={`border-border hover:bg-secondary flex-1 sm:flex-none min-w-[140px] ${
                       isSaved ? "bg-secondary text-secondary-foreground" : ""
                     }`}
-                    disabled={!onToggleSave || isSaving}
-                    onClick={() => {
-                      if (!job || !onToggleSave || isSaving) return;
-                      onToggleSave(job.id);
-                    }}
+                    disabled={saveDisabled}
+                    onClick={handleSaveClick}
                   >
-                    {isSaving ? (
-                      <span className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Saving…
-                      </span>
-                    ) : isSaved ? (
-                      <span className="flex items-center gap-2">
-                        <BookmarkCheck className="h-4 w-4" />
-                        Saved
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <Bookmark className="h-4 w-4" />
-                        Save Job
-                      </span>
-                    )}
+                    {saveContent}
                   </Button>
                 ) : null}
               </div>
@@ -723,6 +752,33 @@ const JobDetailView = ({
           </div>
         </div>
       </div>
+      {showStickyActions && (showApplyButton || showSaveButton) ? (
+        <div className="border-t border-border bg-card/95 px-4 py-3 shadow-[0_-12px_24px_rgba(15,23,42,0.08)] backdrop-blur supports-[backdrop-filter]:bg-card/80">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {showApplyButton ? (
+              <Button
+                className="bg-primary hover:bg-primary/90 text-primary-foreground flex-1"
+                disabled={applyDisabled}
+                onClick={handleApplyClick}
+              >
+                {applyContent}
+              </Button>
+            ) : null}
+            {showSaveButton ? (
+              <Button
+                variant="outline"
+                className={`border-border hover:bg-secondary flex-1 ${
+                  isSaved ? "bg-secondary text-secondary-foreground" : ""
+                }`}
+                disabled={saveDisabled}
+                onClick={handleSaveClick}
+              >
+                {saveContent}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
