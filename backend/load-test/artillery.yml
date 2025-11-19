@@ -1,0 +1,130 @@
+# Artillery Load Testing Configuration for KU Connect Backend
+# Install: npm install -g artillery
+# Run: artillery run load-test/artillery.yml
+# Run with report: artillery run --output report.json load-test/artillery.yml && artillery report report.json
+
+config:
+  target: "http://localhost:3000"
+  phases:
+    # Warm-up phase
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up"
+    # Normal load test
+    - duration: 60
+      arrivalRate: 20
+      name: "Normal load (20 users/sec)"
+    # Peak load test
+    - duration: 60
+      arrivalRate: 50
+      name: "Peak load (50 users/sec)"
+    # Stress test
+    - duration: 30
+      arrivalRate: 100
+      name: "Stress test (100 users/sec)"
+  processor: "processor.js"
+  variables:
+    testEmail: "test-{{ $randomString() }}@ku.th"
+
+scenarios:
+  # Test 1: Authentication Flow
+  - name: "Authentication and Profile Access"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/refresh"
+          json:
+            refreshToken: "{{ refreshToken }}"
+          capture:
+            - json: "$.data.accessToken"
+              as: "accessToken"
+          expect:
+            - statusCode: 
+                - 200
+                - 401  # Expected if no valid token
+      
+      - get:
+          url: "/api/auth/me"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401  # Expected if not authenticated
+
+  # Test 2: Job Browsing
+  - name: "Browse and Search Jobs"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/jobs"
+          expect:
+            - statusCode: 200
+            - contentType: json
+      
+      - get:
+          url: "/api/jobs"
+          qs:
+            search: "developer"
+            location: "Bangkok"
+          expect:
+            - statusCode: 200
+      
+      - get:
+          url: "/api/jobs/{{ $randomString() }}"
+          expect:
+            - statusCode:
+                - 200
+                - 404
+
+  # Test 3: Profile Operations
+  - name: "Profile Management"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/profile"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+                - 403
+      
+      - get:
+          url: "/api/degree"
+          expect:
+            - statusCode: 200
+
+  # Test 4: Admin Dashboard (Lower weight as fewer admin users)
+  - name: "Admin Operations"
+    weight: 5
+    flow:
+      - get:
+          url: "/api/admin/users"
+          headers:
+            Authorization: "Bearer {{ adminToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+                - 403
+
+  # Test 5: Notifications
+  - name: "Notification Access"
+    weight: 5
+    flow:
+      - get:
+          url: "/api/notifications"
+          headers:
+            Authorization: "Bearer {{ accessToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+
+# Performance expectations
+expect:
+  maxErrorRate: 5  # Max 5% error rate
+  p99: 3000        # 99th percentile response time < 3 seconds
+  p95: 1500        # 95th percentile response time < 1.5 seconds

@@ -10,4 +10,5 @@ build/
 # Local storage
 /uploads
 
-/coverage
+# Test coverage reports
+coverage/
