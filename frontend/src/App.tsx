@@ -15,9 +15,9 @@ import EmployerDashboardPage from "@/pages/employer/EmployerDashboard/DashboardP
 import EmployerProfilePage from "@/pages/employer/profile/ProfilePage";
 import ProfessorDashboardPage from "@/pages/professor/dashboard/DashboardPage";
 import ProfessorAnalyticsPage from "@/pages/professor/insight/InsightPage";
+import ProfessorLayout from "@/components/layout/ProfessorLayout";
 import JobPostingPage from "@/pages/employer/JobPosting/JobPostingPage";
 import JobEditPage from "@/pages/employer/JobPosting/JobEditPage";
-import ProfessorDashboardPage from "@/pages/professor/ProfessorDashboard/DashboardPage";
 import AdminDashboardPage from "@/pages/admin/dashboard/AdminDashboardPage";
 import UserManagementPage from "@/pages/admin/user-management/UserManagementPage";
 import AnnouncementManagementPage from "@/pages/admin/announcement-management/AnnouncementPage";
@@ -36,6 +36,15 @@ const AdminBrowseJobsRoute: React.FC = () => (
   >
     <BrowseJobsPage />
   </AdminLayout>
+);
+
+const ProfessorBrowseJobsRoute: React.FC = () => (
+  <ProfessorLayout
+    title="Browse Jobs"
+    description="Curated opportunities for your mentees and advisees."
+  >
+    <BrowseJobsPage />
+  </ProfessorLayout>
 );
 
 const App: React.FC = () => {
@@ -83,7 +92,7 @@ const App: React.FC = () => {
             path="/professor/browse-jobs"
             element={
               <Guard role="professor">
-                <BrowseJobsPage />
+                <ProfessorBrowseJobsRoute />
               </Guard>
             }
           />

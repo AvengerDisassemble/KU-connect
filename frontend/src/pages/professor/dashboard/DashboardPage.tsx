@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import ProfessorPageShell from "@/pages/professor/dashboard/components/ProfessorPageShell";
+import ProfessorLayout from "@/components/layout/ProfessorLayout";
 import {
   getProfessorDashboardAnalytics,
   getProfessorStudents,
@@ -317,12 +317,13 @@ const StudentAnalyticsContent = () => {
   );
 };
 
-const ProfessorDashboardPage = () => {
-  return (
-    <ProfessorPageShell title="Student Analytics">
-      <StudentAnalyticsContent />
-    </ProfessorPageShell>
-  );
-};
+const ProfessorDashboardPage = () => (
+  <ProfessorLayout
+    title="Student Analytics"
+    description="Monitor outcomes and guide your students with live career data."
+  >
+    <StudentAnalyticsContent />
+  </ProfessorLayout>
+);
 
 export default ProfessorDashboardPage;
