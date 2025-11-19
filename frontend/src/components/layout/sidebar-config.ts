@@ -77,6 +77,11 @@ export const adminSidebar = (): AppSidebarItem[] => [
 export const professorSidebar = (): AppSidebarItem[] => [
   { label: "Dashboard", to: "/professor", icon: GraduationCap, end: true },
   {
+    label: "Insights",
+    to: "/professor/analytics",
+    icon: BarChart3,
+  },
+  {
     label: "Browse Jobs",
     to: "/professor/browse-jobs",
     icon: BriefcaseBusiness,
