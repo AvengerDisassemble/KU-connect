@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { phoneSchema } from "./phoneSchema";
@@ -49,6 +49,32 @@ type DegreeOption = {
   id: string;
   label: string;
 };
+
+const GoogleIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 488 512"
+    className="h-4 w-4"
+    aria-hidden="true"
+  >
+    <path
+      d="M488 261.8c0-17.7-1.6-35.1-4.7-52H249v98.7h134.7c-5.8 31.5-23.3 58.2-49.8 76v62h80.2c46.9-43.2 73.9-107 73.9-184.7z"
+      fill="#4285f4"
+    />
+    <path
+      d="M249 492c67.5 0 124.2-22.4 165.6-60.5l-80.2-62c-22.4 15-51.1 23.8-85.4 23.8-65.7 0-121.4-44.3-141.3-103.8h-82v65.1C67.6 439.6 152.7 492 249 492z"
+      fill="#34a853"
+    />
+    <path
+      d="M107.7 289.5c-5.2-15-8.2-31.1-8.2-47.5s3-32.5 8.2-47.5v-65.1h-82A240.2 240.2 0 0 0 9 242c0 37.6 8.9 73.2 24.7 105.6z"
+      fill="#fbbc04"
+    />
+    <path
+      d="M249 97.2c36.7 0 69.3 12.7 95 37.6l71.2-71.2C373.2 24.9 316.5 0 249 0 152.7 0 67.6 52.4 33.7 136.4l82 65.1C127.6 142 183.3 97.2 249 97.2z"
+      fill="#ea4335"
+    />
+  </svg>
+);
 
 const alumniSchema = z
   .object({
@@ -260,7 +286,7 @@ const StudentRegistration = () => {
           );
           const { user } = loginData.data;
 
-          navigate("/student/browse-jobs");
+          navigate("/student/upload-transcript");
           return user.name;
         })(),
         {
@@ -330,20 +356,25 @@ const StudentRegistration = () => {
 
   if (!isAlumni) {
     return (
-      <div
-        className="space-y-6 animate-fade-in"
-        role="region"
-        aria-label="Student registration options"
-      >
+      <div className="space-y-8 rounded-3xl bg-white/60 p-6 shadow-sm">
+        <div className="space-y-3">
+          <h3 className="text-xl font-semibold text-slate-900">
+            Current students
+          </h3>
+          <p className="text-sm text-slate-500">
+            Use your KU Gmail account for instant access. Alumni can continue
+            below for manual verification.
+          </p>
+        </div>
+
         <div className="space-y-4">
           <Button
             onClick={handleOAuthSignup}
-            className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium bg-primary hover:bg-primary/90 transition-all touch-manipulation"
-            size="lg"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-primary py-3 text-base font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
             aria-label="Sign up with Kasetsart University Gmail account"
             disabled={isOAuthInProgress}
           >
-            <Mail className="w-5 h-5 mr-2" aria-hidden="true" />
+            <GoogleIcon />
             Sign up with KU Gmail
           </Button>
           {oauthError && (
@@ -352,42 +383,23 @@ const StudentRegistration = () => {
             </p>
           )}
 
-          <div
-            className="relative"
-            role="separator"
-            aria-label="Alternative registration method"
-          >
+          <div className="relative text-center text-xs uppercase tracking-[0.3em] text-slate-300">
             <div className="absolute inset-0 flex items-center">
               <Separator />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or</span>
-            </div>
+            <span className="relative bg-white/80 px-2 text-slate-400">or</span>
           </div>
 
           <Button
             onClick={() => setIsAlumni(true)}
             variant="outline"
-            className="w-full h-12 sm:h-14 text-base sm:text-lg font-medium border-border hover:bg-muted transition-all touch-manipulation"
-            size="lg"
+            className="w-full rounded-2xl border border-primary/40 py-3 text-base font-medium text-primary hover:bg-primary/5"
             aria-label="Register as alumni with email"
           >
-            Register as Alumni
+            Register as alumni
           </Button>
         </div>
 
-        <div
-          className="bg-muted/50 p-4 sm:p-5 rounded-lg border border-border"
-          role="note"
-        >
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            <strong className="text-foreground">Current students:</strong> Use
-            your KU Gmail account for instant verification.
-            <br />
-            <strong className="text-foreground">Alumni:</strong> Register with
-            your personal email.
-          </p>
-        </div>
       </div>
     );
   }
@@ -694,20 +706,20 @@ const StudentRegistration = () => {
           </div>
         )}
       </div>
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row">
         <Button
           type="button"
           variant="outline"
           onClick={() => setIsAlumni(false)}
-          className="flex-1 h-11 sm:h-12 touch-manipulation"
+          className="flex-1 rounded-xl border border-slate-200 py-3 text-slate-700 hover:bg-slate-50"
         >
           Back
         </Button>
         <Button
           type="submit"
-          className="flex-1 h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"
+          className="flex-1 rounded-xl bg-primary py-3 text-primary-foreground hover:bg-primary/90"
         >
-          Create Account
+          Create account
         </Button>
       </div>
     </form>
