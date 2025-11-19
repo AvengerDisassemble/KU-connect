@@ -68,7 +68,15 @@ export const NotificationBell = ({
           ) : null}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-auto p-0" align="end" sideOffset={12}>
+      <DropdownMenuContent
+        className={cn(
+          "w-auto origin-top-right p-0",
+          "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
+          "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
+        )}
+        align="end"
+        sideOffset={12}
+      >
         <NotificationDropdown
           notifications={filteredNotifications}
           unreadCount={unreadCount}

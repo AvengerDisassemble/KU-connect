@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/hooks/useAuth";
-import EmployerPageShell from "@/components/EmployerPageShell";
+import EmployerLayout from "@/components/layout/EmployerLayout";
 import CompanyProfileCard from "@/pages/employer/JobPosting/components/CompanyProfileCard";
 import JobPostingForm from "@/pages/employer/JobPosting/components/JobPostingForm";
 import { Card, CardContent } from "@/components/ui/card";
@@ -72,7 +72,7 @@ export default function JobPostingPage() {
   }
 
   return (
-    <EmployerPageShell title="Post a Job">
+    <EmployerLayout title="Post a Job">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
           <h1 className="mb-8 text-3xl font-bold text-accent">Post a Job</h1>
@@ -103,6 +103,6 @@ export default function JobPostingPage() {
           </CardContent>
         </Card>
       </div>
-    </EmployerPageShell>
+    </EmployerLayout>
   );
 }

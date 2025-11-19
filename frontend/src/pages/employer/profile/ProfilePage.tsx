@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import EmployerPageShell from "@/components/EmployerPageShell";
+import EmployerLayout from "@/components/layout/EmployerLayout";
 import CompanyInfoForm from "@/pages/employer/profile/components/CompanyInfoForm";
 import VerificationChecklist, {
   type VerificationItem,
@@ -21,24 +21,25 @@ export default function EmployerProfilePage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const qc = useQueryClient();
 
-  const {
-    data: profile,
-    isLoading: isProfileLoading,
-  } = useQuery<EmployerProfileResponse>({
-    queryKey: ["employerProfile", userId],
-    queryFn: () => getEmployerProfile(userId!),
-    enabled: !!userId,
-  });
+  const { data: profile, isLoading: isProfileLoading } =
+    useQuery<EmployerProfileResponse>({
+      queryKey: ["employerProfile", userId],
+      queryFn: () => getEmployerProfile(userId!),
+      enabled: !!userId,
+    });
 
   const uploadMutation = useMutation({
     mutationFn: uploadEmployerVerificationDocument,
     onSuccess: () => {
       const hadExistingDoc = Boolean(profile?.hr?.verificationDocKey);
-      toast.success(hadExistingDoc ? "Verification updated" : "Verification submitted!", {
-        description: hadExistingDoc
-          ? "We replaced your previous document with the new upload."
-          : "We received your document and will review it shortly.",
-      });
+      toast.success(
+        hadExistingDoc ? "Verification updated" : "Verification submitted!",
+        {
+          description: hadExistingDoc
+            ? "We replaced your previous document with the new upload."
+            : "We received your document and will review it shortly.",
+        }
+      );
       setUploadedFile(null);
       if (userId) {
         qc.invalidateQueries({ queryKey: ["employerProfile", userId] });
@@ -147,7 +148,7 @@ export default function EmployerProfilePage() {
   };
 
   return (
-    <EmployerPageShell
+    <EmployerLayout
       title="Company Profile"
       backgroundClassName="bg-background"
       contentClassName="bg-muted/20"
@@ -184,6 +185,6 @@ export default function EmployerProfilePage() {
           </div>
         </div>
       </div>
-    </EmployerPageShell>
+    </EmployerLayout>
   );
 }

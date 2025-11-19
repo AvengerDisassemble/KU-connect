@@ -112,6 +112,7 @@ const CompanyProfileCard: React.FC<Props> = ({
 
   const { data: previewUrl } = useQuery<string | null>({
     queryKey: previewQueryKey,
+    queryFn: () => null, // Add missing queryFn
     initialData: () =>
       queryClient.getQueryData<string | null>(previewQueryKey) ?? null,
     enabled: false,

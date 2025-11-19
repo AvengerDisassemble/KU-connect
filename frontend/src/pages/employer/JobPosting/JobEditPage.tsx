@@ -2,14 +2,10 @@
 
 import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import EmployerPageShell from "@/components/EmployerPageShell";
+import EmployerLayout from "@/components/layout/EmployerLayout";
 import CompanyProfileCard from "@/pages/employer/JobPosting/components/CompanyProfileCard";
 import JobPostingForm, {
   type JobFormState,
@@ -79,10 +75,12 @@ const buildDiff = (
   const diff: Partial<JobCreateUpdatePayload> = {};
 
   if (next.title !== original.title) diff.title = next.title;
-  if (next.description !== original.description) diff.description = next.description;
+  if (next.description !== original.description)
+    diff.description = next.description;
   if (next.location !== original.location) diff.location = next.location;
   if (next.jobType !== original.jobType) diff.jobType = next.jobType;
-  if (next.workArrangement !== original.workArrangement) diff.workArrangement = next.workArrangement;
+  if (next.workArrangement !== original.workArrangement)
+    diff.workArrangement = next.workArrangement;
   if (next.duration !== original.duration) diff.duration = next.duration;
   if (next.minSalary !== original.minSalary) diff.minSalary = next.minSalary;
   if (next.maxSalary !== original.maxSalary) diff.maxSalary = next.maxSalary;
@@ -177,9 +175,7 @@ const JobEditPage = () => {
     },
     onError: (error: unknown) => {
       const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to update job";
+        error instanceof Error ? error.message : "Failed to update job";
       toast.error(message);
     },
   });
@@ -201,10 +197,9 @@ const JobEditPage = () => {
           ...previousDashboard,
           dashboard: {
             ...previousDashboard.dashboard,
-            myJobPostings:
-              previousDashboard.dashboard.myJobPostings.filter(
-                (job) => job.id !== jobIdParam,
-              ),
+            myJobPostings: previousDashboard.dashboard.myJobPostings.filter(
+              (job) => job.id !== jobIdParam
+            ),
           },
         });
       }
@@ -217,9 +212,7 @@ const JobEditPage = () => {
       }
 
       const message =
-        error instanceof Error
-          ? error.message
-          : "Failed to delete job";
+        error instanceof Error ? error.message : "Failed to delete job";
       toast.error(message);
     },
     onSuccess: () => {
@@ -229,10 +222,7 @@ const JobEditPage = () => {
     },
   });
 
-  const handleSave = async (
-    payload: JobSubmitPayload,
-    _form: JobFormState
-  ) => {
+  const handleSave = async (payload: JobSubmitPayload, _form: JobFormState) => {
     void _form;
     if (!jobId) {
       toast.error("Job identifier is missing");
@@ -293,7 +283,7 @@ const JobEditPage = () => {
   }
 
   return (
-    <EmployerPageShell title="Edit Job">
+    <EmployerLayout title="Edit Job">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center">
           <h1 className="mb-8 text-3xl font-bold text-accent">Edit Job</h1>
@@ -306,95 +296,85 @@ const JobEditPage = () => {
           <CardContent className="p-6 sm:p-8">
             <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/employer")}
-                  >
-                    ← Back to dashboard
-                  </Button>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Job Information
-                  </h2>
-                </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      disabled={deleteMutation.isPending}
-                    >
-                      {deleteMutation.isPending ? "Deleting..." : "Delete Job"}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Delete this job?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. Applicants and
-                        related data will be removed.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel
-                        disabled={deleteMutation.isPending}
-                      >
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        className="bg-destructive hover:bg-destructive/90"
-                        disabled={deleteMutation.isPending}
-                        onClick={() => deleteMutation.mutate()}
-                      >
-                        {deleteMutation.isPending ? "Deleting..." : "Delete"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <Button variant="outline" onClick={() => navigate("/employer")}>
+                  ← Back to dashboard
+                </Button>
+                <h2 className="text-lg font-semibold text-foreground">
+                  Job Information
+                </h2>
               </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? "Deleting..." : "Delete Job"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete this job?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. Applicants and related data
+                      will be removed.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={deleteMutation.isPending}>
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive hover:bg-destructive/90"
+                      disabled={deleteMutation.isPending}
+                      onClick={() => deleteMutation.mutate()}
+                    >
+                      {deleteMutation.isPending ? "Deleting..." : "Delete"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
 
-              <CompanyProfileCard
-                userId={user.id}
-                prefetchedProfile={employerProfile}
-                loadingOverride={employerProfileLoading}
-              />
+            <CompanyProfileCard
+              userId={user.id}
+              prefetchedProfile={employerProfile}
+              loadingOverride={employerProfileLoading}
+            />
 
-              {employerProfileError && (
-                <p className="mt-4 text-sm text-destructive">
-                  Failed to load company profile. Retry later.
-                </p>
-              )}
+            {employerProfileError && (
+              <p className="mt-4 text-sm text-destructive">
+                Failed to load company profile. Retry later.
+              </p>
+            )}
 
-              {isLoading ? (
-                <div className="mt-8 space-y-4">
-                  {[0, 1, 2].map((idx) => (
-                    <Skeleton
-                      key={idx}
-                      className="h-16 w-full rounded-xl"
-                    />
-                  ))}
-                </div>
-              ) : isError || !initialFormData ? (
-                <div className="mt-8 rounded-xl border border-destructive/50 bg-destructive/10 p-6 text-sm text-destructive">
-                  Unable to load this job. It may have been removed.
-                </div>
-              ) : (
-                <div className="mt-8">
-                  <JobPostingForm
-                    userId={user.id}
-                    mode="edit"
-                    initialData={initialFormData}
-                    submitLabel="Save Changes"
-                    onSubmit={handleSave}
-                    prefetchedProfile={employerProfile}
-                    profileLoading={employerProfileLoading}
-                  />
-                </div>
-              )}
+            {isLoading ? (
+              <div className="mt-8 space-y-4">
+                {[0, 1, 2].map((idx) => (
+                  <Skeleton key={idx} className="h-16 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : isError || !initialFormData ? (
+              <div className="mt-8 rounded-xl border border-destructive/50 bg-destructive/10 p-6 text-sm text-destructive">
+                Unable to load this job. It may have been removed.
+              </div>
+            ) : (
+              <div className="mt-8">
+                <JobPostingForm
+                  userId={user.id}
+                  mode="edit"
+                  initialData={initialFormData}
+                  submitLabel="Save Changes"
+                  onSubmit={handleSave}
+                  prefetchedProfile={employerProfile}
+                  profileLoading={employerProfileLoading}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-    </EmployerPageShell>
+    </EmployerLayout>
   );
 };
 

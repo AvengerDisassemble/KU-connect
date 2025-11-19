@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   JobFilters,
@@ -19,23 +24,37 @@ import {
   type Job as JobResponse,
   type JobDetail,
   type JobFilters as JobFiltersPayload,
-  type JobListResponse,
 } from "@/services/jobs";
 
 const PAGE_SIZE = 15;
+const MIN_SPINNER_DURATION = 200;
+type LegacyMediaQueryList = MediaQueryList & {
+  addListener?: (
+    this: MediaQueryList,
+    listener: (event: MediaQueryListEvent) => void
+  ) => void;
+  removeListener?: (
+    this: MediaQueryList,
+    listener: (event: MediaQueryListEvent) => void
+  ) => void;
+};
 
 const BrowseJobs = () => {
   const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuth();
   const isStudent = user?.role === "student";
+  const [searchParams, setSearchParams] = useSearchParams();
+  const jobIdFromParams = searchParams.get("job");
+  const searchParamValue = searchParams.get("search") ?? "";
 
   const [activeTab, setActiveTab] = useState<TabKey>("search");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQueryState] = useState(searchParamValue);
   const [jobTypeFilter, setJobTypeFilter] = useState("all");
   const [workArrangementFilter, setWorkArrangementFilter] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [sortBy, setSortBy] = useState("latest");
-  const [page, setPage] = useState(1);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [sentinelNode, setSentinelNode] = useState<HTMLDivElement | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
   const [appliedJobs, setAppliedJobs] = useState<Set<string>>(new Set());
@@ -52,11 +71,18 @@ const BrowseJobs = () => {
   const [knownLocations, setKnownLocations] = useState<Set<string>>(
     () => new Set<string>()
   );
-
+  const [showInfiniteSpinner, setShowInfiniteSpinner] = useState(false);
+  const spinnerTimeoutRef = useRef<number | null>(null);
   const normalizeWorkArrangement = (value?: string | null) =>
     value?.toLowerCase().replace(/[^a-z]/g, "") ?? "";
 
   const emptySetRef = useMemo(() => new Set<string>(), []);
+
+  useEffect(() => {
+    setSearchQueryState((prev) =>
+      prev === searchParamValue ? prev : searchParamValue
+    );
+  }, [searchParamValue]);
 
   const jobFilters = useMemo<JobFiltersPayload>(() => {
     const filters: JobFiltersPayload = {};
@@ -81,31 +107,24 @@ const BrowseJobs = () => {
     return filters;
   }, [searchQuery, jobTypeFilter, workArrangementFilter, locationFilter]);
 
-  const browseQuery = useQuery<JobListResponse>({
-    queryKey: ["jobs", "list", jobFilters, page, PAGE_SIZE],
-    queryFn: () => listJobs({ ...jobFilters }, page, PAGE_SIZE),
-    placeholderData: (previousData) => previousData,
+  const browseQuery = useInfiniteQuery({
+    queryKey: ["jobs", "list", jobFilters, PAGE_SIZE],
+    queryFn: ({ pageParam = 1 }) =>
+      listJobs({ ...jobFilters }, pageParam, PAGE_SIZE),
+    getNextPageParam: (lastPage) => {
+      const currentPage = Math.max(1, lastPage?.page ?? 1);
+      const total = Math.max(0, lastPage?.total ?? 0);
+      const limit = Math.max(1, lastPage?.limit ?? PAGE_SIZE);
+      const totalPages = total ? Math.max(1, Math.ceil(total / limit)) : 1;
+      const nextPage = currentPage + 1;
+      return nextPage <= totalPages ? nextPage : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 60 * 1000,
     retry: false,
   });
 
-  useEffect(() => {
-    setPage((prev) => (prev === 1 ? prev : 1));
-  }, [jobFilters, sortBy]);
-
-  useEffect(() => {
-    const data = browseQuery.data;
-    if (!data) return;
-
-    const limitValue = Math.max(1, data.limit ?? PAGE_SIZE);
-    const totalValue = data.total ?? 0;
-    const maxPage =
-      totalValue > 0 ? Math.max(1, Math.ceil(totalValue / limitValue)) : 1;
-
-    setPage((prev) => {
-      const clamped = Math.min(Math.max(prev, 1), maxPage);
-      return prev === clamped ? prev : clamped;
-    });
-  }, [browseQuery.data]);
+  const firstPage = browseQuery.data?.pages?.[0];
 
   const savedQuery = useQuery({
     queryKey: ["jobs", "saved", user?.id ?? null, PAGE_SIZE],
@@ -144,8 +163,14 @@ const BrowseJobs = () => {
   }, [isStudent, activeTab]);
 
   const browseJobs = useMemo<JobResponse[]>(() => {
-    const jobs = browseQuery.data?.jobs;
-    return Array.isArray(jobs) ? (jobs as JobResponse[]) : [];
+    const pages = browseQuery.data?.pages;
+    if (!pages?.length) {
+      return [];
+    }
+
+    return pages.flatMap((page) =>
+      Array.isArray(page?.jobs) ? (page.jobs as JobResponse[]) : []
+    );
   }, [browseQuery.data]);
 
   const savedJobsList = useMemo<JobResponse[]>(() => {
@@ -371,48 +396,76 @@ const BrowseJobs = () => {
     locationFilter,
   ]);
 
-  const pageSize = Math.max(1, browseQuery.data?.limit ?? PAGE_SIZE);
-  const totalAvailable = browseQuery.data?.total ?? 0;
-  const currentPageFromApi = Math.max(1, browseQuery.data?.page ?? page);
-  const totalPages =
-    totalAvailable > 0 ? Math.max(1, Math.ceil(totalAvailable / pageSize)) : 1;
-  const isFetchingPage = browseQuery.isFetching && !browseQuery.isLoading;
+  const totalAvailableFromApi = firstPage?.total ?? 0;
+  const hasMoreResults =
+    activeTab === "search" && Boolean(browseQuery.hasNextPage);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = browseQuery;
 
-  const handlePageChange = useCallback(
-    (nextPage: number) => {
-      const maxPage = Math.max(1, totalPages);
-      const normalized = Math.min(Math.max(1, Math.trunc(nextPage)), maxPage);
-      setPage((prev) => (prev === normalized ? prev : normalized));
-    },
-    [totalPages]
-  );
+  useEffect(() => {
+    if (isFetchingNextPage) {
+      if (spinnerTimeoutRef.current) {
+        window.clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+      setShowInfiniteSpinner(true);
+      return;
+    }
 
-  const paginationState = useMemo(
-    () =>
-      activeTab === "saved"
-        ? undefined
-        : {
-            page: currentPageFromApi,
-            pageCount: totalPages,
-            pageSize,
-            total: totalAvailable,
-            isFetching: isFetchingPage,
-            onPageChange: handlePageChange,
-          },
-    [
-      activeTab,
-      currentPageFromApi,
-      totalPages,
-      pageSize,
-      totalAvailable,
-      isFetchingPage,
-      handlePageChange,
-    ]
-  );
+    spinnerTimeoutRef.current = window.setTimeout(() => {
+      setShowInfiniteSpinner(false);
+      spinnerTimeoutRef.current = null;
+    }, MIN_SPINNER_DURATION);
+
+    return () => {
+      if (spinnerTimeoutRef.current) {
+        window.clearTimeout(spinnerTimeoutRef.current);
+        spinnerTimeoutRef.current = null;
+      }
+    };
+  }, [isFetchingNextPage]);
+
+  useEffect(() => {
+    if (!hasMoreResults || !sentinelNode) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (!entry?.isIntersecting) {
+          return;
+        }
+
+        if (!hasNextPage || isFetchingNextPage || showInfiniteSpinner) {
+          return;
+        }
+
+        fetchNextPage();
+      },
+      {
+        root: null,
+        rootMargin: "200px",
+      }
+    );
+
+    observer.observe(sentinelNode);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    hasMoreResults,
+    sentinelNode,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    showInfiniteSpinner,
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const legacyMediaQuery = mediaQuery as LegacyMediaQueryList;
 
     const handleChange = (event: MediaQueryListEvent) => {
       setIsDesktop(event.matches);
@@ -425,8 +478,8 @@ const BrowseJobs = () => {
       return () => mediaQuery.removeEventListener("change", handleChange);
     }
 
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
+    legacyMediaQuery.addListener?.(handleChange);
+    return () => legacyMediaQuery.removeListener?.(handleChange);
   }, []);
 
   useEffect(() => {
@@ -438,9 +491,53 @@ const BrowseJobs = () => {
     setDetailSheetOpen(Boolean(selectedJobId));
   }, [isDesktop, selectedJobId]);
 
+  const syncJobSearchParam = useCallback(
+    (jobId: string | null) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (jobId) {
+          next.set("job", jobId);
+        } else {
+          next.delete("job");
+        }
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
+
+  const handleSearchQueryChange = useCallback(
+    (value: string) => {
+      setSearchQueryState(value);
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) {
+          next.set("search", value);
+        } else {
+          next.delete("search");
+        }
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
+
+  const handleLoadMoreRef = useCallback((node: HTMLDivElement | null) => {
+    loadMoreRef.current = node;
+    setSentinelNode(node);
+  }, []);
+
   useEffect(() => {
+    const isTabLoading =
+      activeTab === "saved" ? savedQuery.isLoading : browseQuery.isLoading;
+
     if (!displayedJobs.length) {
+      if (isTabLoading) {
+        return;
+      }
+
       setSelectedJobId(null);
+      syncJobSearchParam(null);
       return;
     }
 
@@ -450,15 +547,51 @@ const BrowseJobs = () => {
 
     if (isDesktop) {
       if (!hasSelectedJob) {
-        setSelectedJobId(displayedJobs[0].id);
+        const firstJobId = displayedJobs[0].id;
+        setSelectedJobId(firstJobId);
+        syncJobSearchParam(firstJobId);
       }
       return;
     }
 
     if (!hasSelectedJob && selectedJobId) {
+      if (jobIdFromParams && selectedJobId === jobIdFromParams) {
+        return;
+      }
       setSelectedJobId(null);
+      if (!jobIdFromParams) {
+        syncJobSearchParam(null);
+      }
     }
-  }, [displayedJobs, selectedJobId, isDesktop]);
+  }, [
+    displayedJobs,
+    selectedJobId,
+    isDesktop,
+    syncJobSearchParam,
+    activeTab,
+    savedQuery.isLoading,
+    browseQuery.isLoading,
+    jobIdFromParams,
+  ]);
+
+  useEffect(() => {
+    if (!jobIdFromParams || jobIdFromParams === selectedJobId) {
+      return;
+    }
+
+    const jobExists =
+      displayedJobs.some((job) => job.id === jobIdFromParams) ||
+      savedJobsList.some((job) => job.id === jobIdFromParams);
+
+    if (!jobExists) {
+      return;
+    }
+
+    setSelectedJobId(jobIdFromParams);
+    if (!isDesktop) {
+      setDetailSheetOpen(true);
+    }
+  }, [jobIdFromParams, selectedJobId, isDesktop, displayedJobs, savedJobsList]);
 
   const selectedJobListItem =
     displayedJobs.find((job) => job.id === selectedJobId) ?? null;
@@ -497,8 +630,10 @@ const BrowseJobs = () => {
   const visibleSavedJobs = isStudent ? savedJobs : emptySetRef;
   const visibleSavingJobs = isStudent ? savingJobIds : emptySetRef;
 
+  const searchResultsCount = totalAvailableFromApi || browseJobs.length;
   const totalResults =
-    activeTab === "saved" ? displayedJobs.length : totalAvailable;
+    activeTab === "saved" ? displayedJobs.length : searchResultsCount;
+  const spinnerVisible = activeTab === "search" && showInfiniteSpinner;
 
   const resultText =
     activeTab === "saved"
@@ -516,12 +651,12 @@ const BrowseJobs = () => {
   );
 
   const handleClearFilters = useCallback(() => {
-    setSearchQuery("");
+    handleSearchQueryChange("");
     setJobTypeFilter("all");
     setWorkArrangementFilter("all");
     setLocationFilter("all");
     setSortBy("latest");
-  }, []);
+  }, [handleSearchQueryChange]);
 
   const handleToggleSave = useCallback(
     async (jobId: string) => {
@@ -651,22 +786,114 @@ const BrowseJobs = () => {
   const handleSelectJob = useCallback(
     (jobId: string) => {
       setSelectedJobId(jobId);
+      syncJobSearchParam(jobId);
       if (!isDesktop) {
         setDetailSheetOpen(true);
       }
     },
-    [isDesktop]
+    [isDesktop, syncJobSearchParam]
   );
+
+  const navigateJobSelection = useCallback(
+    (direction: "next" | "prev") => {
+      if (!displayedJobs.length) {
+        return;
+      }
+
+      const currentIndex = selectedJobId
+        ? displayedJobs.findIndex((job) => job.id === selectedJobId)
+        : -1;
+
+      if (
+        direction === "next" &&
+        currentIndex >= displayedJobs.length - 1 &&
+        hasMoreResults &&
+        !isFetchingNextPage
+      ) {
+        fetchNextPage();
+      }
+
+      let nextIndex: number;
+      if (direction === "next") {
+        nextIndex =
+          currentIndex < 0
+            ? 0
+            : Math.min(currentIndex + 1, displayedJobs.length - 1);
+      } else {
+        nextIndex =
+          currentIndex < 0
+            ? displayedJobs.length - 1
+            : Math.max(currentIndex - 1, 0);
+      }
+
+      const nextJob = displayedJobs[nextIndex];
+      if (!nextJob || nextJob.id === selectedJobId) {
+        return;
+      }
+
+      handleSelectJob(nextJob.id);
+    },
+    [
+      displayedJobs,
+      selectedJobId,
+      handleSelectJob,
+      hasMoreResults,
+      isFetchingNextPage,
+      fetchNextPage,
+    ]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+        return;
+      }
+
+      const target = event.target as HTMLElement | null;
+      if (target) {
+        const tagName = target.tagName.toLowerCase();
+        const role = target.getAttribute("role");
+        if (
+          tagName === "input" ||
+          tagName === "textarea" ||
+          tagName === "select" ||
+          tagName === "button" ||
+          target.isContentEditable ||
+          role === "combobox"
+        ) {
+          return;
+        }
+      }
+
+      if (!displayedJobs.length) {
+        return;
+      }
+
+      if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+        return;
+      }
+
+      event.preventDefault();
+      navigateJobSelection(event.key === "ArrowDown" ? "next" : "prev");
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [displayedJobs.length, navigateJobSelection]);
 
   const handleCloseDetailSheet = useCallback(() => {
     setDetailSheetOpen(false);
     setSelectedJobId(null);
-  }, []);
+    syncJobSearchParam(null);
+  }, [syncJobSearchParam]);
+
+  const isBrowseInitialLoading =
+    browseQuery.isLoading || (browseQuery.isFetching && !browseJobs.length);
 
   const listIsLoading =
     activeTab === "saved"
       ? savedQuery.isLoading && !savedCombinedJobs.length
-      : browseQuery.isLoading && !browseQuery.data;
+      : isBrowseInitialLoading;
 
   const isSelectedJobApplied =
     selectedJobListItem &&
@@ -682,24 +909,37 @@ const BrowseJobs = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <JobFilters
-        activeTab={activeTab}
-        searchQuery={searchQuery}
-        jobTypeFilter={jobTypeFilter}
-        locationFilter={locationFilter}
-        workArrangementFilter={workArrangementFilter}
-        locationOptions={locationOptions}
-        savedCount={savedCount}
-        onTabChange={handleTabChange}
-        onSearchChange={setSearchQuery}
-        onJobTypeFilterChange={setJobTypeFilter}
-        onLocationFilterChange={setLocationFilter}
-        onWorkArrangementFilterChange={setWorkArrangementFilter}
-        onClearFilters={handleClearFilters}
-        showSavedTab={isStudent}
-      />
+      <main
+        className="
+        flex flex-1 flex-col 
+        lg:grid 
+        lg:grid-rows-[auto_minmax(0,1fr)] 
+        lg:grid-cols-[420px_minmax(0,1fr)] 
+        lg:items-start 
+        lg:overflow-visible
+      "
+      >
+        {/* Filters row – full width */}
+        <div className="lg:col-span-2">
+          <JobFilters
+            activeTab={activeTab}
+            searchQuery={searchQuery}
+            jobTypeFilter={jobTypeFilter}
+            locationFilter={locationFilter}
+            workArrangementFilter={workArrangementFilter}
+            locationOptions={locationOptions}
+            savedCount={savedCount}
+            onTabChange={handleTabChange}
+            onSearchChange={handleSearchQueryChange}
+            onJobTypeFilterChange={setJobTypeFilter}
+            onLocationFilterChange={setLocationFilter}
+            onWorkArrangementFilterChange={setWorkArrangementFilter}
+            onClearFilters={handleClearFilters}
+            showSavedTab={isStudent}
+          />
+        </div>
 
-      <main className="flex flex-1 overflow-hidden lg:grid lg:grid-cols-[420px_minmax(0,1fr)] lg:overflow-visible">
+        {/* Left Column: Job List */}
         <JobList
           displayedJobs={displayedJobs}
           resultText={resultText}
@@ -712,13 +952,18 @@ const BrowseJobs = () => {
           onSelectJob={handleSelectJob}
           onToggleSave={isStudent ? handleToggleSave : undefined}
           onClearFilters={handleClearFilters}
-          pagination={paginationState}
+          isFetchingNextPage={isFetchingNextPage}
+          loadMoreRef={handleLoadMoreRef}
+          canLoadMore={hasMoreResults}
           savingJobIds={visibleSavingJobs}
           showSaveActions={isStudent}
+          showSpinner={spinnerVisible}
+          delayRender={spinnerVisible}
         />
 
-        <section className="hidden lg:flex lg:flex-1 lg:min-w-0">
-          <div className="sticky top-0 flex h-screen w-full flex-col bg-card">
+        {/* Right Column: Sticky Job Detail (Desktop Only) */}
+        <section className="hidden lg:block lg:sticky lg:top-0 lg:min-w-0 lg:flex-1">
+          <div className="flex h-[100vh] w-full flex-col overflow-hidden  border border-border/60 bg-card shadow-md">
             <JobDetailView
               job={selectedJobDetail}
               onApply={isStudent ? handleRequestApply : undefined}
@@ -732,7 +977,8 @@ const BrowseJobs = () => {
           </div>
         </section>
 
-        {!isDesktop && selectedJobListItem ? (
+        {/* Mobile Sheet */}
+        {!isDesktop && selectedJobListItem && (
           <JobDetailSheet
             isDetailSheetOpen={isDetailSheetOpen}
             selectedJob={selectedJobDetail}
@@ -740,6 +986,7 @@ const BrowseJobs = () => {
               setDetailSheetOpen(open);
               if (!open) {
                 setSelectedJobId(null);
+                syncJobSearchParam(null);
               }
             }}
             onClose={handleCloseDetailSheet}
@@ -751,10 +998,11 @@ const BrowseJobs = () => {
             isSaving={isSelectedJobSaving}
             isLoadingDetail={isJobDetailLoading}
           />
-        ) : null}
+        )}
       </main>
 
-      {isStudent ? (
+      {/* Application Dialog */}
+      {isStudent && (
         <JobApplicationDialog
           job={jobPendingApply}
           open={Boolean(jobPendingApply)}
@@ -762,7 +1010,7 @@ const BrowseJobs = () => {
           onApplied={handleApplicationSuccess}
           onSubmittingChange={(next) => setSubmittingApplication(next)}
         />
-      ) : null}
+      )}
     </div>
   );
 };

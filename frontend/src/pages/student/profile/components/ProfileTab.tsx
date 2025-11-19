@@ -33,6 +33,7 @@ import { getProfile, updateProfile } from "@/services/profile";
 import { fetchDegreeTypes, type DegreeType } from "@/services/degree";
 import { phoneSchema } from "@/pages/public/register/components/phoneSchema";
 import ResumeSection from "./ResumeSection";
+import { ProfileContentSkeleton } from "./LoadingSkeleton";
 
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
@@ -184,11 +185,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
   };
 
   if (isLoading) {
-    return (
-      <div className="max-w-4xl">
-        <div className="text-center py-8">Loading profile...</div>
-      </div>
-    );
+    return <ProfileContentSkeleton />;
   }
 
   if (error) {
