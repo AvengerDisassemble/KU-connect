@@ -334,7 +334,7 @@ export const test = base.extend({
                   name: registered.name,
                   surname: registered.surname,
                   email: registered.email,
-                  role: 'EMPLOYER',
+                  role: 'employer',
                   status: 'PENDING',
                   verified: false,
                 },
@@ -365,7 +365,7 @@ export const test = base.extend({
                   name: employerProfileData.name,
                   surname: employerProfileData.surname,
                   email: employerProfileData.email,
-                  role: 'EMPLOYER',
+                  role: 'employer',
                   status: employerProfileData.status,
                   verified: employerProfileData.verified,
                 },
@@ -388,7 +388,7 @@ export const test = base.extend({
                   name: 'Student',
                   surname: 'User',
                   email: 'student1@ku.th',
-                  role: 'STUDENT',
+                  role: 'student',
                   status: 'APPROVED',
                   verified: true,
                 },
@@ -410,9 +410,25 @@ export const test = base.extend({
       }
 
       // ---------------------------------------------------
+      // EMPLOYER DASHBOARD: GET /api/profile/dashboard
+      // ---------------------------------------------------
+      if (
+        method === 'GET' &&
+        (pathname.endsWith('/profile/dashboard') || pathname.endsWith('/user-profile/dashboard'))
+      ) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(dashboardResponse()),
+        });
+        return;
+      }
+
+      // ---------------------------------------------------
       // PROFILE GET: GET /api/profile/:id
       // ---------------------------------------------------
-      if (method === 'GET' && pathname.includes('/profile/')) {
+      const profileMatch = pathname.match(/\/profile\/([^/]+)$/);
+      if (method === 'GET' && profileMatch) {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
@@ -474,18 +490,6 @@ export const test = base.extend({
             message: 'Profile updated successfully',
             data: employerProfileData,
           }),
-        });
-        return;
-      }
-
-      // ---------------------------------------------------
-      // EMPLOYER DASHBOARD: GET /api/user-profile/dashboard
-      // ---------------------------------------------------
-      if (method === 'GET' && pathname.endsWith('/user-profile/dashboard')) {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify(dashboardResponse()),
         });
         return;
       }
