@@ -29,7 +29,7 @@ const JobTypeChart: React.FC<JobTypeChartProps> = ({ jobTypes, isLoading }) => {
       <CardHeader>
         <CardTitle>Job Type Mix</CardTitle>
       </CardHeader>
-      <CardContent className="h-72">
+      <CardContent className="h-80">
         {isLoading ? (
           <Skeleton className="h-full w-full rounded-xl" />
         ) : normalized && normalized.length ? (
@@ -51,8 +51,8 @@ const JobTypeChart: React.FC<JobTypeChartProps> = ({ jobTypes, isLoading }) => {
                 wrapperClassName="rounded-xl border border-border bg-background/95 backdrop-blur"
                 contentStyle={{ borderRadius: "0.75rem" }}
               />
-              <Bar dataKey="applications" name="Applications" className="fill-primary" />
-              <Bar dataKey="roles" name="Open Roles" className="fill-secondary" />
+              <Bar dataKey="applications" name="Applications" className="fill-accent" />
+              <Bar dataKey="roles" name="Open Roles" className="fill-primary" />
             </BarChart>
           </ResponsiveContainer>
         ) : (

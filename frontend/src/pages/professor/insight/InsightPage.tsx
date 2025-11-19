@@ -38,19 +38,6 @@ const ProfessorInsightsPage = () => {
     return normalizedQualifiedRate;
   }, [data?.applicationMetrics?.byStatus, normalizedQualifiedRate]);
 
-  const rechartsDaily = useMemo(
-    () =>
-      dailyTrend.map((point) => ({
-        date: new Date(point.date).toLocaleDateString(undefined, {
-          month: "short",
-          day: "numeric",
-        }),
-        applications: point.applications,
-        newJobs: point.newJobs,
-      })),
-    [dailyTrend],
-  );
-
   const rechartsMonthly = useMemo(
     () =>
       monthlyTrend.map((point) => ({
@@ -63,7 +50,7 @@ const ProfessorInsightsPage = () => {
 
   return (
     <ProfessorPageShell title="Professor Insights">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-10">
         <header className="space-y-1">
           <h1 className="font-poppins text-3xl font-semibold text-foreground">
             Professor Insights
@@ -97,12 +84,7 @@ const ProfessorInsightsPage = () => {
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <TrendsChart
-            data={rechartsDaily}
-            title="Daily Applications vs New Jobs"
-            isLoading={isLoading}
-          />
+        <div className="w-full">
           <TrendsChart
             data={rechartsMonthly}
             title="Monthly Applications vs New Jobs"
@@ -110,7 +92,7 @@ const ProfessorInsightsPage = () => {
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 h-80">
           <JobTypeChart jobTypes={jobMetrics?.byJobType} isLoading={isLoading} />
           <TopCompaniesCard companies={jobMetrics?.topCompanies} isLoading={isLoading} />
         </div>

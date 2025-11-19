@@ -13,7 +13,7 @@ interface ProfessorSidebarProps {
 
 const navItems = [
   { label: "Student Analytics Dashboard", to: "/professor" },
-  { label: "Student Analytics Insights", to: "/professor/analytics" },
+  { label: "Profeesor Insights", to: "/professor/analytics" },
 ];
 
 const ProfessorSidebar: React.FC<ProfessorSidebarProps> = ({ onNavigate }) => {
@@ -34,7 +34,7 @@ const ProfessorSidebar: React.FC<ProfessorSidebarProps> = ({ onNavigate }) => {
   };
 
   return (
-    <aside className="flex min-h-screen w-full max-w-[280px] flex-col border-r border-border bg-card max-[390px]:max-w-[240px] md:w-60">
+    <aside className="flex h-full w-full max-w-[280px] flex-col border-r border-border bg-card max-[390px]:max-w-[240px] md:sticky md:top-0 md:h-screen md:w-60">
       <div className="border-border border-b p-8 pt-8 text-center max-[390px]:p-6">
         <div className="flex w-full items-center justify-center">
           <img
@@ -72,7 +72,7 @@ const ProfessorSidebar: React.FC<ProfessorSidebarProps> = ({ onNavigate }) => {
         ))}
       </nav>
 
-      <div className="border-border border-t p-8 max-[390px]:p-6">
+      <div className="p-8 max-[390px]:p-6">
         <Button
           variant="outline"
           className="flex w-full items-center justify-center gap-2"
