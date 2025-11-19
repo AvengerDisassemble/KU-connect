@@ -203,7 +203,7 @@ describe('UserService - Enhanced Coverage', () => {
   describe('getDashboardStats', () => {
     beforeEach(async () => {
       // Create diverse test data
-      const users = await prisma.user.createMany({
+      await prisma.user.createMany({
         data: [
           { name: 'Student1', surname: 'Test', email: 's1@test.com', password: 'hash', role: 'STUDENT', status: 'APPROVED' },
           { name: 'Student2', surname: 'Test', email: 's2@test.com', password: 'hash', role: 'STUDENT', status: 'PENDING' },

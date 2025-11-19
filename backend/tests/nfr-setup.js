@@ -5,7 +5,6 @@
  */
 
 const { createNFRTestUsers, cleanupNFRTestUsers } = require('./nfr-helpers/setup')
-const prisma = require('../src/models/prisma')
 
 let nfrTestContext = null
 

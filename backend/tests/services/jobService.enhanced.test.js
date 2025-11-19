@@ -2,7 +2,7 @@ const jobService = require('../../src/services/jobService');
 const prisma = require('../../src/models/prisma');
 
 describe('JobService - Enhanced Coverage', () => {
-  let testHR, testStudent, testJob, testUser;
+  let testHR, testStudent, testUser;
 
   beforeAll(async () => {
     // Create test user for HR

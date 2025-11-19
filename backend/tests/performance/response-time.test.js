@@ -40,7 +40,7 @@ describe('NFR-2: Performance Requirements', () => {
       const startTime = Date.now()
       
       // Use the test job created in setup
-      const response = await request(app)
+      await request(app)
         .get(`/api/job/${testContext.testJob.id}`)
         .set('Authorization', testContext.tokens.student)
       
