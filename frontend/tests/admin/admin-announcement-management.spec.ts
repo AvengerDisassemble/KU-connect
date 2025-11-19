@@ -117,6 +117,7 @@ test.describe('ADM-TS-005 Announcement management @regression', () => {
     await page.waitForTimeout(500);
     await expect(page.getByText('Announcement created')).toBeVisible();
     await expect(page.getByText(studentAnnouncement.title, { exact: true })).toBeVisible();
+    await page.waitForTimeout(4000);
 
     const employerAnnouncement = {
       title: 'Job Fair 2025',

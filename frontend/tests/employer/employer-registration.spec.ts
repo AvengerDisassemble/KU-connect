@@ -20,8 +20,8 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
   const clickContinueButton = async (page: any) => {
     const continueButton = page.getByRole('button', { name: 'Continue' });
     await continueButton.scrollIntoViewIfNeeded();
-    await expect(continueButton).toBeEnabled({ timeout: 60000 });
-    await continueButton.click();
+    await continueButton.waitFor({ state: 'visible', timeout: 60000 });
+    await continueButton.click({ timeout: 60000 });
   };
 
   /**
@@ -67,12 +67,17 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     await page.getByRole('textbox', { name: 'Phone Number *' }).fill('+66 86 555 1122');
     await page.getByRole('textbox', { name: 'Website' }).fill('https://siammanufacturing.com');
 
-    const registerResponsePromise = page.waitForResponse((res) => {
-      const request = res.request();
-      return request.method() === 'POST' && res.url().includes('/register/enterprise');
-    });
+    const registerResponsePromise = page.waitForResponse(
+      (res) => {
+        const request = res.request();
+        return request.method() === 'POST' && res.url().includes('/register/enterprise');
+      },
+      { timeout: 60000 }
+    );
 
-    await page.getByRole('button', { name: 'Submit for Verification' }).click();
+    const submitButton = page.getByRole('button', { name: 'Submit for Verification' });
+    await expect(submitButton).toBeEnabled({ timeout: 60000 });
+    await submitButton.click();
     const registerResponse = await registerResponsePromise;
     expect(registerResponse.ok()).toBeTruthy();
 

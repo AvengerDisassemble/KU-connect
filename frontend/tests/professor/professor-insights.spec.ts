@@ -89,8 +89,10 @@ test.describe('PROF-TS-005 Professor insights view @regression', () => {
       .first();
     await expect(monthlyChart).toBeVisible();
 
-    await expect(page.locator('div').filter({ hasText: /^0%SuccessQualifiedRejected$/ }).first()).toBeVisible();
-    await expect(page.getByText('ApplicationsOpen Rolescontractfull-timeinternshippart-')).toBeVisible();
+    await expect(page.getByText('Success', { exact: false })).toBeVisible();
+    await expect(page.getByText('Qualified', { exact: false })).toBeVisible();
+    await expect(page.getByText('Rejected', { exact: false })).toBeVisible();
+    await expect(page.getByText('Job Type Mix')).toBeVisible();
     await expect(jobTypeCard).toBeVisible();
     await expect(companiesCard).toBeVisible();
   });

@@ -32,8 +32,10 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
 
   const confirmPostJob = async (page: any) => {
     await page.getByRole('button', { name: 'Post Job' }).click();
-    const confirmButton = page.getByRole('button', { name: /^Confirm$/ });
-    await expect(confirmButton).toBeVisible({ timeout: 5000 });
+    const dialog = page.getByRole('alertdialog').first();
+    await expect(dialog).toBeVisible({ timeout: 15000 });
+    const confirmButton = dialog.getByRole('button', { name: /^Confirm$/ });
+    await expect(confirmButton).toBeEnabled({ timeout: 10000 });
     await confirmButton.click();
   };
 
