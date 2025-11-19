@@ -117,51 +117,6 @@ const deleteAnnouncementHandler = asyncErrorHandler(async (req, res) => {
 })
 
 /**
- * Get user notifications
- * GET /api/notifications
- * @access Authenticated users
- */
-const getUserNotificationsHandler = asyncErrorHandler(async (req, res) => {
-  const { unreadOnly } = req.query
-
-  const notifications = await announcementService.getUserNotifications(
-    req.user.id,
-    unreadOnly === 'true'
-  )
-
-  const lastFetchedAt = notifications.length > 0
-    ? notifications[0].createdAt
-    : new Date().toISOString()
-
-  res.json({
-    success: true,
-    message: 'Notifications retrieved successfully',
-    data: {
-      notifications,
-      hasMore: false,
-      lastFetchedAt
-    }
-  })
-})
-
-/**
- * Mark notification as read
- * PATCH /api/notifications/:id/read
- * @access Authenticated users
- */
-const markNotificationReadHandler = asyncErrorHandler(async (req, res) => {
-  const { id } = req.params
-
-  const notification = await announcementService.markNotificationAsRead(id)
-
-  res.json({
-    success: true,
-    message: 'Notification marked as read',
-    data: notification
-  })
-})
-
-/**
  * Search announcements with comprehensive filters (Admin use)
  * POST /api/admin/announcements/search
  * @access Admin only
@@ -199,8 +154,6 @@ module.exports = {
   getAnnouncementByIdHandler,
   updateAnnouncementHandler,
   deleteAnnouncementHandler,
-  getUserNotificationsHandler,
-  markNotificationReadHandler,
   searchAnnouncementsHandler,
   getAnnouncementsForUserHandler
 }

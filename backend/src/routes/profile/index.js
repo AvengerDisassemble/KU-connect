@@ -10,7 +10,7 @@ const profileController = require('../../controllers/profileController')
 const { authMiddleware, verifiedUserMiddleware } = require('../../middlewares/authMiddleware')
 const { roleMiddleware } = require('../../middlewares/roleMiddleware')
 const { validateUpdateProfile } = require('../../validators/profileValidator')
-const { strictLimiter, writeLimiter } = require('../../middlewares/rateLimitMiddleware')
+const { strictLimiter, writeLimiter, dashboardLimiter } = require('../../middlewares/rateLimitMiddleware')
 
 // Configure multer for avatar uploads (support common image formats, 5 MB limit)
 const avatarUpload = multer({
@@ -61,6 +61,13 @@ router.get(
   strictLimiter,
   profileController.downloadAvatar,
 );
+
+// ===================== DASHBOARD =====================
+
+// Get dashboard data (Student or Employer dashboard)
+// Rate limited: Aggregates multiple data sources
+// NOTE: This must come BEFORE /:userId to avoid route conflicts with dynamic route
+router.get('/dashboard', dashboardLimiter, profileController.getDashboardData)
 
 // ===================== INDIVIDUAL PROFILE ACCESS =====================
 

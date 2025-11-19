@@ -9,3 +9,5 @@ build/
 
 # Local storage
 /uploads
+
+/coverage

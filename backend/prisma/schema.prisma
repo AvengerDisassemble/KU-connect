@@ -81,33 +81,40 @@ enum NotificationPriority {
   HIGH
 }
 
+enum NotificationType {
+  ANNOUNCEMENT          // Admin broadcast to role-based audience
+  APPLICATION_STATUS    // Student: application accepted/rejected
+  EMPLOYER_APPLICATION  // Employer: new application received
+}
+
 // ------------------------------
 //  MODELS
 // ------------------------------
 
 model User {
-  id            String         @id @default(cuid())
-  name          String
-  surname       String
-  password      String?
-  email         String         @unique
-  username      String?        @unique
-  role          Role
-  status        UserStatus     @default(PENDING)
-  verified      Boolean        @default(false)
-  avatarKey     String?        // Storage key for user avatar image
-  phoneNumber   String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  professor     Professor?
-  admin         Admin?
-  student       Student?
-  hr            HR?
-  refreshTokens RefreshToken[]
-  accounts      Account[]
-  reports       JobReport[]
-  announcements Announcement[]
-  notifications Notification[]
+  id                      String             @id @default(cuid())
+  name                    String
+  surname                 String
+  password                String?
+  email                   String             @unique
+  username                String?            @unique
+  role                    Role
+  status                  UserStatus         @default(PENDING)
+  verified                Boolean            @default(false)
+  avatarKey               String?            // Storage key for user avatar image
+  phoneNumber             String?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
+  professor               Professor?
+  admin                   Admin?
+  student                 Student?
+  hr                      HR?
+  refreshTokens           RefreshToken[]
+  accounts                Account[]
+  reports                 JobReport[]
+  announcements           Announcement[]
+  notifications           Notification[]       @relation("NotificationRecipient")
+  sentNotifications       Notification[]       @relation("NotificationSender")
   // Back-relation to saved jobs — allows querying what this user saved
   savedJobs     SavedJob[]
 }
@@ -160,10 +167,10 @@ model Admin {
 }
 
 model Student {
-  id                     String            @id @default(cuid())
-  userId                 String            @unique
-  user                   User              @relation(fields: [userId], references: [id])
-  degreeType             DegreeType        @relation(fields: [degreeTypeId], references: [id])
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  user                   User               @relation(fields: [userId], references: [id])
+  degreeType             DegreeType         @relation(fields: [degreeTypeId], references: [id])
   degreeTypeId           String
   address                String
   gpa                    Float?
@@ -174,8 +181,9 @@ model Student {
   interests              StudentInterest[]
   resumes                Resume[]
   applications           Application[]
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
+  preference             StudentPreference?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 }
 
 model HR {
@@ -353,15 +361,52 @@ model Announcement {
   creator       User                 @relation(fields: [createdBy], references: [id])
   createdAt     DateTime             @default(now())
   expiresAt     DateTime?
-  notifications Notification[]
+  notifications Notification[]       // Notifications generated from this announcement
 }
 
+// ------------------------------
+//  UNIFIED NOTIFICATION MODEL
+// ------------------------------
+
 model Notification {
-  id             String       @id @default(cuid())
-  announcementId String
-  userId         String
-  isRead         Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String           @id @default(cuid())
+  userId         String           // Recipient
+  type           NotificationType // Type of notification
+  
+  // Content
+  title          String
+  message        String
+  priority       NotificationPriority @default(MEDIUM)
+  
+  // Status
+  isRead         Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  
+  // Optional metadata (used based on type)
+  senderId       String?          // For user-to-user notifications
+  announcementId String?          // Link to announcement (for ANNOUNCEMENT type)
+  jobId          String?          // Link to job (for application notifications)
+  applicationId  String?          // Link to application
+  
+  // Relations
+  user           User             @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  sender         User?            @relation("NotificationSender", fields: [senderId], references: [id], onDelete: SetNull)
+  announcement   Announcement?    @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, createdAt])
+  @@index([userId, isRead])
+  @@index([userId, type])
+}
+
+model StudentPreference {
+  id              String    @id @default(cuid())
+  studentId       String    @unique
+  desiredLocation String?
+  minSalary       Int?
+  industry        Industry? // preferred company industry
+  jobType         String?   // internship, part-time, full-time, contract
+  remoteWork      String?   // on-site, remote, hybrid
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  student         Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
