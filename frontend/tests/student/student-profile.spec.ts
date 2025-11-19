@@ -15,7 +15,7 @@ test.describe('STU-TS-005 Student Profile management @regression', () => {
 
     await page.getByRole('textbox', { name: 'Email' }).fill('student1@ku.ac.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
 
     await page.waitForURL('**/student/browse-jobs', {
       waitUntil: 'networkidle',

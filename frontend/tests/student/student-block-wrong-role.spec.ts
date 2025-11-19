@@ -12,7 +12,7 @@ test.describe('STU-TS-002 Block wrong role (Employer vs Student) @smoke', () => 
     await page.getByRole('button', { name: 'Login' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
   };
 

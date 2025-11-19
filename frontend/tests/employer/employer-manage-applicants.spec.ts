@@ -18,7 +18,7 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
     await page.getByRole('button', { name: 'Login' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
     await page.waitForFunction(() => !!localStorage.getItem('user'));
 

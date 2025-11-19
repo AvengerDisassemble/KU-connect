@@ -30,7 +30,7 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
     // ----------------------------
     // Submit login
     // ----------------------------
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
 
     // ----------------------------

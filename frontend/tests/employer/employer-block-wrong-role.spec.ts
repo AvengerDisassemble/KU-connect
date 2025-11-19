@@ -27,7 +27,7 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Wait until navigation after login is done

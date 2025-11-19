@@ -30,7 +30,7 @@ test.describe('EMP-TS-004 Employer Login @smoke', () => {
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Expect profile landing page to be visible
@@ -63,7 +63,7 @@ test.describe('EMP-TS-004 Employer Login @smoke', () => {
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Expect error toast/message "Invalid credentials" to appear

@@ -12,11 +12,6 @@ test.describe('EMP-TS-001 Redirect unauthenticated @smoke', () => {
    */
   const assertLoginPageVisible = async (page: any) => {
     // ----------------------------
-    // Scope all checks under <main> to avoid navbar duplicates
-    // ----------------------------
-    const main = page.getByRole('main');
-
-    // ----------------------------
     // Assert: URL is login
     // ----------------------------
     await expect(page).toHaveURL(/\/login/);
@@ -24,10 +19,10 @@ test.describe('EMP-TS-001 Redirect unauthenticated @smoke', () => {
     // ----------------------------
     // Assert: Login heading and form fields are visible
     // ----------------------------
-    await expect(main.getByRole('heading', { name: 'Login to KU-Connect' })).toBeVisible();
-    await expect(main.getByRole('textbox', { name: 'Email' })).toBeVisible();
-    await expect(main.getByRole('textbox', { name: 'Password' })).toBeVisible();
-    await expect(main.getByRole('button', { name: 'Login' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Login to KU-Connect' })).toBeVisible();
+    await expect(page.getByText('Email', { exact: true })).toBeVisible();
+    await expect(page.getByText('Password')).toBeVisible();
+    await expect(page.locator('form').getByRole('button', { name: 'Login' })).toBeVisible();
   };
 
   /**

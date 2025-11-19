@@ -30,7 +30,7 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Wait until profile page is loaded
