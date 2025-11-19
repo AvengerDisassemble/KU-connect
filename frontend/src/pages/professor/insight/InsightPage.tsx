@@ -54,14 +54,6 @@ const ProfessorInsightsPage = () => {
       description="Track employer demand, student applications, and emerging trends."
     >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-10">
-        <header className="space-y-1">
-          <h1 className="font-poppins text-3xl font-semibold text-foreground">
-            Professor Insights
-          </h1>
-          <p className="text-muted-foreground">
-            Track employer demand, student applications, and trend shifts in one dashboard.
-          </p>
-        </header>
 
         {error ? (
           <Alert variant="destructive">

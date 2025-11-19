@@ -227,14 +227,6 @@ const StudentAnalyticsContent = () => {
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
-      <div className="space-y-1">
-        <h1 className="font-poppins text-3xl font-semibold text-black py-2">
-          Student Analytics Dashboard
-        </h1>
-        <p className="text-muted-foreground py-4">
-          Monitor and analyze student job search activities and outcomes in real time.
-        </p>
-      </div>
 
       {(analyticsError || studentsError) && (
         <Alert variant="destructive">

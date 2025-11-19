@@ -7,7 +7,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw, Search } from "lucide-react";
 import { toast } from "sonner";
 
-import DashboardHeader from "./DashboardHeader";
 import NotificationBanner from "./NotificationBanner";
 import StatCard from "./StatCard";
 import JobCard from "./JobCard";
@@ -507,10 +506,6 @@ const EmployerDashboardContent = () => {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-2 sm:px-4">
-      <DashboardHeader
-        onPostJob={() => navigate("/employer/job-postings/create")}
-      />
-
       <NotificationBanner newApplications={aggregateStats.newThisWeek} />
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
