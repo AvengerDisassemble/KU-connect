@@ -8,9 +8,16 @@ import { test, expect } from '../fixtures/student.fixture';
 test.describe('STU-TS-003 Student Registration @regression', () => {
   test('STU-TS-003-TC01: alumni registration submits and lands on student home', async ({ page }) => {
     await page.goto('http://localhost:5173/');
+
+    // ----------------------------
+    // Open alumni registration
+    // ----------------------------
     await page.getByRole('button', { name: 'Sign Up' }).click();
     await page.getByRole('button', { name: 'Register as Alumni' }).click();
 
+    // ----------------------------
+    // Fill registration form
+    // ----------------------------
     await page.getByRole('textbox', { name: 'First Name' }).fill('Saranya');
     await page.getByRole('textbox', { name: 'Last Name' }).fill('Kasemsri');
     await page.getByRole('textbox', { name: 'Email Address' }).fill('saranya.k@ku.ac.th');
@@ -27,6 +34,9 @@ test.describe('STU-TS-003 Student Registration @regression', () => {
       return req.method() === 'POST' && res.url().includes('/register/alumni');
     });
 
+    // ----------------------------
+    // Submit and verify welcome
+    // ----------------------------
     await page.getByRole('button', { name: 'Create Account' }).click();
     const registerRes = await registerResponsePromise;
     expect(registerRes.ok()).toBeTruthy();

@@ -8,10 +8,14 @@ import { test, expect } from '../fixtures/student.fixture';
  */
 test.describe('STU-TS-001 Student Redirect unauthenticated @smoke', () => {
   test('STU-TS-001-TC01: redirect unauthenticated user to login', async ({ page }) => {
+    // ----------------------------
     // Attempt to open student dashboard without logging in
+    // ----------------------------
     await page.goto('http://localhost:5173/student', { waitUntil: 'load' });
 
+    // ----------------------------
     // Expect guard to send user to login page
+    // ----------------------------
     await page.waitForURL('**/login', { waitUntil: 'networkidle' });
     await expect(
       page.getByRole('heading', { name: 'Login to KU-Connect' })

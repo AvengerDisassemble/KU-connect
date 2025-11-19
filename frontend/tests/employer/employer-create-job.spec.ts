@@ -11,25 +11,37 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
    * Helper: login as employer and navigate to create job page
    */
   const loginAndGoToCreateJob = async (page: any) => {
+    // ----------------------------
     // Open home page
+    // ----------------------------
     await page.goto('http://localhost:5173/');
 
+    // ----------------------------
     // Go to Login
+    // ----------------------------
     await page.getByRole('button', { name: 'Login' }).click();
 
+    // ----------------------------
     // Fill credentials
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
 
+    // ----------------------------
     // Submit login
+    // ----------------------------
     await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Navigate to create job form
+    // ----------------------------
     await page.goto('http://localhost:5173/employer/job-postings/create');
     await page.waitForLoadState('networkidle');
     
+    // ----------------------------
     // Company header should show the employer’s company (from mock profile)
+    // ----------------------------
     await expect(
       page.getByRole('heading', { name: 'Test Company Ltd.' })
     ).toBeVisible({ timeout: 30000 });
@@ -64,7 +76,9 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
       'Assist backend team with API development and debugging.'
     );
 
+    // ----------------------------
     // Salary fields (textboxes with number input)
+    // ----------------------------
     await page.getByRole('textbox', { name: '10000' }).fill('15000');
     await page.getByRole('textbox', { name: '15000' }).fill('20000');
 
@@ -113,12 +127,16 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
     // Submit: Post Job → Confirm
     // ----------------------------
     const [jobRes] = await Promise.all([
+      // ----------------------------
       // Wait for POST /job to be sent and completed
+      // ----------------------------
       page.waitForResponse((res) => {
         const req = res.request();
         return req.method() === 'POST' && res.url().includes('/job');
       }),
+      // ----------------------------
       // Click confirm in the dialog
+      // ----------------------------
       (async () => {
         await page.getByRole('button', { name: 'Post Job' }).click();
         await page.getByRole('button', { name: 'Confirm' }).click();

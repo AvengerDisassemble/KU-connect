@@ -13,17 +13,25 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
   const loginAsStudent = async (page: any) => {
     await page.goto('http://localhost:5173/');
 
+    // ----------------------------
     // Open login page from home
+    // ----------------------------
     await page.getByRole('button', { name: 'Login' }).click();
 
+    // ----------------------------
     // Fill student credentials
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Email' }).fill('student1@ku.ac.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
 
+    // ----------------------------
     // Submit login form
+    // ----------------------------
     await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
 
+    // ----------------------------
     // Wait until navigation after login is done
+    // ----------------------------
     await page.waitForLoadState('networkidle');
   };
 
@@ -32,7 +40,9 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
    * (used as generic "employer-only" UI indicator)
    */
   const assertEmployerProfileNotVisible = async (page: any) => {
+    // ----------------------------
     // This heading is expected only for Employer profile landing page
+    // ----------------------------
     await expect(
       page.getByRole('heading', { name: 'Company Profile & Verification' })
     ).not.toBeVisible();
@@ -47,13 +57,19 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
   test('EMP-TS-002-TC01: student login succeeds but not on employer profile', async ({
     page,
   }) => {
+    // ----------------------------
     // Act: Login as student
+    // ----------------------------
     await loginAsStudent(page);
 
+    // ----------------------------
     // Assert: Should not land on employer profile page
+    // ----------------------------
     await assertEmployerProfileNotVisible(page);
 
+    // ----------------------------
     // Optional: Assert we are not on /employer route
+    // ----------------------------
     const currentUrl = page.url();
     expect(currentUrl).not.toContain('/employer/');
     expect(currentUrl).not.toBe('http://localhost:5173/employer');
@@ -69,18 +85,26 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
   test('EMP-TS-002-TC02: student cannot access /employer dashboard', async ({
     page,
   }) => {
+    // ----------------------------
     // Arrange: Login as student first
+    // ----------------------------
     await loginAsStudent(page);
 
+    // ----------------------------
     // Act: Try to open employer dashboard URL directly
+    // ----------------------------
     await page.goto('http://localhost:5173/employer');
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Assert: We should not stay on /employer
+    // ----------------------------
     const currentUrl = page.url();
     expect(currentUrl).not.toBe('http://localhost:5173/employer');
 
+    // ----------------------------
     // Assert: Employer profile UI is not visible
+    // ----------------------------
     await assertEmployerProfileNotVisible(page);
   });
 
@@ -94,19 +118,27 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
   test('EMP-TS-002-TC03: student cannot access create job page', async ({
     page,
   }) => {
+    // ----------------------------
     // Arrange: Login as student
+    // ----------------------------
     await loginAsStudent(page);
 
+    // ----------------------------
     // Act: Try to open employer create job page
+    // ----------------------------
     const targetUrl = 'http://localhost:5173/employer/job-postings/create';
     await page.goto(targetUrl);
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Assert: We should not stay on the create job URL
+    // ----------------------------
     const currentUrl = page.url();
     expect(currentUrl).not.toBe(targetUrl);
 
+    // ----------------------------
     // Assert: Employer profile UI is not visible
+    // ----------------------------
     await assertEmployerProfileNotVisible(page);
   });
 
@@ -120,19 +152,27 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
   test('EMP-TS-002-TC04: student cannot access edit job page', async ({
     page,
   }) => {
+    // ----------------------------
     // Arrange: Login as student
+    // ----------------------------
     await loginAsStudent(page);
 
+    // ----------------------------
     // Act: Try to open employer edit job page
+    // ----------------------------
     const targetUrl = 'http://localhost:5173/employer/job-postings/mock-job-id/edit';
     await page.goto(targetUrl);
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Assert: We should not stay on the edit job URL
+    // ----------------------------
     const currentUrl = page.url();
     expect(currentUrl).not.toBe(targetUrl);
 
+    // ----------------------------
     // Assert: Employer profile UI is not visible
+    // ----------------------------
     await assertEmployerProfileNotVisible(page);
   });
 });

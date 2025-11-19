@@ -11,23 +11,35 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
    * Helper: login as Employer and land on profile page
    */
   const loginAsEmployerAndGoToProfile = async (page: any) => {
+    // ----------------------------
     // Open home page
+    // ----------------------------
     await page.goto('http://localhost:5173/');
 
+    // ----------------------------
     // Open login page from home
+    // ----------------------------
     await page.getByRole('button', { name: 'Login' }).click();
 
+    // ----------------------------
     // Fill employer credentials
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
 
+    // ----------------------------
     // Submit login form
+    // ----------------------------
     await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
 
+    // ----------------------------
     // Wait until profile page is loaded
+    // ----------------------------
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Assert: Employer profile landing page is visible
+    // ----------------------------
     await expect(
       page.getByRole('heading', { name: 'Company Profile & Verification' })
     ).toBeVisible();
@@ -40,10 +52,14 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
    *   - Required fields are visible and pre-filled from mock API
    */
   test('EMP-TS-005-TC01: view pre-filled employer profile', async ({ page }) => {
+    // ----------------------------
     // Arrange: login and go to profile page
+    // ----------------------------
     await loginAsEmployerAndGoToProfile(page);
 
+    // ----------------------------
     // Locate main fields on company profile form
+    // ----------------------------
     const companyNameInput = page.getByRole('textbox', {
       name: 'Company Name *',
     });
@@ -64,7 +80,9 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
       name: 'Address *',
     });
 
+    // ----------------------------
     // Assert: fields are visible
+    // ----------------------------
     await expect(companyNameInput).toBeVisible();
     await expect(industryCombobox).toBeVisible();
     await expect(companySizeCombobox).toBeVisible();
@@ -73,7 +91,9 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
     await expect(phoneNumberInput).toBeVisible();
     await expect(addressInput).toBeVisible();
 
+    // ----------------------------
     // Assert: pre-filled values from mocked profile (see employer.fixture.ts)
+    // ----------------------------
     await expect(companyNameInput).toHaveValue('Test Company Ltd.');
     await expect(websiteInput).toHaveValue('http://testcompany.com');
     await expect(contactEmailInput).toHaveValue('hr1@company.com');
@@ -82,7 +102,9 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
       '789 Business District, Bangkok, Thailand'
     );
 
+    // ----------------------------
     // For dropdowns we just assert they are not empty
+    // ----------------------------
     await expect(industryCombobox).not.toHaveText('');
     await expect(companySizeCombobox).not.toHaveText('');
   });
@@ -97,7 +119,9 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
   test('EMP-TS-005-TC02: update employer profile and persist after reload', async ({
     page,
   }) => {
+    // ----------------------------
     // Arrange: login and go to profile page
+    // ----------------------------
     await loginAsEmployerAndGoToProfile(page);
 
     const companyNameInput = page.getByRole('textbox', {
@@ -110,29 +134,43 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
       name: 'Company Size *',
     });
 
+    // ----------------------------
     // Act: change company name
+    // ----------------------------
     await companyNameInput.click();
     await companyNameInput.fill('Test2 Company Ltd.');
 
+    // ----------------------------
     // Act: change industry
+    // ----------------------------
     await industryCombobox.click();
     await page.getByRole('option', { name: 'IT Services' }).click();
 
+    // ----------------------------
     // Act: change company size
+    // ----------------------------
     await companySizeCombobox.click();
     await page.getByRole('option', { name: '51-200' }).click();
 
+    // ----------------------------
     // Submit profile form
+    // ----------------------------
     await page.getByRole('button', { name: 'Save Changes' }).click();
 
+    // ----------------------------
     // Wait for mocked PATCH /api/profile to be processed
+    // ----------------------------
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Reload page to verify data is coming from mocked backend state
+    // ----------------------------
     await page.reload();
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Re-locate fields after reload
+    // ----------------------------
     const companyNameAfterReload = page.getByRole('textbox', {
       name: 'Company Name *',
     });
@@ -143,7 +181,9 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
       name: 'Company Size *',
     });
 
+    // ----------------------------
     // Assert: updated values are still present after reload
+    // ----------------------------
     await expect(companyNameAfterReload).toHaveValue('Test2 Company Ltd.');
     await expect(industryAfterReload).toHaveText(/IT Services/);
     await expect(companySizeAfterReload).toHaveText(/51-200/);

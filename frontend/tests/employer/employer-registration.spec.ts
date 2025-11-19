@@ -34,7 +34,9 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
   test('EMP-TS-003-TC01: register employer account (pending verification)', async ({ page }) => {
     await openEmployerRegistration(page);
 
+    // ----------------------------
     // Step 1: personal info
+    // ----------------------------
     await page.getByRole('textbox', { name: 'First Name *' }).fill('Arthit');
     await page.getByRole('textbox', { name: 'Last Name *' }).fill('Srinakarin');
     await page.getByRole('textbox', { name: 'Work Email *' }).fill('arthit.srinakarin@siamma.com');
@@ -44,7 +46,9 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     const companyNameInput = page.getByRole('textbox', { name: 'Company Name *' });
     await companyNameInput.waitFor({ state: 'visible', timeout: 60000 });
 
+    // ----------------------------
     // Step 2: company info
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Company Name *' }).fill('Siam Manufacturing Co., Ltd.');
     await page.getByRole('textbox', { name: 'Company Address *' }).fill('88 Rama IV Road, Pathumwan, Bangkok 10330');
     await page.getByRole('textbox', { name: 'Company Description' }).fill('Manufacturing partner for automotive and energy industries.');
@@ -57,7 +61,9 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
       .getByRole('button', { name: 'Submit for Verification' })
       .waitFor({ state: 'visible', timeout: 60000 });
 
+    // ----------------------------
     // Step 3: contact info
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Phone Number *' }).fill('+66 86 555 1122');
     await page.getByRole('textbox', { name: 'Website' }).fill('https://siammanufacturing.com');
 
@@ -74,7 +80,9 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
       page.getByText('Registration submitted! Awaiting verification.', { exact: false })
     ).toBeVisible();
 
+    // ----------------------------
     // Auto login should bring user to profile page (pending verification)
+    // ----------------------------
     await expect(
       page.getByRole('heading', { name: 'Company Profile & Verification' })
     ).toBeVisible({ timeout: 60000 });

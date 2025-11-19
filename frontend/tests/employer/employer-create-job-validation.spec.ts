@@ -46,7 +46,9 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
   test('EMP-TS-007-TC02: salary validation toasts appear', async ({ page }) => {
     await gotoCreateJobPage(page);
 
+    // ----------------------------
     // Fill required fields (valid)
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Job Title *' }).fill('Backend Intern');
     await page.getByRole('combobox', { name: 'Job Type *' }).click();
     await page.getByRole('option', { name: 'Internship' }).click();
@@ -58,7 +60,9 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
     await page.getByRole('textbox', { name: 'Application Deadline *' }).fill('2025-11-30');
     await page.getByRole('textbox', { name: 'Phone *' }).fill('+66876543210');
 
+    // ----------------------------
     // Min > Max
+    // ----------------------------
     await page.getByRole('textbox', { name: '10000' }).fill('20000');
     await page.getByRole('textbox', { name: '15000' }).fill('10000');
 
@@ -82,12 +86,16 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
   }) => {
     await gotoCreateJobPage(page);
 
+    // ----------------------------
     // Short/invalid fields
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Job Title *' }).fill('A');
     await page.getByRole('textbox', { name: 'Job Description *' }).fill('short');
     await page.getByRole('textbox', { name: 'Location *' }).fill('B');
 
+    // ----------------------------
     // Other required valid fields
+    // ----------------------------
     await page.getByRole('combobox', { name: 'Job Type *' }).click();
     await page.getByRole('option', { name: 'Internship' }).click();
     await page.getByRole('combobox', { name: 'Work Arrangement *' }).click();

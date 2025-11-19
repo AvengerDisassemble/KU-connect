@@ -11,6 +11,9 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
    * Helper: login as employer and land on dashboard
    */
   const loginAndOpenDashboard = async (page: any) => {
+    // ----------------------------
+    // Login as employer
+    // ----------------------------
     await page.goto('http://localhost:5173/');
     await page.getByRole('button', { name: 'Login' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
@@ -19,6 +22,9 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
     await page.waitForLoadState('networkidle');
     await page.waitForFunction(() => !!localStorage.getItem('user'));
 
+    // ----------------------------
+    // Navigate to employer dashboard
+    // ----------------------------
     await page.goto('http://localhost:5173/employer');
     await page.waitForURL('**/employer');
     await page.waitForLoadState('networkidle');
@@ -34,6 +40,9 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
   test('EMP-TS-009-TC01: approve applicant updates status', async ({ page }) => {
     await loginAndOpenDashboard(page);
 
+    // ----------------------------
+    // Open applicant modal
+    // ----------------------------
     const applicantRow = page.locator('tr').filter({ hasText: 'Alice K.' }).first();
     await expect(applicantRow.getByText('Pending', { exact: true })).toBeVisible();
 
@@ -42,6 +51,9 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
     await expect(page.getByText('Documents', { exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Download' })).toBeVisible();
 
+    // ----------------------------
+    // Approve and verify
+    // ----------------------------
     const approveResponse = page.waitForResponse((res) => {
       const req = res.request();
       return req.method() === 'POST' && res.url().includes('/job/') && res.url().includes('/applyer');
@@ -63,6 +75,9 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
   test('EMP-TS-009-TC02: reject applicant updates status', async ({ page }) => {
     await loginAndOpenDashboard(page);
 
+    // ----------------------------
+    // Open applicant modal
+    // ----------------------------
     const applicantRow = page.locator('tr').filter({ hasText: 'Alice K.' }).first();
     await expect(applicantRow.getByText('Pending', { exact: true })).toBeVisible();
 
@@ -71,6 +86,9 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
     await expect(page.getByText('Documents', { exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Download' })).toBeVisible();
 
+    // ----------------------------
+    // Reject and verify
+    // ----------------------------
     const rejectResponse = page.waitForResponse((res) => {
       const req = res.request();
       return req.method() === 'POST' && res.url().includes('/job/') && res.url().includes('/applyer');

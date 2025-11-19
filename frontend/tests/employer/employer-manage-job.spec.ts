@@ -11,7 +11,9 @@ test.describe('EMP-TS-008 Employer Manage Job @regression', () => {
    * Helper: login as Employer and land on dashboard job list
    */
   const loginAndOpenDashboard = async (page: any) => {
+    // ----------------------------
     // Go to landing and login as employer
+    // ----------------------------
     await page.goto('http://localhost:5173/');
     await page.getByRole('button', { name: 'Login' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
@@ -19,15 +21,21 @@ test.describe('EMP-TS-008 Employer Manage Job @regression', () => {
     await page.getByRole('main').getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Ensure auth session persisted before navigating to employer area
+    // ----------------------------
     await page.waitForFunction(() => !!localStorage.getItem('user'));
 
+    // ----------------------------
     // Directly visit employer dashboard once session is ready
+    // ----------------------------
     await page.goto('http://localhost:5173/employer');
     await page.waitForURL('**/employer');
     await page.waitForLoadState('networkidle');
 
+    // ----------------------------
     // Ensure job card heading is visible
+    // ----------------------------
     await expect(
       page.getByRole('heading', { name: 'Backend Developer Intern' }).first()
     ).toBeVisible();
@@ -43,12 +51,16 @@ test.describe('EMP-TS-008 Employer Manage Job @regression', () => {
   test('EMP-TS-008-TC01: employer updates an existing job', async ({ page }) => {
     await loginAndOpenDashboard(page);
 
+    // ----------------------------
     // Open the edit form for the first job card
+    // ----------------------------
     await page.getByRole('button', { name: 'Edit Job' }).first().click();
     await page.waitForURL('**/job-postings/**/edit');
     await expect(page.getByRole('button', { name: 'Save Changes' })).toBeVisible();
 
+    // ----------------------------
     // Update core fields
+    // ----------------------------
     await page.getByRole('textbox', { name: 'Job Title *' }).fill('Backend Developer Intern (Updated)');
     await page.getByRole('combobox', { name: 'Job Type *' }).click();
     await page.getByRole('option', { name: 'Part-time' }).click();
@@ -59,13 +71,17 @@ test.describe('EMP-TS-008 Employer Manage Job @regression', () => {
     await page.getByRole('textbox', { name: 'Location *' }).fill('Remote - Bangkok Hub');
     await page.getByRole('textbox', { name: 'Duration *' }).fill('5 months');
 
+    // ----------------------------
     // Remove an existing tag and add a new one
+    // ----------------------------
     await page.getByRole('button', { name: 'remove backend' }).click();
     const tagsInput = page.getByRole('textbox', { name: 'Tags' });
     await tagsInput.fill('expressjs');
     await tagsInput.press('Enter');
 
+    // ----------------------------
     // Save changes and confirm
+    // ----------------------------
     const updateResponsePromise = page.waitForResponse((res) => {
       const request = res.request();
       return request.method() === 'PATCH' && res.url().includes('/job/');
@@ -75,7 +91,9 @@ test.describe('EMP-TS-008 Employer Manage Job @regression', () => {
     const updateResponse = await updateResponsePromise;
     expect(updateResponse.ok()).toBeTruthy();
 
+    // ----------------------------
     // Expect toast and redirect to dashboard with updated job card
+    // ----------------------------
     await expect(page.getByText('Job updated successfully')).toBeVisible();
     await page.waitForURL('**/employer');
     await expect(
@@ -95,7 +113,9 @@ test.describe('EMP-TS-008 Employer Manage Job @regression', () => {
   test('EMP-TS-008-TC02: employer deletes a job', async ({ page }) => {
     await loginAndOpenDashboard(page);
 
+    // ----------------------------
     // Edit the job to reach delete controls
+    // ----------------------------
     await page.getByRole('button', { name: 'Edit Job' }).first().click();
     await page.waitForURL('**/job-postings/**/edit');
 
@@ -112,7 +132,9 @@ test.describe('EMP-TS-008 Employer Manage Job @regression', () => {
     await expect(page.getByText('Job deleted')).toBeVisible();
     await page.waitForURL('**/employer');
 
+    // ----------------------------
     // Deleted job should be gone, remaining listings still visible
+    // ----------------------------
     await expect(
       page.getByText('Backend Developer Intern (Updated)', { exact: false })
     ).toHaveCount(0);
