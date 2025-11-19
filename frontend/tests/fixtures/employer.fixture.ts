@@ -51,6 +51,26 @@ type MockJob = {
   applications: number;
 };
 
+type EmployerNotificationRecord = {
+  id: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  notificationType: 'ANNOUNCEMENT' | 'APPLICATION_STATUS' | 'EMPLOYER_APPLICATION';
+  jobId?: string | null;
+  applicationId?: string | null;
+  sender?:
+    | {
+        id: string;
+        name: string;
+        surname: string;
+        role: string;
+      }
+    | null;
+};
+
 const createEmployerJobs = (): MockJob[] => [
   {
     id: 'job-mock-1',
@@ -109,6 +129,7 @@ const createEmployerJobs = (): MockJob[] => [
 ];
 
 let employerJobs = createEmployerJobs();
+let employerNotifications: EmployerNotificationRecord[] = [];
 
 const dashboardResponse = () => ({
   success: true,
@@ -238,11 +259,72 @@ const createJobApplicants = (): Record<string, any[]> => ({
 });
 
 let jobApplicants = createJobApplicants();
+const createEmployerNotifications = (): EmployerNotificationRecord[] => [
+  {
+    id: 'notif-employer-application',
+    title: 'New Job Application',
+    content: 'Student Example has applied for "Backend Developer Intern".',
+    isRead: false,
+    createdAt: new Date('2025-02-15T07:45:00Z').toISOString(),
+    priority: 'HIGH',
+    notificationType: 'EMPLOYER_APPLICATION',
+    jobId: 'job-mock-1',
+    applicationId: 'app-mock-1',
+    sender: {
+      id: 'student-example',
+      name: 'Student',
+      surname: 'Example',
+      role: 'STUDENT',
+    },
+  },
+  {
+    id: 'notif-job-fair',
+    title: 'Job Fair',
+    content: 'University will host a campus job fair on March 10.',
+    isRead: true,
+    createdAt: new Date('2025-02-14T10:00:00Z').toISOString(),
+    priority: 'LOW',
+    notificationType: 'ANNOUNCEMENT',
+  },
+];
+
+const toEmployerNotificationResponse = (record: EmployerNotificationRecord) => {
+  const base = {
+    id: record.id,
+    userId: employerProfileData.id,
+    type: record.notificationType,
+    title: record.title,
+    message: record.content,
+    priority: record.priority ?? 'MEDIUM',
+    isRead: record.isRead,
+    createdAt: record.createdAt,
+    senderId: record.sender?.id ?? null,
+    announcementId: record.notificationType === 'ANNOUNCEMENT' ? record.id : null,
+    jobId: record.jobId ?? null,
+    applicationId: record.applicationId ?? null,
+    sender: record.sender ?? null,
+  };
+
+  return {
+    ...base,
+    announcement:
+      record.notificationType === 'ANNOUNCEMENT'
+        ? {
+            id: record.id,
+            title: record.title,
+            content: record.content,
+            priority: record.priority ?? 'LOW',
+            audience: 'EMPLOYERS',
+          }
+        : null,
+  };
+};
 
 export const test = base.extend({
   page: async ({ page }, use) => {
     employerJobs = createEmployerJobs();
     jobApplicants = createJobApplicants();
+    employerNotifications = createEmployerNotifications();
     registeredEmployers = {};
     await page.route('**/api/**', async (route, request) => {
       const url = new URL(request.url());
@@ -404,6 +486,61 @@ export const test = base.extend({
           body: JSON.stringify({
             success: false,
             message: 'Invalid credentials',
+          }),
+        });
+        return;
+      }
+
+      // ---------------------------------------------------
+      // NOTIFICATIONS: GET /api/notifications + PATCH /api/notifications/:id/read
+      // ---------------------------------------------------
+      if (method === 'GET' && pathname.endsWith('/notifications')) {
+        const entries = employerNotifications.map(toEmployerNotificationResponse);
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              notifications: entries,
+              unreadCount: employerNotifications.filter((n) => !n.isRead).length,
+              hasMore: false,
+              lastFetchedAt: new Date().toISOString(),
+            },
+          }),
+        });
+        return;
+      }
+
+      const employerNotifReadMatch = pathname.match(/\/notifications\/([^/]+)\/read$/);
+      if (method === 'PATCH' && employerNotifReadMatch) {
+        const notifId = employerNotifReadMatch[1];
+        const target = employerNotifications.find((notification) => notification.id === notifId);
+        if (target) target.isRead = true;
+        const entry = target
+          ? toEmployerNotificationResponse(target)
+          : {
+              id: notifId,
+              userId: employerProfileData.id,
+              type: 'ANNOUNCEMENT',
+              title: 'Notification updated',
+              message: 'Notification marked as read',
+              priority: 'LOW',
+              isRead: true,
+              createdAt: new Date().toISOString(),
+              senderId: null,
+              announcementId: null,
+              jobId: null,
+              applicationId: null,
+              sender: null,
+              announcement: null,
+            };
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: entry,
           }),
         });
         return;
