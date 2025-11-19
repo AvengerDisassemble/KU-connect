@@ -149,19 +149,12 @@ export default function EmployerProfilePage() {
 
   return (
     <EmployerLayout
-      title="Company Profile"
+      title="Company Profile & Verification"
+      description="Manage your company information, documents, and verification status."
       backgroundClassName="bg-background"
       contentClassName="bg-muted/20"
     >
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-6">
-          <h1 className="mb-6 text-3xl font-bold text-foreground">
-            Company Profile & Verification
-          </h1>
-          <p className="text-muted-foreground">
-            Manage your company information and verification status
-          </p>
-        </div>
+      <div className="mx-auto max-w-6xl space-y-6">
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">

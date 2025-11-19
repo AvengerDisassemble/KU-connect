@@ -72,16 +72,11 @@ export default function JobPostingPage() {
   }
 
   return (
-    <EmployerLayout title="Post a Job">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-8 text-center">
-          <h1 className="mb-8 text-3xl font-bold text-accent">Post a Job</h1>
-
-          <p className="text-muted-foreground">
-            Connect with talented KU engineering students ready to join your
-            team
-          </p>
-        </div>
+    <EmployerLayout
+      title="Post a Job"
+      description="Connect with KU talent by publishing your open roles in minutes."
+    >
+      <div className="mx-auto max-w-4xl space-y-8">
 
         <Card className="rounded-2xl border-none shadow-sm">
           <CardContent className="p-6 sm:p-8">
