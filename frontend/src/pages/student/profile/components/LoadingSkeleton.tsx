@@ -57,3 +57,38 @@ export const ProfileSkeleton = () => {
     </div>
   );
 };
+
+export const ProfileContentSkeleton = () => {
+  return (
+    <div className="max-w-4xl space-y-6">
+      <div>
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="mt-2 h-4 w-64" />
+      </div>
+
+      <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="mt-1 h-4 w-72" />
+          </div>
+          <Skeleton className="h-10 w-32 rounded-md" />
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="space-y-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-10 w-full rounded-md" />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Skeleton className="h-10 w-32 rounded-md" />
+          <Skeleton className="h-10 w-32 rounded-md" />
+        </div>
+      </div>
+    </div>
+  );
+};

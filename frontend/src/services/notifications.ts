@@ -161,12 +161,28 @@ const mapPriorityToCategory = (
   }
 };
 
+const mapNotificationTypeToCategory = (
+  notificationType?: NotificationType,
+  priority?: string | null
+): NotificationCategory => {
+  switch (notificationType) {
+    case "APPLICATION_STATUS":
+      return "application_status";
+    case "EMPLOYER_APPLICATION":
+      return "job_update";
+    case "ANNOUNCEMENT":
+      return mapPriorityToCategory(priority);
+    default:
+      return "info";
+  }
+};
+
 const transformNotification = (entry: BackendNotification): Notification => {
   // For announcement-type notifications, use announcement data if available
   const title = entry.announcement?.title || entry.title;
   const message = entry.announcement?.content || entry.message;
   const priority = entry.announcement?.priority || entry.priority;
-  const type = mapPriorityToCategory(priority);
+  const type = mapNotificationTypeToCategory(entry.type, priority);
 
   return {
     id: entry.id,

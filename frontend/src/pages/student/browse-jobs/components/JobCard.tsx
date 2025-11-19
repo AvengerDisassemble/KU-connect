@@ -2,8 +2,7 @@ import { motion } from "framer-motion";
 import {
   Bookmark,
   BookmarkCheck,
-  Building2,
-  DollarSign,
+  Banknote,
   Timer,
   Loader2,
 } from "lucide-react";
@@ -76,6 +75,7 @@ const JobCard = ({
   return (
     <motion.div
       key={job.id}
+      data-job-id={job.id}
       initial={isSorting ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -92,9 +92,6 @@ const JobCard = ({
       >
         <CardContent className="space-y-4 p-4">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <Building2 className="h-5 w-5" />
-            </div>
             <div className="flex-1 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 space-y-1">
@@ -135,7 +132,7 @@ const JobCard = ({
           <div className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <span className="flex items-center gap-1.5 font-semibold text-primary">
-                <DollarSign className="h-4 w-4" />
+                <Banknote className="h-4 w-4" />
                 {formatSalary(job.minSalary, job.maxSalary)}
               </span>
               {hasDuration ? (

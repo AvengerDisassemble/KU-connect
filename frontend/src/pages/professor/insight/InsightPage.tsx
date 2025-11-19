@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import ProfessorPageShell from "@/pages/professor/dashboard/components/ProfessorPageShell";
+import ProfessorLayout from "@/components/layout/ProfessorLayout";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useProfessorDashboardAnalytics } from "@/hooks/useProfessorDashboardAnalytics";
 import KpiCards from "./components/KpiCards";
@@ -49,7 +49,10 @@ const ProfessorInsightsPage = () => {
   );
 
   return (
-    <ProfessorPageShell title="Professor Insights">
+    <ProfessorLayout
+      title="Professor Insights"
+      description="Track employer demand, student applications, and emerging trends."
+    >
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 pb-10">
         <header className="space-y-1">
           <h1 className="font-poppins text-3xl font-semibold text-foreground">
@@ -97,7 +100,7 @@ const ProfessorInsightsPage = () => {
           <TopCompaniesCard companies={jobMetrics?.topCompanies} isLoading={isLoading} />
         </div>
       </div>
-    </ProfessorPageShell>
+    </ProfessorLayout>
   );
 };
 
