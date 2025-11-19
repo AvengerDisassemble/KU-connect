@@ -32,12 +32,61 @@ type StudentProfile = {
   };
 };
 
+type JobDetailEntry = { id: string; text: string };
+
+type JobRecord = {
+  id: string;
+  hrId: string;
+  title: string;
+  companyName: string;
+  description: string;
+  location: string;
+  jobType: string;
+  workArrangement: string;
+  duration: string;
+  minSalary: number;
+  maxSalary: number;
+  application_deadline: string;
+  email: string;
+  phone_number: string;
+  other_contact_information?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  tags: { id: string; name: string }[];
+  requirements: JobDetailEntry[];
+  qualifications: JobDetailEntry[];
+  responsibilities: JobDetailEntry[];
+  benefits: JobDetailEntry[];
+  hr?: {
+    id: string;
+    companyName?: string | null;
+    description?: string | null;
+    address?: string | null;
+    industry?: string | null;
+    companySize?: string | null;
+    website?: string | null;
+    phoneNumber?: string | null;
+  } | null;
+};
+
 const degreeOptions = [
   { id: 'deg-bachelor', name: 'Bachelor' },
   { id: 'deg-master', name: 'Master' },
   { id: 'deg-doctor', name: 'Doctor' },
 ];
 
+const JOB_LIST_PAGE_LIMIT = 4;
+
+const makeDetailEntries = (prefix: string, items: string[]): JobDetailEntry[] =>
+  items.map((text, index) => ({
+    id: `${prefix}-${index + 1}`,
+    text,
+  }));
+
+let jobCatalog: Record<string, JobRecord> = {};
+let appliedJobIds: Set<string> = new Set();
+let jobResumeLinks: Record<string, { jobId: string; link: string; source: 'PROFILE' | 'UPLOADED' }> =
+  {};
 let studentAccounts: Record<string, StudentAccount> = {};
 let studentProfiles: Record<string, StudentProfile> = {};
 let studentNotifications: Record<
@@ -51,6 +100,42 @@ let studentResume: {
   content: string;
   updatedAt: string;
 } | null = null;
+
+const toJobResponse = (job: JobRecord) => ({
+  ...job,
+  isSaved: savedJobIds.has(job.id),
+  isApplied: appliedJobIds.has(job.id),
+});
+
+const filterJobsByPayload = (payload: {
+  keyword?: string;
+  jobType?: string;
+  workArrangement?: string;
+  location?: string;
+}) => {
+  const keyword = payload.keyword?.toLowerCase().trim();
+  const jobType = payload.jobType?.toLowerCase().trim();
+  const workArrangement = payload.workArrangement?.toLowerCase().trim();
+  const location = payload.location?.toLowerCase().trim();
+
+  return Object.values(jobCatalog).filter((job) => {
+    const matchesKeyword = keyword
+      ? job.title.toLowerCase().includes(keyword) ||
+        job.companyName.toLowerCase().includes(keyword) ||
+        job.description.toLowerCase().includes(keyword)
+      : true;
+    const matchesJobType = jobType ? job.jobType.toLowerCase() === jobType : true;
+    const matchesLocation = location
+      ? job.location.toLowerCase() === location
+      : true;
+    const matchesWorkStyle = workArrangement
+      ? job.workArrangement.replace(/[^a-z]/gi, '').toLowerCase() ===
+        workArrangement.replace(/[^a-z]/gi, '').toLowerCase()
+      : true;
+
+    return matchesKeyword && matchesJobType && matchesLocation && matchesWorkStyle;
+  });
+};
 
 const bootstrapState = () => {
   const baseAccount: StudentAccount = {
@@ -105,8 +190,312 @@ const bootstrapState = () => {
     ],
   };
 
-  savedJobIds = new Set(['job-mock-1']);
+  savedJobIds = new Set(['job-part-time-remote']);
   studentResume = null;
+  appliedJobIds = new Set();
+  jobResumeLinks = {};
+
+  const jobSeeds: JobRecord[] = [
+    {
+      id: 'job-contract-developer',
+      hrId: 'hr-100',
+      title: 'Contract Developer',
+      companyName: 'GlobalTech Solutions',
+      description: 'Build and maintain mission-critical dashboards for enterprise clients.',
+      location: 'Bangkok, Thailand',
+      jobType: 'contract',
+      workArrangement: 'remote',
+      duration: '6 months',
+      minSalary: 48000,
+      maxSalary: 65000,
+      application_deadline: '2025-12-31T23:59:59Z',
+      email: 'talent@globaltech.com',
+      phone_number: '+66 80 987 6543',
+      other_contact_information: null,
+      tags: [
+        { id: 'tag-react', name: 'React' },
+        { id: 'tag-node', name: 'Node.js' },
+      ],
+      requirements: makeDetailEntries('contract-dev-req', [
+        '3+ years of JavaScript experience',
+        'Strong understanding of distributed systems',
+      ]),
+      qualifications: makeDetailEntries('contract-dev-qual', [
+        'Bachelor degree in Computer Science or related field',
+        'Experience working with international teams',
+      ]),
+      responsibilities: makeDetailEntries('contract-dev-resp', [
+        'Collaborate with UX and product partners',
+        'Implement data visualizations from specs',
+      ]),
+      benefits: makeDetailEntries('contract-dev-benefits', [
+        'Remote stipend',
+        'Flexible schedule',
+      ]),
+      createdAt: new Date('2025-02-14T09:00:00Z').toISOString(),
+      updatedAt: new Date('2025-02-14T09:00:00Z').toISOString(),
+      hr: {
+        id: 'hr-100',
+        companyName: 'GlobalTech Solutions',
+        description: 'Consulting partner for high-growth startups.',
+        address: 'Bangkok',
+        industry: 'Technology',
+        companySize: '500+',
+        website: 'https://globaltech.example.com',
+        phoneNumber: '+66 80 987 6543',
+      },
+    },
+    {
+      id: 'job-part-time-remote',
+      hrId: 'hr-200',
+      title: 'Part-Time Remote Software Engineer',
+      companyName: 'GlobalTech Consulting',
+      description: 'Support feature development for a remote-first engineering team.',
+      location: 'Bangkok, Thailand',
+      jobType: 'part-time',
+      workArrangement: 'remote',
+      duration: 'Part-Time',
+      minSalary: 18000,
+      maxSalary: 30000,
+      application_deadline: '2025-11-30T23:59:59Z',
+      email: 'jobs@globaltechconsulting.com',
+      phone_number: '+66 80 123 4567',
+      other_contact_information: null,
+      tags: [
+        { id: 'tag-typescript', name: 'TypeScript' },
+        { id: 'tag-remote', name: 'Remote Friendly' },
+      ],
+      requirements: makeDetailEntries('remote-eng-req', [
+        'Experience with React and Node.js',
+        'Comfortable collaborating asynchronously',
+      ]),
+      qualifications: makeDetailEntries('remote-eng-qual', [
+        'Portfolio of shipped products',
+        'Familiar with GitHub and CI pipelines',
+      ]),
+      responsibilities: makeDetailEntries('remote-eng-resp', [
+        'Build UI components from Figma files',
+        'Write integration tests for key flows',
+      ]),
+      benefits: makeDetailEntries('remote-eng-benefits', [
+        'Remote work allowance',
+        'Learning stipend',
+      ]),
+      createdAt: new Date('2025-02-15T09:00:00Z').toISOString(),
+      updatedAt: new Date('2025-02-15T09:00:00Z').toISOString(),
+      hr: {
+        id: 'hr-200',
+        companyName: 'GlobalTech Consulting',
+        description: 'Boutique consultancy for startups.',
+        address: 'Bangkok',
+        industry: 'Software',
+        companySize: '200-500',
+        website: 'https://consulting.example.com',
+        phoneNumber: '+66 80 123 4567',
+      },
+    },
+    {
+      id: 'job-fulltime-qa',
+      hrId: 'hr-300',
+      title: 'Full-Time QA Engineer',
+      companyName: 'Future Innovations',
+      description: 'Own exploratory testing for the IoT platform.',
+      location: 'Phuket, Thailand',
+      jobType: 'full-time',
+      workArrangement: 'on-site',
+      duration: 'Full-Time',
+      minSalary: 40000,
+      maxSalary: 52000,
+      application_deadline: '2025-10-31T23:59:59Z',
+      email: 'careers@futureinnovations.com',
+      phone_number: '+66 85 222 3344',
+      other_contact_information: null,
+      tags: [
+        { id: 'tag-qa', name: 'QA' },
+        { id: 'tag-onsite', name: 'On-site' },
+      ],
+      requirements: makeDetailEntries('qa-req', [
+        '3+ years testing backend APIs',
+        'Experience with Cypress or Playwright',
+      ]),
+      qualifications: makeDetailEntries('qa-qual', [
+        'ISTQB certification is a plus',
+        'Comfortable collaborating with hardware teams',
+      ]),
+      responsibilities: makeDetailEntries('qa-resp', [
+        'Design regression suites',
+        'Mentor junior testers',
+      ]),
+      benefits: makeDetailEntries('qa-benefits', [
+        'Gym membership',
+        'Relocation support',
+      ]),
+      createdAt: new Date('2025-02-13T09:00:00Z').toISOString(),
+      updatedAt: new Date('2025-02-13T09:00:00Z').toISOString(),
+      hr: {
+        id: 'hr-300',
+        companyName: 'Future Innovations',
+        description: 'Hardware and IoT research lab.',
+        address: 'Phuket',
+        industry: 'Hardware',
+        companySize: '200-500',
+        website: 'https://futureinnovations.example.com',
+        phoneNumber: '+66 85 222 3344',
+      },
+    },
+    {
+      id: 'job-ux-research-intern',
+      hrId: 'hr-400',
+      title: 'UX Research Intern',
+      companyName: 'DesignHub Studio',
+      description: 'Assist the research pod with diary studies and interviews.',
+      location: 'Bangkok, Thailand',
+      jobType: 'internship',
+      workArrangement: 'hybrid',
+      duration: '3 months',
+      minSalary: 12000,
+      maxSalary: 15000,
+      application_deadline: '2025-08-15T23:59:59Z',
+      email: 'ux@designhub.com',
+      phone_number: '+66 86 432 1999',
+      other_contact_information: null,
+      tags: [
+        { id: 'tag-ux', name: 'UX Research' },
+        { id: 'tag-hybrid', name: 'Hybrid' },
+      ],
+      requirements: makeDetailEntries('ux-req', [
+        'Comfortable facilitating interviews',
+        'Can synthesize qualitative insights',
+      ]),
+      qualifications: makeDetailEntries('ux-qual', [
+        'Currently enrolled in design program',
+        'Fluent in Thai and English',
+      ]),
+      responsibilities: makeDetailEntries('ux-resp', [
+        'Support weekly user testing',
+        'Maintain the research repository',
+      ]),
+      benefits: makeDetailEntries('ux-benefits', [
+        'Hybrid work schedule',
+        'Lunch stipend',
+      ]),
+      createdAt: new Date('2025-02-12T09:00:00Z').toISOString(),
+      updatedAt: new Date('2025-02-12T09:00:00Z').toISOString(),
+      hr: {
+        id: 'hr-400',
+        companyName: 'DesignHub Studio',
+        description: 'Product design agency.',
+        address: 'Bangkok',
+        industry: 'Design',
+        companySize: '50-100',
+        website: 'https://designhub.example.com',
+        phoneNumber: '+66 86 432 1999',
+      },
+    },
+    {
+      id: 'job-data-analyst-hybrid',
+      hrId: 'hr-500',
+      title: 'Hybrid Data Analyst',
+      companyName: 'Insight Analytics',
+      description: 'Create BI dashboards for energy clients.',
+      location: 'Chiang Mai, Thailand',
+      jobType: 'full-time',
+      workArrangement: 'hybrid',
+      duration: 'Full-Time',
+      minSalary: 38000,
+      maxSalary: 47000,
+      application_deadline: '2025-09-30T23:59:59Z',
+      email: 'analytics@insight.com',
+      phone_number: '+66 83 111 0000',
+      other_contact_information: null,
+      tags: [
+        { id: 'tag-sql', name: 'SQL' },
+        { id: 'tag-tableau', name: 'Tableau' },
+      ],
+      requirements: makeDetailEntries('data-req', [
+        'Advanced SQL knowledge',
+        'Experience with dashboard tools',
+      ]),
+      qualifications: makeDetailEntries('data-qual', [
+        'Degree in statistics or economics',
+        'Strong communication skills',
+      ]),
+      responsibilities: makeDetailEntries('data-resp', [
+        'Build BI dashboards',
+        'Present insights to stakeholders',
+      ]),
+      benefits: makeDetailEntries('data-benefits', [
+        'Hybrid work style',
+        'Professional development budget',
+      ]),
+      createdAt: new Date('2025-01-30T09:00:00Z').toISOString(),
+      updatedAt: new Date('2025-01-30T09:00:00Z').toISOString(),
+      hr: {
+        id: 'hr-500',
+        companyName: 'Insight Analytics',
+        description: 'Energy-focused analytics firm.',
+        address: 'Chiang Mai',
+        industry: 'Consulting',
+        companySize: '100-200',
+        website: 'https://insight-analytics.example.com',
+        phoneNumber: '+66 83 111 0000',
+      },
+    },
+    {
+      id: 'job-ai-research-fellow',
+      hrId: 'hr-600',
+      title: 'AI Research Fellow',
+      companyName: 'Future Labs',
+      description: 'Conduct applied ML research with academic partners.',
+      location: 'Khon Kaen, Thailand',
+      jobType: 'full-time',
+      workArrangement: 'hybrid',
+      duration: '12 months',
+      minSalary: 60000,
+      maxSalary: 80000,
+      application_deadline: '2025-12-15T23:59:59Z',
+      email: 'ai@futurelabs.com',
+      phone_number: '+66 82 555 1212',
+      other_contact_information: null,
+      tags: [
+        { id: 'tag-ml', name: 'Machine Learning' },
+        { id: 'tag-research', name: 'Research' },
+      ],
+      requirements: makeDetailEntries('ai-req', [
+        'Strong Python background',
+        'Familiar with transformer architectures',
+      ]),
+      qualifications: makeDetailEntries('ai-qual', [
+        'Graduate degree in Computer Science or related field',
+        'Published research a plus',
+      ]),
+      responsibilities: makeDetailEntries('ai-resp', [
+        'Prototype ML models',
+        'Collaborate with universities',
+      ]),
+      benefits: makeDetailEntries('ai-benefits', [
+        'Research budget',
+        'Conference sponsorship',
+      ]),
+      createdAt: new Date('2025-01-29T09:00:00Z').toISOString(),
+      updatedAt: new Date('2025-01-29T09:00:00Z').toISOString(),
+      hr: {
+        id: 'hr-600',
+        companyName: 'Future Labs',
+        description: 'Applied research lab.',
+        address: 'Khon Kaen',
+        industry: 'Research',
+        companySize: '100-200',
+        website: 'https://futurelabs.example.com',
+        phoneNumber: '+66 82 555 1212',
+      },
+    },
+  ];
+
+  jobCatalog = jobSeeds.reduce<Record<string, JobRecord>>((acc, job) => {
+    acc[job.id] = job;
+    return acc;
+  }, {});
 };
 
 export const test = base.extend({
@@ -271,43 +660,38 @@ export const test = base.extend({
         }
 
         if (method === 'GET') {
+          const pageParam = Number(url.searchParams.get('page') ?? 1);
+          const pageSizeRaw = url.searchParams.get('pageSize');
+          const pageSizeFallback = savedJobIds.size || 25;
+          const pageSizeParam = Number(pageSizeRaw ?? pageSizeFallback);
+          const pageValue = Number.isFinite(pageParam) && pageParam > 0 ? pageParam : 1;
+          const pageSizeValue =
+            Number.isFinite(pageSizeParam) && pageSizeParam > 0 ? pageSizeParam : 25;
+          const savedItems = Array.from(savedJobIds)
+            .map((id) => {
+              const record = jobCatalog[id];
+              if (!record) return null;
+              return {
+                savedAt: new Date().toISOString(),
+                job: toJobResponse(record),
+              };
+            })
+            .filter((entry): entry is { savedAt: string; job: ReturnType<typeof toJobResponse> } =>
+              Boolean(entry)
+            );
+          const start = (pageValue - 1) * pageSizeValue;
+          const paged = savedItems.slice(start, start + pageSizeValue);
+
           await route.fulfill({
             status: 200,
             contentType: 'application/json',
             body: JSON.stringify({
               success: true,
               data: {
-                items: Array.from(savedJobIds).map((id) => ({
-                  savedAt: new Date().toISOString(),
-                  job: {
-                    id,
-                    hrId: 'hr-1',
-                    title: 'Mock Internship',
-                    companyName: 'KU Connect',
-                    description: 'Assist product team with student projects.',
-                    location: 'Bangkok, Thailand',
-                    jobType: 'internship',
-                    workArrangement: 'hybrid',
-                    duration: '3 months',
-                    minSalary: 10000,
-                    maxSalary: 15000,
-                    application_deadline: '2025-12-31T23:59:59Z',
-                    email: 'hr@kuconnect.app',
-                    phone_number: '+66 80 000 0000',
-                    other_contact_information: null,
-                    tags: [],
-                    requirements: [],
-                    qualifications: [],
-                    responsibilities: [],
-                    benefits: [],
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    isSaved: true,
-                  },
-                })),
-                total: savedJobIds.size,
-                page: Number(url.searchParams.get('page') ?? 1),
-                pageSize: Number(url.searchParams.get('pageSize') ?? 25),
+                items: paged,
+                total: savedItems.length,
+                page: pageValue,
+                pageSize: pageSizeValue,
               },
             }),
           });
@@ -407,9 +791,29 @@ export const test = base.extend({
         const body = (request.postDataJSON?.() ?? {}) as {
           page?: number;
           limit?: number;
+          keyword?: string;
+          jobType?: string;
+          workArrangement?: string;
+          location?: string;
         };
-        const pageValue = Number.isFinite(body.page) ? Number(body.page) : 1;
-        const limitValue = Number.isFinite(body.limit) ? Number(body.limit) : 25;
+        const filteredJobs = filterJobsByPayload(body);
+        const requestedPage = Number(body.page);
+        const requestedLimit = Number(body.limit);
+        const limitValue =
+          Number.isFinite(requestedLimit) && requestedLimit > 0
+            ? Math.min(requestedLimit, JOB_LIST_PAGE_LIMIT)
+            : JOB_LIST_PAGE_LIMIT;
+        const total = filteredJobs.length;
+        const totalPages = Math.max(1, Math.ceil(total / limitValue));
+        const pageValue =
+          Number.isFinite(requestedPage) && requestedPage > 0
+            ? Math.min(Math.trunc(requestedPage), totalPages)
+            : 1;
+        const startIndex = (pageValue - 1) * limitValue;
+        const sortedJobs = [...filteredJobs].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const paginatedJobs = sortedJobs.slice(startIndex, startIndex + limitValue).map(toJobResponse);
 
         await route.fulfill({
           status: 200,
@@ -417,14 +821,135 @@ export const test = base.extend({
           body: JSON.stringify({
             success: true,
             data: {
-              jobs: [],
-              total: 0,
+              jobs: paginatedJobs,
+              total,
               page: pageValue,
               limit: limitValue,
             },
           }),
         });
         return;
+      }
+
+      const jobResumeMatch = pathname.match(/\/jobs\/([^/]+)\/resume$/);
+      if (jobResumeMatch && method === 'POST') {
+        const jobId = jobResumeMatch[1];
+        const job = jobCatalog[jobId];
+        if (!job) {
+          await route.fulfill({
+            status: 404,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: false,
+              message: 'Job not found',
+            }),
+          });
+          return;
+        }
+
+        const payload = {
+          jobId,
+          link: `https://cdn.kuconnect.test/jobs/${jobId}/resume-${Date.now()}.pdf`,
+          source: 'UPLOADED' as const,
+        };
+        jobResumeLinks[jobId] = payload;
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            message: 'Resume linked to job',
+            data: payload,
+          }),
+        });
+        return;
+      }
+
+      const jobDetailMatch = pathname.match(/\/job\/([^/]+)$/);
+      if (jobDetailMatch) {
+        const jobId = jobDetailMatch[1];
+        const job = jobCatalog[jobId];
+        if (!job) {
+          await route.fulfill({
+            status: 404,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: false,
+              message: 'Job not found',
+            }),
+          });
+          return;
+        }
+
+        if (method === 'GET') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: true,
+              data: toJobResponse(job),
+            }),
+          });
+          return;
+        }
+
+        if (method === 'POST') {
+          const body = (request.postDataJSON?.() ?? {}) as { resumeLink?: string };
+          if (!body.resumeLink) {
+            await route.fulfill({
+              status: 400,
+              contentType: 'application/json',
+              body: JSON.stringify({
+                success: false,
+                message: 'Missing resume link',
+              }),
+            });
+            return;
+          }
+
+          appliedJobIds.add(jobId);
+          const profile = studentProfiles['student-1'];
+          const timestamp = new Date().toISOString();
+          const applicationId = `application-${Date.now()}`;
+
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              success: true,
+              message: 'Application submitted',
+              data: {
+                id: applicationId,
+                jobId,
+                studentId: 'student-1',
+                resumeId: jobResumeLinks[jobId]?.jobId ?? null,
+                status: 'PENDING',
+                createdAt: timestamp,
+                updatedAt: timestamp,
+                student: {
+                  id: 'student-1',
+                  degreeType: profile?.student.degreeType ?? null,
+                  user: {
+                    id: profile?.id ?? 'student-1',
+                    name: profile?.name ?? 'Thanakorn',
+                    surname: profile?.surname ?? 'Ratanaporn',
+                    email: profile?.email ?? 'student1@ku.ac.th',
+                  },
+                  address: profile?.student.address ?? '',
+                  gpa: profile?.student.gpa ?? null,
+                  expectedGraduationYear: profile?.student.expectedGraduationYear ?? null,
+                  interests: [],
+                },
+                resume: {
+                  id: `resume-${Date.now()}`,
+                  link: body.resumeLink,
+                },
+              },
+            }),
+          });
+          return;
+        }
       }
 
       /**
