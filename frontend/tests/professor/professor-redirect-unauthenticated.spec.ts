@@ -11,6 +11,9 @@ test.describe('PROF-TS-001 Professor auth guard @smoke', () => {
   const professorRoutes = ['/professor', '/professor/analytics', '/professor/browse-jobs'];
 
   const resetSession = async (page: any) => {
+    // ----------------------------
+    // Arrange: visit login page and clear storage
+    // ----------------------------
     await page.goto(`${appUrl}/login`);
     await page.evaluate(() => {
       localStorage.clear();
@@ -26,16 +29,22 @@ test.describe('PROF-TS-001 Professor auth guard @smoke', () => {
    */
   test('PROF-TS-001-TC01: unauthenticated professor routes redirect to login', async ({ page }) => {
     for (const path of professorRoutes) {
+      // ----------------------------
+      // Arrange: reset session to simulate unauthenticated user
+      // ----------------------------
       await resetSession(page);
 
-      // Direct visit to a protected professor route should trigger the guard
+      // ----------------------------
+      // Act: navigate directly to a protected professor route
+      // ----------------------------
       await page.goto(`${appUrl}${path}`);
       await page.waitForURL('**/login', { timeout: 10000 });
 
-      // Login page should load with the expected heading
+      // ----------------------------
+      // Assert: login page hero text is visible
+      // ----------------------------
       await expect(page.getByRole('heading', { name: 'Login to KU-Connect' })).toBeVisible();
       await expect(page).toHaveURL(`${appUrl}/login`);
     }
   });
 });
-

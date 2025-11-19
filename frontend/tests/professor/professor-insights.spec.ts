@@ -3,14 +3,25 @@ import { test, expect } from '../fixtures/professor.fixture';
 const appUrl = 'http://localhost:5173';
 
 const loginAndOpenInsights = async (page: any) => {
+  // ----------------------------
+  // Arrange: sign in as professor
+  // ----------------------------
   await page.goto(appUrl);
   await page.getByRole('button', { name: 'Login' }).click();
   await page.getByRole('textbox', { name: 'Email' }).fill('prof@ku.th');
   await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
   await page.locator('form').getByRole('button', { name: 'Login' }).click();
   await page.waitForURL('**/professor', { waitUntil: 'networkidle' });
+
+  // ----------------------------
+  // Act: navigate to Insights view
+  // ----------------------------
   await page.getByRole('link', { name: 'Insights' }).click();
   await page.waitForURL('**/professor/analytics', { waitUntil: 'networkidle' });
+
+  // ----------------------------
+  // Assert: insights heading is visible
+  // ----------------------------
   await expect(page.getByRole('heading', { name: 'Professor Insights' })).toBeVisible();
 };
 
@@ -28,8 +39,14 @@ test.describe('PROF-TS-005 Professor insights view @regression', () => {
    *  - Job type donut and top companies cards visible
    */
   test('PROF-TS-005-TC01: professor reviews insights overview', async ({ page }) => {
+    // ----------------------------
+    // Arrange: login and open insights
+    // ----------------------------
     await loginAndOpenInsights(page);
 
+    // ----------------------------
+    // Assert: KPI cards and charts render
+    // ----------------------------
     await expect(page.getByText('Track employer demand, student applications', { exact: false })).toBeVisible();
     await expect(page.getByText('Active Job Postings')).toBeVisible();
     await expect(page.getByText('Total live opportunities')).toBeVisible();
@@ -52,8 +69,14 @@ test.describe('PROF-TS-005 Professor insights view @regression', () => {
    *  - Top companies list displays seeded company names
   */
   test('PROF-TS-005-TC02: professor interacts with insight charts', async ({ page }) => {
+    // ----------------------------
+    // Arrange: login and open insights
+    // ----------------------------
     await loginAndOpenInsights(page);
 
+    // ----------------------------
+    // Assert: chart canvases, legends, and cards are visible
+    // ----------------------------
     const jobTypeCard = page.getByText('Job Type Mix').locator('..').locator('..');
     const companiesCard = page.getByText('Top Hiring Companies').locator('..').locator('..');
 
@@ -66,9 +89,9 @@ test.describe('PROF-TS-005 Professor insights view @regression', () => {
       .first();
     await expect(monthlyChart).toBeVisible();
 
-    await expect(page.locator('div').filter({ hasText: /^0%SuccessQualifiedRejected$/ }).first()).toBeVisible
-    await expect(page.getByText('ApplicationsOpen Rolescontractfull-timeinternshippart-')).toBeVisible
-    await expect(page.getByText('Job Type Mix')).toBeVisible
-    await expect(page.getByText('Top Hiring Companies')).toBeVisible
+    await expect(page.locator('div').filter({ hasText: /^0%SuccessQualifiedRejected$/ }).first()).toBeVisible();
+    await expect(page.getByText('ApplicationsOpen Rolescontractfull-timeinternshippart-')).toBeVisible();
+    await expect(jobTypeCard).toBeVisible();
+    await expect(companiesCard).toBeVisible();
   });
 });

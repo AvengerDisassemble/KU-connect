@@ -3,11 +3,22 @@ import { test, expect } from '../fixtures/professor.fixture';
 const appUrl = 'http://localhost:5173';
 
 const loginAsProfessor = async (page: any) => {
+  // ----------------------------
+  // Arrange: open landing page and launch login
+  // ----------------------------
   await page.goto(appUrl);
   await page.getByRole('button', { name: 'Login' }).click();
+
+  // ----------------------------
+  // Act: submit professor credentials
+  // ----------------------------
   await page.getByRole('textbox', { name: 'Email' }).fill('prof@ku.th');
   await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
   await page.locator('form').getByRole('button', { name: 'Login' }).click();
+
+  // ----------------------------
+  // Assert: redirect lands on professor dashboard
+  // ----------------------------
   await page.waitForURL('**/professor', { waitUntil: 'networkidle' });
   await expect(page.getByRole('heading', { name: 'Student Analytics' })).toBeVisible();
 };
@@ -32,8 +43,14 @@ test.describe('PROF-TS-004 Professor dashboard overview @regression', () => {
    *  - Student list table renders seeded student rows
    */
   test('PROF-TS-004-TC01: professor sees dashboard stats and student list', async ({ page }) => {
+    // ----------------------------
+    // Arrange: login and land on professor dashboard
+    // ----------------------------
     await loginAsProfessor(page);
 
+    // ----------------------------
+    // Assert: KPI cards and student list render
+    // ----------------------------
     await expect(page).toHaveURL(/\/professor$/);
     await expect(page.getByText('Students Monitored', { exact: false })).toBeVisible();
     await expect(page.getByText('Job Applications', { exact: false })).toBeVisible();
@@ -57,9 +74,14 @@ test.describe('PROF-TS-004 Professor dashboard overview @regression', () => {
    *  - Export button triggers a CSV download and refresh button resets filters summary text
    */
   test('PROF-TS-004-TC02: professor filters students and exports data', async ({ page }) => {
+    // ----------------------------
+    // Arrange: login and view dashboard
+    // ----------------------------
     await loginAsProfessor(page);
 
-    // Apply dropdown filters
+    // ----------------------------
+    // Act: apply degree/year/time filters
+    // ----------------------------
     await page.getByRole('combobox').filter({ hasText: 'All Degrees' }).click();
     await page.getByRole('option', { name: 'Bachelor' }).click();
 
@@ -69,28 +91,38 @@ test.describe('PROF-TS-004 Professor dashboard overview @regression', () => {
     await page.getByRole('combobox').filter({ hasText: 'Last 90 Days' }).click();
     await page.getByRole('option', { name: 'Last 30 Days' }).click();
 
-    // Search for a specific student
+    // ----------------------------
+    // Act: run student searches to filter table
+    // ----------------------------
     const searchInput = page.getByPlaceholder('Search students by name, ID, or degree...');
     await searchInput.fill('Anya');
     await expect(studentNameCell(page, 'Anya', 'Tanaporn').first()).toBeVisible();
     await expect(studentNameCell(page, 'Chai', 'Phan')).toHaveCount(0);
 
-    // Search mismatch to show empty state
+    // ----------------------------
+    // Assert: search miss shows empty state
+    // ----------------------------
     await searchInput.fill('somchai');
     await expect(
       page.locator('tbody td').filter({ hasText: 'No students match the current filters.' }).nth(0)
     ).toBeVisible();
 
-    // Clear search to bring results back
+    // ----------------------------
+    // Act: clear search to restore rows
+    // ----------------------------
     await searchInput.fill('');
     await expect(studentNameCell(page, 'Anya', 'Tanaporn').first()).toBeVisible();
 
-    // Export current filter set
+    // ----------------------------
+    // Act: export filtered dataset
+    // ----------------------------
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export filtered CSV' }).click();
     await downloadPromise;
 
-    // Refresh data to reset filters (text summary remains visible)
+    // ----------------------------
+    // Act: refresh data and assert summary text
+    // ----------------------------
     await page.getByRole('button', { name: 'Refresh data' }).click();
     await expect(page.getByText('Showing insights for', { exact: false })).toBeVisible();
   });
