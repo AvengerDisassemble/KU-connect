@@ -29,4 +29,22 @@ test.describe('PROF-TS-003 Professor login @smoke', () => {
       page.getByText('Monitor outcomes and guide your students', { exact: false })
     ).toBeVisible();
   });
+
+  /**
+   * PROF-TS-003-TC02: professor enters invalid password
+   * Expected result:
+   *  - Error toast/message is visible
+   *  - Guard does not redirect to /professor
+   */
+  test('PROF-TS-003-TC02: login fails with invalid password', async ({ page }) => {
+    await page.goto('http://localhost:5173/');
+
+    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('textbox', { name: 'Email' }).fill('prof@ku.th');
+    await page.getByRole('textbox', { name: 'Password' }).fill('WrongPassword123');
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+
+    await expect(page.getByText('Invalid credentials')).toBeVisible();
+    await expect(page).not.toHaveURL(/\/professor/);
+  });
 });
