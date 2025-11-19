@@ -195,9 +195,9 @@ const transformNotification = (entry: BackendNotification): Notification => {
     notificationType: entry.type, // Add notification type for frontend logic
     data: {
       announcementId: entry.announcement?.id || entry.announcementId,
-      jobId: entry.jobId,
-      applicationId: entry.applicationId,
-      senderId: entry.senderId,
+      jobId: entry.jobId ?? undefined,
+      applicationId: entry.applicationId ?? undefined,
+      senderId: entry.senderId ?? undefined,
       sender: entry.sender,
     },
   };
