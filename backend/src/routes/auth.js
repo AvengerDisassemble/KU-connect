@@ -12,6 +12,7 @@ const {
   generateRefreshToken,
   generateJwtId,
   getRefreshTokenExpiry,
+  encryptToken,
 } = require("../utils/tokenUtils");
 const prisma = require("../models/prisma");
 
@@ -148,6 +149,27 @@ router.get(
           expiresAt: getRefreshTokenExpiry(),
         },
       });
+
+      try {
+        const encryptedAccessToken = encryptToken(accessToken);
+        const encryptedRefreshToken = encryptToken(refreshToken);
+
+        res.cookie("accessToken", encryptedAccessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 15 * 60 * 1000,
+        });
+
+        res.cookie("refreshToken", encryptedRefreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict",
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+      } catch (cookieError) {
+        console.error("Failed to set OAuth cookies:", cookieError);
+      }
 
       const payload = Buffer.from(
         JSON.stringify({

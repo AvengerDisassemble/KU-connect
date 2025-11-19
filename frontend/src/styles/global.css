@@ -82,12 +82,13 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  --brand-teal: #006664;              /* Teal Green */
-  --brand-lime: #B2BB1E;              /* Lime Green */
-  --neutral-bg-1: #F7F8F9;            /* Background 1 */
-  --neutral-bg-2: #FFFFFF;            /* Background 2 */
-  --neutral-text-primary: #111827;    /* Text Primary */
-  --neutral-text-secondary: #6B7280;  /* Text Secondary */
+  --brand-teal: #006664; /* Teal Green */
+  --brand-lime: #b2bb1e; /* Lime Green */
+  --neutral-bg-1: #f7f8f9; /* Background 1 */
+  --neutral-bg-2: #ffffff; /* Background 2 */
+  --neutral-text-primary: #111827; /* Text Primary */
+  --neutral-text-secondary: #6b7280; /* Text Secondary */
+  --app-header-height: 0px;
 }
 
 .dark {

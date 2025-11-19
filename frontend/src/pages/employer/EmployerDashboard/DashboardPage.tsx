@@ -1,10 +1,10 @@
-import EmployerPageShell from "@/components/EmployerPageShell";
+import EmployerLayout from "@/components/layout/EmployerLayout";
 import EmployerDashboardContent from "./components/DashboardContent";
 
 export default function EmployerDashboardPage() {
   return (
-    <EmployerPageShell title="Employer Dashboard">
+    <EmployerLayout title="Employer Dashboard">
       <EmployerDashboardContent />
-    </EmployerPageShell>
+    </EmployerLayout>
   );
 }
