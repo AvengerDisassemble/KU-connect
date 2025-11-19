@@ -6,6 +6,7 @@ import { test, expect } from '../fixtures/employer.fixture';
  * Tags: @regression
  */
 test.describe('EMP-TS-010 Employer notifications @regression', () => {
+  // Mirrors the dashboard login helper from other employer specs.
   const loginAndOpenDashboard = async (page: any) => {
     await page.goto('http://localhost:5173/');
     await page.getByRole('button', { name: 'Login' }).click();
@@ -21,11 +22,17 @@ test.describe('EMP-TS-010 Employer notifications @regression', () => {
   };
 
   test('EMP-TS-010-TC01: employer views application + announcement notifications', async ({ page }) => {
+    // ----------------------------
+    // Login and open employer notification tray
+    // ----------------------------
     await loginAndOpenDashboard(page);
 
     await page.getByRole('button', { name: 'Open notifications' }).click();
     await expect(page.getByText('Notifications')).toBeVisible();
 
+    // ----------------------------
+    // Expand each notification
+    // ----------------------------
     await page.getByRole('button', { name: 'New Job Application' }).click();
     await expect(
       page.getByText('Student Example has applied for "Backend Developer Intern".')
@@ -34,6 +41,9 @@ test.describe('EMP-TS-010 Employer notifications @regression', () => {
     await page.getByRole('button', { name: 'Job Fair' }).click();
     await expect(page.getByText('University will host a campus job fair on March 10.')).toBeVisible();
 
+    // ----------------------------
+    // Filter unread and mark application notification as read
+    // ----------------------------
     await page.getByRole('button', { name: 'Unread' }).click();
     await expect(page.getByRole('button', { name: 'Job Fair' })).toHaveCount(0);
 

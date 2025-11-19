@@ -6,6 +6,7 @@ import { test, expect } from '../fixtures/student.fixture';
  * Tags: @regression
  */
 test.describe('STU-TS-009 Student notifications @regression', () => {
+  // Helper mirrors other student specs for consistency.
   const loginAsStudent = async (page: any) => {
     await page.goto('http://localhost:5173/');
     await page.getByRole('button', { name: 'Login' }).click();
@@ -21,11 +22,16 @@ test.describe('STU-TS-009 Student notifications @regression', () => {
   test('STU-TS-009-TC01: student reviews notification feed and filters unread items', async ({
     page,
   }) => {
+    // ----------------------------
+    // Login and open notification tray
+    // ----------------------------
     await loginAsStudent(page);
-
     await page.getByRole('button', { name: 'Open notifications' }).click();
     await expect(page.getByText('Notifications')).toBeVisible();
 
+    // ----------------------------
+    // Expand each notification entry
+    // ----------------------------
     await page.getByRole('button', { name: 'Application Update' }).first().click();
     await expect(
       page.getByText('Your job application for "Contract Developer" has been rejected.')
@@ -41,6 +47,9 @@ test.describe('STU-TS-009 Student notifications @regression', () => {
       page.getByText('Join the KU career fair on February 20 at the main auditorium.')
     ).toBeVisible();
 
+    // ----------------------------
+    // Toggle filters and mark read
+    // ----------------------------
     await page.getByRole('button', { name: 'Unread' }).click();
     await expect(page.getByRole('button', { name: 'Career Fair Announcement' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Application Update' })).toHaveCount(2);

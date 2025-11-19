@@ -6,6 +6,7 @@ import { test, expect } from '../fixtures/student.fixture';
  * Tags: @regression
  */
 test.describe('STU-TS-007 Student application status @regression', () => {
+  // Reuse the same login helper as other student specs.
   const loginAsStudent = async (page: any) => {
     await page.goto('http://localhost:5173/');
     await page.getByRole('button', { name: 'Login' }).click();
@@ -21,6 +22,9 @@ test.describe('STU-TS-007 Student application status @regression', () => {
   test('STU-TS-007-TC01: student sees dashboard statuses that match the API payload', async ({
     page,
   }) => {
+    // ----------------------------
+    // Login and reach the student dashboard
+    // ----------------------------
     await loginAsStudent(page);
     await page.getByRole('link', { name: 'Home' }).click();
     await page.waitForURL('**/student', {
@@ -28,6 +32,9 @@ test.describe('STU-TS-007 Student application status @regression', () => {
       timeout: 30000,
     });
 
+    // ----------------------------
+    // Open the applications widget and verify table rows
+    // ----------------------------
     await page.getByText('My applications').click();
     await expect(page.getByText('Monitor your latest submissions')).toBeVisible();
 
