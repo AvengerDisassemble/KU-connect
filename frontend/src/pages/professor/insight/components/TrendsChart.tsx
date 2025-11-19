@@ -63,50 +63,71 @@ const TrendsChart: React.FC<TrendsChartProps> = ({
       <CardHeader>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="h-80">
+      <CardContent className="flex h-80 flex-col gap-4">
         {isLoading ? (
           <Skeleton className="h-full w-full rounded-xl" />
         ) : data && data.length ? (
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="4 4" className="stroke-muted" />
-              <XAxis
-                dataKey="date"
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "currentColor", fontSize: 12 }}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                tick={{ fill: "currentColor", fontSize: 12 }}
-              />
-              <Tooltip
-                wrapperClassName="rounded-xl border border-border bg-background/95 backdrop-blur"
-                contentStyle={{ borderRadius: "0.75rem" }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="applications"
-                name="Applications"
-                stroke="hsl(var(--primary))"
-                strokeWidth={3}
-                dot={applicationsDot}
-                activeDot={applicationsActiveDot}
-              />
-              <Line
-                type="monotone"
-                dataKey="newJobs"
-                name="New Jobs"
-                stroke="hsl(var(--accent))"
-                strokeWidth={3}
-                strokeDasharray="6 4"
-                dot={newJobsDot}
-                activeDot={newJobsActiveDot}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <>
+            <div className="flex justify-end gap-4 text-xs font-medium text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-primary" />
+                Applications
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+                New Jobs
+              </div>
+            </div>
+            <div className="flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data}>
+                  <CartesianGrid strokeDasharray="4 4" className="stroke-muted" />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "currentColor", fontSize: 12 }}
+                  />
+                  <YAxis
+                    label={{
+                      value: "Count",
+                      angle: -90,
+                      position: "insideLeft",
+                      offset: 10,
+                      style: { fill: "currentColor", fontSize: 12 },
+                    }}
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: "currentColor", fontSize: 12 }}
+                  />
+                  <Tooltip
+                    wrapperClassName="rounded-xl border border-border bg-background/95 backdrop-blur"
+                    contentStyle={{ borderRadius: "0.75rem" }}
+                  />
+                  <Legend wrapperStyle={{ display: "none" }} />
+                  <Line
+                    type="monotone"
+                    dataKey="applications"
+                    name="Applications"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={3}
+                    dot={applicationsDot}
+                    activeDot={applicationsActiveDot}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="newJobs"
+                    name="New Jobs"
+                    stroke="hsl(var(--accent))"
+                    strokeWidth={3}
+                    strokeDasharray="6 4"
+                    dot={newJobsDot}
+                    activeDot={newJobsActiveDot}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">No trend data available.</p>
         )}
