@@ -245,6 +245,25 @@ export interface CreateProfessorData {
   email: string;
   department?: string;
   title?: string;
+  password?: string;
+}
+
+export interface CreateProfessorResponse {
+  user: UserManagementItem;
+  professor?: {
+    id: string;
+    userId: string;
+    department?: string | null;
+    phoneNumber?: string | null;
+    officeLocation?: string | null;
+    title?: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  credentials?: {
+    temporaryPassword?: string;
+  };
+  emailSent?: boolean;
 }
 
 export interface UserActionResponse {
@@ -330,8 +349,8 @@ export const activateUser = async (
 
 export const createProfessorAccount = async (
   professorData: CreateProfessorData
-): Promise<UserManagementItem> => {
-  return requestApi<UserManagementItem>("/admin/users/professor", {
+): Promise<CreateProfessorResponse> => {
+  return requestApi<CreateProfessorResponse>("/admin/users/professor", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(professorData),

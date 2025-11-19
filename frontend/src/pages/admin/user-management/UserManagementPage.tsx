@@ -16,6 +16,7 @@ import {
 } from "@/services/admin";
 import type {
   CreateProfessorData,
+  CreateProfessorResponse,
   UserFilters,
   UserListResponse,
   UserManagementItem,
@@ -251,11 +252,21 @@ const useUserMutations = () => {
 const useCreateProfessor = () => {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: (payload: CreateProfessorData) =>
-      createProfessorAccount(payload),
-    onSuccess: () => {
-      toast.success("Professor account created");
+  return useMutation<CreateProfessorResponse, Error, CreateProfessorData>({
+    mutationFn: (payload) => createProfessorAccount(payload),
+    onSuccess: (data) => {
+      const tempPassword = data.credentials?.temporaryPassword;
+      const email = data.user?.email;
+      toast.success("Professor account created", {
+        description:
+          tempPassword && email
+            ? `Email: ${email} · Temporary password: ${tempPassword}`
+            : tempPassword
+            ? `Temporary password: ${tempPassword}`
+            : email
+            ? `Email: ${email}`
+            : undefined,
+      });
       void queryClient.invalidateQueries({ queryKey: ["admin", "users"] });
       void queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
     },
@@ -278,6 +289,7 @@ const ProfessorFormDialog: React.FC<{
       email: "",
       department: "",
       title: "",
+      password: "",
     },
   });
 
@@ -328,6 +340,25 @@ const ProfessorFormDialog: React.FC<{
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="professor@ku.th" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password (optional)</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Leave blank to auto-generate"
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -534,8 +565,13 @@ const UserManagementPage: React.FC = () => {
   const totalPages = resolvedData.totalPages ?? 1;
 
   const handleProfessorSubmit = async (values: CreateProfessorData) => {
+    const payload: CreateProfessorData = {
+      ...values,
+      password: values.password?.trim() ? values.password.trim() : undefined,
+    };
+
     try {
-      await createProfessorMutation.mutateAsync(values);
+      await createProfessorMutation.mutateAsync(payload);
       setDialogOpen(false);
       setSearchTerm("");
       setQuery("");
