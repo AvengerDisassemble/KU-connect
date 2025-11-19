@@ -69,6 +69,33 @@ type JobRecord = {
   } | null;
 };
 
+type DashboardApplicationRecord = {
+  id: string;
+  jobId: string;
+  status: 'PENDING' | 'QUALIFIED' | 'REJECTED';
+  createdAt: string;
+};
+
+type DashboardJobSummary = {
+  id: string;
+  title: string;
+  location: string;
+  application_deadline: string;
+  hr?: JobRecord['hr'];
+};
+
+type StudentNotificationRecord = {
+  id: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  notificationType: 'ANNOUNCEMENT' | 'APPLICATION_STATUS' | 'EMPLOYER_APPLICATION';
+  jobId?: string | null;
+  applicationId?: string | null;
+};
+
 const degreeOptions = [
   { id: 'deg-bachelor', name: 'Bachelor' },
   { id: 'deg-master', name: 'Master' },
@@ -76,6 +103,12 @@ const degreeOptions = [
 ];
 
 const JOB_LIST_PAGE_LIMIT = 4;
+const STUDENT_DASHBOARD_RECENT_JOB_IDS = [
+  'job-contract-developer',
+  'job-part-time-remote',
+  'job-ai-research-fellow',
+];
+const STUDENT_DASHBOARD_QUICK_ACTIONS = ['Browse jobs', 'Track applications', 'Update resume'];
 
 const makeDetailEntries = (prefix: string, items: string[]): JobDetailEntry[] =>
   items.map((text, index) => ({
@@ -89,10 +122,7 @@ let jobResumeLinks: Record<string, { jobId: string; link: string; source: 'PROFI
   {};
 let studentAccounts: Record<string, StudentAccount> = {};
 let studentProfiles: Record<string, StudentProfile> = {};
-let studentNotifications: Record<
-  string,
-  { id: string; title: string; content: string; isRead: boolean; createdAt: string }[]
-> = {};
+let studentNotifications: Record<string, StudentNotificationRecord[]> = {};
 let savedJobIds: Set<string> = new Set();
 let studentResume: {
   filename: string;
@@ -100,6 +130,8 @@ let studentResume: {
   content: string;
   updatedAt: string;
 } | null = null;
+let studentApplicationRecords: DashboardApplicationRecord[] = [];
+let studentDashboardTimestamp = '';
 
 const toJobResponse = (job: JobRecord) => ({
   ...job,
@@ -139,6 +171,91 @@ const filterJobsByPayload = (payload: {
 
     return matchesKeyword && matchesJobType && matchesLocation && matchesWorkStyle;
   });
+};
+
+const summarizeJobForDashboard = (jobId: string): DashboardJobSummary | null => {
+  const job = jobCatalog[jobId];
+  if (!job) {
+    return null;
+  }
+
+  const fallbackHr: NonNullable<JobRecord['hr']> = {
+    id: job.hrId,
+    companyName: job.companyName,
+  };
+
+  return {
+    id: job.id,
+    title: job.title,
+    location: job.location,
+    application_deadline: job.application_deadline,
+    hr: job.hr ?? fallbackHr,
+  };
+};
+
+const buildStudentDashboardPayload = () => {
+  const recentJobs = STUDENT_DASHBOARD_RECENT_JOB_IDS.map((jobId) =>
+    summarizeJobForDashboard(jobId)
+  ).filter((job): job is DashboardJobSummary => Boolean(job));
+  const myApplications = studentApplicationRecords
+    .map((record) => {
+      const job = summarizeJobForDashboard(record.jobId);
+      if (!job) {
+        return null;
+      }
+      return {
+        id: record.id,
+        status: record.status,
+        createdAt: record.createdAt,
+        job,
+      };
+    })
+    .filter(
+      (application): application is { id: string; status: DashboardApplicationRecord['status']; createdAt: string; job: DashboardJobSummary } =>
+        Boolean(application)
+    );
+
+  return {
+    userRole: 'STUDENT' as const,
+    timestamp: studentDashboardTimestamp || new Date().toISOString(),
+    dashboard: {
+      recentJobs,
+      myApplications,
+      quickActions: [...STUDENT_DASHBOARD_QUICK_ACTIONS],
+    },
+  };
+};
+
+const toBackendNotification = (record: StudentNotificationRecord) => {
+  const base = {
+    id: record.id,
+    userId: 'student-1',
+    type: record.notificationType,
+    title: record.title,
+    message: record.content,
+    priority: record.priority ?? 'LOW',
+    isRead: record.isRead,
+    createdAt: record.createdAt,
+    senderId: null,
+    announcementId: record.notificationType === 'ANNOUNCEMENT' ? record.id : null,
+    jobId: record.jobId ?? null,
+    applicationId: record.applicationId ?? null,
+    sender: null,
+  };
+
+  return {
+    ...base,
+    announcement:
+      record.notificationType === 'ANNOUNCEMENT'
+        ? {
+            id: record.id,
+            title: record.title,
+            content: record.content,
+            priority: record.priority ?? 'LOW',
+            audience: 'STUDENTS',
+          }
+        : null,
+  };
 };
 
 const bootstrapState = () => {
@@ -185,11 +302,35 @@ const bootstrapState = () => {
   studentNotifications = {
     [baseAccount.id]: [
       {
-        id: 'notif-1',
-        title: 'Welcome to KU-Connect',
-        content: 'Complete your profile to get better matches.',
+        id: 'notif-contract-rejected',
+        title: 'Application Update',
+        content: 'Your job application for "Contract Developer" has been rejected.',
         isRead: false,
-        createdAt: new Date('2025-11-01T09:00:00Z').toISOString(),
+        createdAt: new Date('2025-02-15T07:00:00Z').toISOString(),
+        priority: 'MEDIUM',
+        notificationType: 'APPLICATION_STATUS',
+        jobId: 'job-contract-developer',
+        applicationId: 'application-contract-developer',
+      },
+      {
+        id: 'notif-ux-qualified',
+        title: 'Application Update',
+        content: 'Great news! "UX Research Intern" has moved to qualified status.',
+        isRead: false,
+        createdAt: new Date('2025-02-14T15:30:00Z').toISOString(),
+        priority: 'LOW',
+        notificationType: 'APPLICATION_STATUS',
+        jobId: 'job-ux-research-intern',
+        applicationId: 'application-ux-research-intern',
+      },
+      {
+        id: 'notif-campus-announcement',
+        title: 'Career Fair Announcement',
+        content: 'Join the KU career fair on February 20 at the main auditorium.',
+        isRead: true,
+        createdAt: new Date('2025-02-12T05:00:00Z').toISOString(),
+        priority: 'LOW',
+        notificationType: 'ANNOUNCEMENT',
       },
     ],
   };
@@ -500,6 +641,29 @@ const bootstrapState = () => {
     acc[job.id] = job;
     return acc;
   }, {});
+
+  studentDashboardTimestamp = new Date('2025-02-15T08:45:00Z').toISOString();
+  studentApplicationRecords = [
+    {
+      id: 'application-ux-research-intern',
+      jobId: 'job-ux-research-intern',
+      status: 'QUALIFIED',
+      createdAt: new Date('2025-02-14T08:45:00Z').toISOString(),
+    },
+    {
+      id: 'application-fulltime-qa',
+      jobId: 'job-fulltime-qa',
+      status: 'PENDING',
+      createdAt: new Date('2025-02-12T15:30:00Z').toISOString(),
+    },
+    {
+      id: 'application-contract-developer',
+      jobId: 'job-contract-developer',
+      status: 'REJECTED',
+      createdAt: new Date('2025-02-10T11:00:00Z').toISOString(),
+    },
+  ];
+  appliedJobIds = new Set(studentApplicationRecords.map((record) => record.jobId));
 };
 
 export const test = base.extend({
@@ -738,27 +902,17 @@ export const test = base.extend({
        */
       if (method === 'GET' && pathname.includes('/notifications')) {
         const notifications = studentNotifications['student-1'] ?? [];
+        const entries = notifications.map(toBackendNotification);
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
             success: true,
             data: {
-              notifications: notifications.map((item) => ({
-                id: item.id,
-                announcementId: item.id,
-                userId: 'student-1',
-                isRead: item.isRead,
-                createdAt: item.createdAt,
-                announcement: {
-                  id: item.id,
-                  title: item.title,
-                  content: item.content,
-                  priority: 'LOW',
-                  createdAt: item.createdAt,
-                },
-              })),
+              notifications: entries,
               unreadCount: notifications.filter((n) => !n.isRead).length,
+              hasMore: false,
+              lastFetchedAt: new Date().toISOString(),
             },
           }),
         });
@@ -771,18 +925,30 @@ export const test = base.extend({
         const list = studentNotifications['student-1'] ?? [];
         const target = list.find((n) => n.id === notifId);
         if (target) target.isRead = true;
+        const entry = target
+          ? toBackendNotification(target)
+          : {
+              id: notifId,
+              userId: 'student-1',
+              type: 'ANNOUNCEMENT',
+              title: 'Notification updated',
+              message: 'Notification state changed',
+              priority: 'LOW',
+              isRead: true,
+              createdAt: new Date().toISOString(),
+              senderId: null,
+              announcementId: null,
+              jobId: null,
+              applicationId: null,
+              sender: null,
+              announcement: null,
+            };
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
           body: JSON.stringify({
             success: true,
-            data: {
-              id: notifId,
-              announcementId: notifId,
-              userId: 'student-1',
-              isRead: true,
-              createdAt: target?.createdAt ?? new Date().toISOString(),
-            },
+            data: entry,
           }),
         });
         return;
@@ -884,11 +1050,11 @@ export const test = base.extend({
             }),
           });
           return;
-        }
+      }
 
-        if (method === 'GET') {
-          await route.fulfill({
-            status: 200,
+      if (method === 'GET') {
+        await route.fulfill({
+          status: 200,
             contentType: 'application/json',
             body: JSON.stringify({
               success: true,
@@ -1034,6 +1200,26 @@ export const test = base.extend({
           });
           return;
         }
+      }
+
+      /**
+       * Student dashboard
+       */
+      if (
+        method === 'GET' &&
+        (pathname.endsWith('/profile/dashboard') || pathname.endsWith('/user-profile/dashboard'))
+      ) {
+        const payload = buildStudentDashboardPayload();
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            message: 'Dashboard data retrieved successfully',
+            data: payload,
+          }),
+        });
+        return;
       }
 
       /**
