@@ -107,6 +107,9 @@ const toJobResponse = (job: JobRecord) => ({
   isApplied: appliedJobIds.has(job.id),
 });
 
+const normalizeToken = (value?: string | null) =>
+  value?.toLowerCase().replace(/[^a-z0-9]/g, '') ?? '';
+
 const filterJobsByPayload = (payload: {
   keyword?: string;
   jobType?: string;
@@ -114,9 +117,9 @@ const filterJobsByPayload = (payload: {
   location?: string;
 }) => {
   const keyword = payload.keyword?.toLowerCase().trim();
-  const jobType = payload.jobType?.toLowerCase().trim();
-  const workArrangement = payload.workArrangement?.toLowerCase().trim();
-  const location = payload.location?.toLowerCase().trim();
+  const jobTypeRaw = payload.jobType;
+  const workArrangementRaw = payload.workArrangement;
+  const locationRaw = payload.location;
 
   return Object.values(jobCatalog).filter((job) => {
     const matchesKeyword = keyword
@@ -124,13 +127,14 @@ const filterJobsByPayload = (payload: {
         job.companyName.toLowerCase().includes(keyword) ||
         job.description.toLowerCase().includes(keyword)
       : true;
-    const matchesJobType = jobType ? job.jobType.toLowerCase() === jobType : true;
-    const matchesLocation = location
-      ? job.location.toLowerCase() === location
+    const matchesJobType = jobTypeRaw
+      ? normalizeToken(job.jobType) === normalizeToken(jobTypeRaw)
       : true;
-    const matchesWorkStyle = workArrangement
-      ? job.workArrangement.replace(/[^a-z]/gi, '').toLowerCase() ===
-        workArrangement.replace(/[^a-z]/gi, '').toLowerCase()
+    const matchesLocation = locationRaw
+      ? normalizeToken(job.location) === normalizeToken(locationRaw)
+      : true;
+    const matchesWorkStyle = workArrangementRaw
+      ? normalizeToken(job.workArrangement) === normalizeToken(workArrangementRaw)
       : true;
 
     return matchesKeyword && matchesJobType && matchesLocation && matchesWorkStyle;
