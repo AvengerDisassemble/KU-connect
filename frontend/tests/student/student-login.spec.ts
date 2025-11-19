@@ -34,4 +34,22 @@ test.describe('STU-TS-004 Student Login @smoke', () => {
     });
     expect(page.url()).toContain('/student/browse-jobs');
   });
+
+  /**
+   * STU-TS-004-TC02: student fails to log in with invalid password
+   * Expected result:
+   *  - Error message is displayed
+   *  - User is not redirected to student dashboard/browse routes
+   */
+  test('STU-TS-004-TC02: login fails with invalid password', async ({ page }) => {
+    await page.goto('http://localhost:5173/');
+
+    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('textbox', { name: 'Email' }).fill('student1@ku.ac.th');
+    await page.getByRole('textbox', { name: 'Password' }).fill('WrongPassword123');
+    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+
+    await expect(page.getByText('Invalid credentials')).toBeVisible();
+    await expect(page).not.toHaveURL(/\/student(\/|$)/);
+  });
 });
