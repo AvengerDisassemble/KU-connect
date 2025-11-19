@@ -57,6 +57,7 @@ test.describe('STU-TS-006 Student browsing & application @smoke', () => {
     await openLocationSelect();
     await page.getByRole('option', { name: 'Phuket, Thailand' }).click();
     await expect(page.getByRole('paragraph').filter({ hasText: 'Phuket, Thailand' })).toBeVisible();
+    await page.waitForTimeout(3000);
 
     // ----------------------------
     // Reset location to all
