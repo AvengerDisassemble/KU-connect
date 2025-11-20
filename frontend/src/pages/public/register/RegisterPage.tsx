@@ -4,12 +4,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { GraduationCap, Building2 } from "lucide-react";
 import StudentRegistration from "./components/StudentRegistration";
 import EmployerRegistration from "./components/EmployerRegistration";
+import Logo from "@/assets/logo.png";
 
 const RegisterPage = () => {
   const [activeRole, setActiveRole] = useState<"student" | "employer">("student");
 
   return (
     <main className="min-h-screen bg-background py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-4xl items-center justify-between pb-6">
+        <a
+          href="/"
+          className="inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.35em] text-foreground"
+        >
+          <img src={Logo} alt="KU Connect logo" className="h-9 w-auto" />
+        </a>
+      </div>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <header className="text-center mb-6 sm:mb-8 space-y-3">

@@ -1,370 +1,301 @@
-import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { ArrowUpRight } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  GraduationCap,
-  Building2,
-  Star,
-  ArrowRight,
-  CheckCircle,
-  Shield,
-  ChevronDown,
-} from "lucide-react";
+import Logo from "@/assets/logo.png";
+
+const navLinks = [
+  { label: "Students", href: "#students" },
+  { label: "Employers", href: "#employers" },
+  { label: "Career Center", href: "#career-center" },
+];
+
+const highlightMetrics = [
+  { value: "42K+", label: "Active KU students" },
+  { value: "320+", label: "Partner employers" },
+  { value: "12", label: "Faculties represented" },
+];
+
+const jobCards = [
+  {
+    role: "Product Design Intern",
+    company: "TikTok",
+    location: "Bangkok · Hybrid",
+    tags: ["Design", "Internship"],
+  },
+  {
+    role: "Software Engineer",
+    company: "Meta",
+    location: "Remote · Asia",
+    tags: ["Full-time", "React"],
+  },
+  {
+    role: "Marketing Analyst",
+    company: "Spotify",
+    location: "Singapore",
+    tags: ["Growth", "Data"],
+  },
+  {
+    role: "People Operations",
+    company: "Grab",
+    location: "Bangkok",
+    tags: ["People", "Graduate"],
+  },
+];
+
+const featureCards = [
+  {
+    title: "Guided student journeys",
+    copy: "Playbooks, reminders, and curated roles help KU students focus on what actually moves the needle.",
+  },
+  {
+    title: "Employer-ready tools",
+    copy: "Share updates, review profiles, and nudge shortlists from one shared workspace built for hiring teams.",
+  },
+  {
+    title: "Career center clarity",
+    copy: "Dashboards show which cohorts engaged, who needs support, and how outcomes improve over time.",
+  },
+];
+
+const guidePoints = [
+  "Verified KU accounts keep the community focused and safe.",
+  "Smart job boards remix roles, events, and faculty resources.",
+  "Integrated messaging means fewer tabs for recruiters and students.",
+];
+
+const fadeUp = {
+  initial: { opacity: 0, y: 24 },
+  whileInView: { opacity: 1, y: 0 },
+  transition: { duration: 0.6, ease: "easeOut" },
+  viewport: { once: true, amount: 0.4 },
+};
 
 const LandingPage = () => {
-  const [scrollY, setScrollY] = useState(0);
-  const [visibleSections, setVisibleSections] = useState<Set<string>>(
-    new Set()
-  );
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-
-      // Check which sections are visible
-      const sections = document.querySelectorAll("[data-section]");
-      const newVisibleSections = new Set<string>();
-
-      sections.forEach((section) => {
-        const rect = section.getBoundingClientRect();
-        const isVisible =
-          rect.top < window.innerHeight * 0.8 && rect.bottom > 0;
-        if (isVisible) {
-          newVisibleSections.add(section.getAttribute("data-section") || "");
-        }
-      });
-
-      setVisibleSections(newVisibleSections);
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initial check
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      {/* Hero Section */}
-      <section
-        data-section="hero"
-        className={`min-h-screen flex items-center justify-center px-4 transition-all duration-1000 ${
-          visibleSections.has("hero")
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto text-center space-y-8">
-          <div
-            className="space-y-6"
-            style={{ transform: `translateY(${scrollY * 0.3}px)` }}
-          >
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight">
-              <span className="block text-foreground">Your Career Journey</span>
-              <span className="block text-primary">Starts Here</span>
-            </h1>
-
-            <p className="text-xl sm:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Connect with top employers, discover opportunities, and launch
-              your career with KU's trusted professional network.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-md mx-auto">
+    <div className="min-h-screen bg-[#f6f5f0] text-[#1c1d17]">
+      <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-[#f6f5f0]/90 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
+          <img src={Logo} alt="KU Connect" className="h-10 w-auto" />
+          <nav className="hidden items-center gap-6 text-sm text-slate-600 md:flex">
+            {navLinks.map((link) => (
+              <a key={link.label} href={link.href} className="transition hover:text-[#1c1d17]">
+                {link.label}
+              </a>
+            ))}
+          </nav>
+          <div className="flex items-center gap-3">
             <Button
+              variant="ghost"
+              className="h-10 rounded-full border border-slate-200 bg-white px-5 text-sm font-semibold text-[#1c1d17] hover:bg-gray-100 hover:text-[#1c1d17]"
+              onClick={() => (window.location.href = "/login")}
+            >
+              Sign in
+            </Button>
+            <Button
+              className="hidden h-10 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 md:inline-flex"
               onClick={() => (window.location.href = "/register")}
-              size="lg"
-              className="w-full sm:w-auto h-14 text-lg bg-primary hover:bg-primary/90 px-8 group"
             >
-              Get Started Now
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              Get started
             </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full sm:w-auto h-14 text-lg px-8 border-border hover:bg-muted"
-            >
-              How It Works
-            </Button>
-          </div>
-
-          <div className="mt-12 flex justify-center">
-            <ChevronDown className="w-6 h-6 text-muted-foreground animate-bounce" />
           </div>
         </div>
-      </section>
+      </header>
 
-      {/* Stats Section */}
-      <section
-        data-section="stats"
-        className={`py-20 px-4 bg-card/50 transition-all duration-1000 delay-200 ${
-          visibleSections.has("stats")
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto"></div>
-      </section>
-
-      {/* Features Section */}
-      <section
-        data-section="features"
-        className={`py-20 px-4 transition-all duration-1000 delay-300 ${
-          visibleSections.has("features")
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Why Choose KU-Connect?</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              The premier platform connecting KU talent with meaningful
-              opportunities
+      <main className="px-4 pb-24 pt-12 md:px-6">
+        <motion.section
+          id="students"
+          {...fadeUp}
+          className="mx-auto grid max-w-6xl gap-12 rounded-[32px] border border-slate-200 bg-white px-6 py-12 lg:grid-cols-[1.2fr_0.8fr] lg:px-10"
+        >
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.45em] text-slate-500">Kasetsart University Careers</p>
+            <h1 className="mt-6 text-4xl font-semibold leading-tight text-[#1b1c13] sm:text-5xl">
+              A calm space for KU students, employers, and advisors to meet.
+            </h1>
+            <p className="mt-6 text-lg text-slate-600">
+              Discover curated opportunities, stay close to your faculty career teams, and hire verified talent with less noise.
+              Simple tools, shared context, and a neutral palette keep the focus on the work ahead.
             </p>
+            <div className="mt-8 flex flex-wrap gap-4">
+              <Button
+                className="h-12 rounded-full bg-primary px-8 text-base font-semibold text-primary-foreground hover:bg-primary/90"
+                onClick={() => (window.location.href = "/register?role=student")}
+              >
+                Explore roles <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                className="h-12 rounded-full border border-slate-300 bg-white px-8 text-base font-semibold text-[#1c1d17] hover:bg-white"
+                onClick={() => (window.location.href = "/register?role=employer")}
+              >
+                I hire KU talent
+              </Button>
+            </div>
+            <div className="mt-10 grid gap-6 sm:grid-cols-3">
+              {highlightMetrics.map((metric) => (
+                <div key={metric.label} className="rounded-2xl border border-slate-200 bg-[#f9f8f3] p-4">
+                  <p className="text-2xl font-semibold text-[#1b1c13]">{metric.value}</p>
+                  <p className="mt-1 text-sm text-slate-600">{metric.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: GraduationCap,
-                title: "For Students",
-                description:
-                  "Access exclusive opportunities, build your profile, and connect with top employers looking for KU talent.",
-                features: [
-                  "Personalized job matches",
-                  "Career resources",
-                  "Alumni network",
-                ],
-              },
-              {
-                icon: Building2,
-                title: "For Employers",
-                description:
-                  "Find qualified candidates from one of Thailand's top universities. Post jobs and manage applications seamlessly.",
-                features: [
-                  "Verified talent pool",
-                  "Advanced filtering",
-                  "Direct messaging",
-                ],
-              },
-              {
-                icon: Shield,
-                title: "Trusted Platform",
-                description:
-                  "University-backed verification ensures quality connections and protects all users in the hiring process.",
-                features: [
-                  "Identity verification",
-                  "Safe messaging",
-                  "Quality assurance",
-                ],
-              },
-            ].map((feature, index) => (
-              <Card
-                key={index}
-                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 ${
-                  visibleSections.has("features")
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-10"
-                }`}
-                style={{ transitionDelay: `${index * 150 + 400}ms` }}
-              >
-                <CardContent className="p-8">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
-                    <feature.icon className="w-8 h-8 text-primary" />
+          <div className="space-y-6 rounded-3xl border border-slate-200 bg-[#fdfcf8] p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <p className="text-xs uppercase tracking-[0.4em] text-slate-500">Weekly highlight</p>
+              <h3 className="mt-4 text-2xl font-semibold text-[#1b1c13]">A board that feels handcrafted</h3>
+              <p className="mt-3 text-sm text-slate-600">
+                Each student sees roles, events, and nudges selected by their faculty mentors. Employers see trusted profiles without digging through feeds.
+              </p>
+            </div>
+            <div className="space-y-4">
+              {jobCards.slice(0, 2).map((job) => (
+                <div key={job.role} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">
+                    <span>{job.company}</span>
+                    <span>{job.location}</span>
                   </div>
-                  <h3 className="text-2xl font-bold mb-4">{feature.title}</h3>
-                  <p className="text-muted-foreground mb-6">
-                    {feature.description}
-                  </p>
-                  <ul className="space-y-3">
-                    {feature.features.map((item, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                        <span className="text-sm">{item}</span>
-                      </li>
+                  <p className="mt-4 text-xl font-semibold text-[#1b1c13]">{job.role}</p>
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                    {job.tags.map((tag) => (
+                      <span key={tag} className="rounded-full border border-slate-200 px-3 py-1">
+                        {tag}
+                      </span>
                     ))}
-                  </ul>
-                </CardContent>
-              </Card>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
+        <section className="mx-auto mt-16 max-w-6xl border-y border-slate-200/80 py-10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.5em] text-slate-500">Trusted by hiring teams</p>
+          <p className="mt-4 text-sm text-slate-600">
+            KU faculties, research centers, and partner employers rely on KU Connect to run recruiting moments with calm,
+            shared context.
+          </p>
+        </section>
+
+        <motion.section
+          id="career-center"
+          {...fadeUp}
+          className="mx-auto mt-16 max-w-5xl rounded-[32px] border border-slate-200 bg-white p-8"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.45em] text-slate-500">Career teams</p>
+          <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_0.8fr]">
+            <div>
+              <h2 className="text-3xl font-semibold text-[#1b1c13]">Modern guidance, but still personal.</h2>
+              <p className="mt-4 text-slate-600">
+                KU advisors share templates, track check-ins, and collaborate with employers in one tranquil dashboard. Everyone stays aligned without extra slides or messages.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-[#f9f8f3] p-6">
+              <blockquote className="text-lg text-[#1b1c13]">“Our students finally have a home that feels like KU. Clean, helpful, and calm.”</blockquote>
+              <p className="mt-6 text-sm font-medium text-[#1b1c13]">Career Studio KU</p>
+              <p className="text-sm text-slate-600">Faculty of Engineering</p>
+            </div>
+          </div>
+          <ul className="mt-8 space-y-3 text-sm text-slate-600">
+            {guidePoints.map((point) => (
+              <li key={point} className="flex items-start gap-3">
+                <span className="mt-1 inline-flex h-2 w-2 rounded-full bg-[#b2bb1e]" />
+                {point}
+              </li>
+            ))}
+          </ul>
+        </motion.section>
+
+        <motion.section id="jobs" {...fadeUp} className="mx-auto mt-16 max-w-6xl">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.45em] text-slate-500">Opportunities</p>
+              <h2 className="mt-3 text-3xl font-semibold text-[#1b1c13]">Fresh roles added every week.</h2>
+            </div>
+            <Button
+              variant="ghost"
+              className="h-11 rounded-full border border-slate-300 bg-white px-6 text-sm font-semibold text-[#1c1d17] hover:bg-white"
+              onClick={() => (window.location.href = "/jobs")}
+            >
+              View board
+            </Button>
+          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-2">
+            {jobCards.map((job) => (
+              <article key={job.role} className="rounded-3xl border border-slate-200 bg-white p-6">
+                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.4em] text-slate-500">
+                  <span>{job.company}</span>
+                  <span>{job.location}</span>
+                </div>
+                <h3 className="mt-4 text-2xl font-semibold text-[#1b1c13]">{job.role}</h3>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-600">
+                  {job.tags.map((tag) => (
+                    <span key={tag} className="rounded-full border border-slate-200 px-3 py-1">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </article>
             ))}
           </div>
-        </div>
-      </section>
+        </motion.section>
 
-      {/* How It Works */}
-      <section
-        data-section="how-it-works"
-        className={`py-20 px-4 bg-muted/30 transition-all duration-1000 delay-500 ${
-          visibleSections.has("how-it-works")
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">How It Works</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Get started in minutes and find your perfect opportunity
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8">
-            {[
-              {
-                step: "1",
-                title: "Sign Up",
-                description: "Create your account with KU Gmail verification",
-              },
-              {
-                step: "2",
-                title: "Build Profile",
-                description: "Showcase your skills and experience",
-              },
-              {
-                step: "3",
-                title: "Explore",
-                description: "Browse jobs and discover opportunities",
-              },
-              {
-                step: "4",
-                title: "Connect",
-                description: "Apply and connect with employers",
-              },
-            ].map((step, index) => (
-              <div
-                key={index}
-                className="text-center"
-                style={{ transitionDelay: `${index * 100 + 600}ms` }}
-              >
-                <div className="w-16 h-16 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  {step.step}
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                <p className="text-muted-foreground text-sm">
-                  {step.description}
-                </p>
+        <motion.section id="employers" {...fadeUp} className="mx-auto mt-16 max-w-6xl">
+          <div className="grid gap-6 md:grid-cols-3">
+            {featureCards.map((card) => (
+              <div key={card.title} className="rounded-3xl border border-slate-200 bg-white p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.4em] text-slate-500">Toolkit</p>
+                <h3 className="mt-4 text-xl font-semibold text-[#1b1c13]">{card.title}</h3>
+                <p className="mt-3 text-sm text-slate-600">{card.copy}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
+        </motion.section>
 
-      {/* Testimonials */}
-      <section
-        data-section="testimonials"
-        className={`py-20 px-4 transition-all duration-1000 delay-700 ${
-          visibleSections.has("testimonials")
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4">Success Stories</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Hear from our community of students and employers
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Sarah Chen",
-                role: "Computer Engineering '24",
-                company: "Tech Corp",
-                content:
-                  "KU-Connect helped me land my dream internship. The platform made it easy to find relevant opportunities and connect with recruiters.",
-                rating: 5,
-              },
-              {
-                name: "John Smith",
-                role: "HR Manager",
-                company: "StartupHub",
-                content:
-                  "We've hired several talented KU students through this platform. The quality of candidates is exceptional and the process is seamless.",
-                rating: 5,
-              },
-              {
-                name: "Emily Johnson",
-                role: "Software Engineering '23",
-                company: "Digital Agency",
-                content:
-                  "The personalized job recommendations and career resources helped me prepare for interviews and land a great position.",
-                rating: 5,
-              },
-            ].map((testimonial, index) => (
-              <Card
-                key={index}
-                className={`border-0 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 ${
-                  visibleSections.has("testimonials")
-                    ? "opacity-100 translate-y-0"
-                    : "opacity-0 translate-y-10"
-                }`}
-                style={{ transitionDelay: `${index * 150 + 800}ms` }}
-              >
-                <CardContent className="p-8">
-                  <div className="flex mb-4">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-4 h-4 text-yellow-400 fill-current"
-                      />
-                    ))}
-                  </div>
-                  <p className="text-muted-foreground mb-6 italic">
-                    "{testimonial.content}"
-                  </p>
-                  <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {testimonial.role}
-                    </div>
-                    <div className="text-sm text-primary">
-                      {testimonial.company}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section
-        data-section="cta"
-        className={`py-20 px-4 bg-primary text-primary-foreground transition-all duration-1000 delay-900 ${
-          visibleSections.has("cta")
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 translate-y-10"
-        }`}
-      >
-        <div className="max-w-4xl mx-auto text-center space-y-8">
-          <h2 className="text-4xl font-bold">Ready to Start Your Journey?</h2>
-          <p className="text-xl opacity-90">
-            Join thousands of students and employers building meaningful
-            connections
+        <motion.section {...fadeUp} className="mx-auto mt-16 max-w-5xl rounded-[32px] border border-slate-200 bg-white px-8 py-12 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.45em] text-slate-500">Ready?</p>
+          <h3 className="mt-4 text-3xl font-semibold text-[#1b1c13]">Open the door to KU careers.</h3>
+          <p className="mt-4 text-slate-600">
+            Create your space in minutes. Invite teammates, send your first posting, or share the board with your cohort.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Button
+              className="h-12 rounded-full bg-primary px-8 text-base font-semibold text-primary-foreground hover:bg-primary/90"
               onClick={() => (window.location.href = "/register")}
-              size="lg"
-              variant="secondary"
-              className="h-14 text-lg px-8 group"
             >
-              Get Started Free
-              <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              Create account
             </Button>
             <Button
-              variant="outline"
-              size="lg"
-              className="h-14 text-lg px-8 border-primary-foreground/20 text-accent hover:bg-primary-foreground/10"
+              variant="ghost"
+              className="h-12 rounded-full border border-slate-300 bg-white px-8 text-base font-semibold text-[#1c1d17] hover:bg-white"
+              onClick={() => (window.location.href = "mailto:support@kuconnect.co")}
             >
-              Learn More
+              Talk with our team
             </Button>
           </div>
+        </motion.section>
+      </main>
+
+      <footer className="border-t border-slate-200/80 bg-[#f6f5f0] px-4 py-12 text-sm text-slate-600">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div>
+            <p className="text-base font-semibold text-[#1c1d17]">KU Connect</p>
+            <p className="text-sm text-slate-500">© {new Date().getFullYear()} Kasetsart University. Built for students, employers, and advisors.</p>
+          </div>
+          <div className="flex flex-wrap gap-4 text-xs uppercase tracking-[0.3em] text-slate-500">
+            {navLinks.map((link) => (
+              <a key={`footer-${link.label}`} href={link.href} className="hover:text-[#1c1d17]">
+                {link.label}
+              </a>
+            ))}
+            <a href="mailto:support@kuconnect.co" className="hover:text-[#1c1d17]">
+              Support
+            </a>
+          </div>
         </div>
-      </section>
+      </footer>
     </div>
   );
 };

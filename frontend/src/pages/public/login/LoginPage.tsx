@@ -11,6 +11,7 @@ import {
 import { API_BASE } from "@/services/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Logo from "@/assets/logo.png";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -158,7 +159,14 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto space-y-6 mt-12 p-6 bg-card border rounded-lg animate-fade-in">
+    <div className="min-h-screen bg-[#f6f5f0] pb-16">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
+        <a href="/" className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.35em] text-[#1c1d17]">
+          <img src={Logo} alt="KU Connect logo" className="h-10 w-auto" />
+        </a>
+      </div>
+
+      <div className="max-w-md mx-auto space-y-6 mt-4 p-6 bg-card border rounded-lg animate-fade-in">
       <h1 className="text-xl font-semibold text-center">Login to KU-Connect</h1>
 
       <Button
@@ -267,6 +275,17 @@ const LoginPage = () => {
           {isSubmitting ? "Signing in…" : "Login"}
         </Button>
       </form>
+
+      <p className="text-center text-sm text-muted-foreground">
+        Don’t have an account yet?{" "}
+        <a
+          href="/register"
+          className="font-semibold text-foreground underline-offset-4 hover:underline"
+        >
+          Register now
+        </a>
+      </p>
+      </div>
     </div>
   );
 };
