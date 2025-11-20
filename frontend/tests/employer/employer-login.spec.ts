@@ -17,9 +17,9 @@ test.describe('EMP-TS-004 Employer Login @smoke', () => {
     await page.goto('http://localhost:5173/');
 
     // ----------------------------
-    // Open login page from home
+    // Open sign-in modal from home
     // ----------------------------
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Fill valid credentials
@@ -30,7 +30,7 @@ test.describe('EMP-TS-004 Employer Login @smoke', () => {
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Expect profile landing page to be visible
@@ -50,9 +50,9 @@ test.describe('EMP-TS-004 Employer Login @smoke', () => {
     await page.goto('http://localhost:5173/');
 
     // ----------------------------
-    // Open login page
+    // Open sign-in modal
     // ----------------------------
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Fill correct email but wrong password
@@ -63,7 +63,7 @@ test.describe('EMP-TS-004 Employer Login @smoke', () => {
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Expect error toast/message "Invalid credentials" to appear

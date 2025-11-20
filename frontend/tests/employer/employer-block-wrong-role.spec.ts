@@ -14,9 +14,9 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
     await page.goto('http://localhost:5173/');
 
     // ----------------------------
-    // Open login page from home
+    // Open sign-in modal from home
     // ----------------------------
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Fill student credentials
@@ -27,7 +27,7 @@ test.describe('EMP-TS-002 Block wrong role (Student vs Employer) @smoke', () => 
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Wait until navigation after login is done

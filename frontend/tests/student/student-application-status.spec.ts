@@ -9,10 +9,10 @@ test.describe('STU-TS-007 Student application status @regression', () => {
   // Reuse the same login helper as other student specs.
   const loginAsStudent = async (page: any) => {
     await page.goto('http://localhost:5173/');
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('student1@ku.ac.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
     await page.waitForURL('**/student/browse-jobs', {
       waitUntil: 'networkidle',
       timeout: 30000,

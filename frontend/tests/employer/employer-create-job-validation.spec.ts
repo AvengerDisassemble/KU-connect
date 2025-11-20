@@ -12,10 +12,10 @@ test.describe('EMP-TS-007 Employer Create Job Validation @negative', () => {
    */
   const gotoCreateJobPage = async (page: any) => {
     await page.goto('http://localhost:5173/');
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
 
     await page.goto('http://localhost:5173/employer/job-postings/create');

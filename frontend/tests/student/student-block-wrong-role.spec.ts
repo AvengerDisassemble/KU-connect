@@ -9,10 +9,10 @@ import { test, expect } from '../fixtures/employer.fixture';
 test.describe('STU-TS-002 Block wrong role (Employer vs Student) @smoke', () => {
   const loginAsEmployer = async (page: any) => {
     await page.goto('http://localhost:5173/');
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
   };
 
@@ -23,7 +23,8 @@ test.describe('STU-TS-002 Block wrong role (Employer vs Student) @smoke', () => 
     await page.waitForURL('**/403', { waitUntil: 'networkidle' });
 
     expect(page.url()).toContain('/403');
-    await expect(page.getByText('Page Not Found')).toBeVisible();
+    await expect(page.getByText('not found', { exact: false })).toBeVisible();
+    await expect(page.getByRole('heading', { name: "We couldn't find that page." })).toBeVisible();
     await expect(
       page.getByText('Student Dashboard', { exact: false })
     ).toHaveCount(0);

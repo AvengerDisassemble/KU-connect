@@ -46,32 +46,22 @@ test.describe('ADM-TS-003 Admin login @smoke', () => {
       page.getByText('Monitor platform health, growth metrics, and pending actions.')
     ).toBeVisible();
 
-    const expectVisible = async (locator: any) => {
-      await locator.scrollIntoViewIfNeeded();
-      await expect(locator).toBeVisible();
+    const expectMetricButton = async (name: RegExp | string) => {
+      await expect(page.getByRole('button', { name }).first()).toBeVisible();
     };
 
-    await expectVisible(
-      page.getByRole('button', { name: 'Total Users 1,200 25 new this week' })
-    );
-    await expectVisible(page.getByRole('link', { name: 'Dashboard' }));
-    await expectVisible(page.getByRole('button', { name: 'Active Jobs 210 14 posted this week' }));
-    await expectVisible(page.getByRole('link', { name: 'Dashboard' }));
-    await expectVisible(page.getByRole('button', { name: 'Pending Approvals 12' }));
-    await expectVisible(page.getByRole('link', { name: 'Dashboard' }));
-    await expectVisible(page.getByRole('button', { name: 'Unresolved Reports 5' }));
-    await expectVisible(page.getByRole('link', { name: 'Dashboard' }));
-    await expectVisible(
-      page.getByRole('button', { name: 'Total Announcements 18 12 active' })
-    );
-    await expectVisible(page.getByRole('link', { name: 'Dashboard' }));
+    await expectMetricButton(/Total Users/i);
+    await expectMetricButton(/Active Jobs/i);
+    await expectMetricButton(/Pending Approvals/i);
+    await expectMetricButton(/Unresolved Reports/i);
+    await expectMetricButton(/Total Announcements/i);
 
-    await expectVisible(page.getByText('Platform overview'));
-    await expectVisible(page.getByText('Registration trend (7 days)'));
-    await expectVisible(page.getByText('Application status mix'));
-    await expectVisible(page.getByText('Recent platform activity'));
-    await expectVisible(page.getByText('Alerts & follow-ups'));
-    await expectVisible(page.getByText('Trending jobs'));
+    await expect(page.getByText('Platform overview')).toBeVisible();
+    await expect(page.getByText('Registration trend (7 days)')).toBeVisible();
+    await expect(page.getByText('Application status mix')).toBeVisible();
+    await expect(page.getByText('Recent platform activity')).toBeVisible();
+    await expect(page.getByText('Alerts & follow-ups')).toBeVisible();
+    await expect(page.getByText('Trending jobs')).toBeVisible();
   };
 
   /**

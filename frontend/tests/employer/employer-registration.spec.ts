@@ -12,7 +12,7 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
    */
   const openEmployerRegistration = async (page: any) => {
     await page.goto('http://localhost:5173/');
-    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await page.getByRole('button', { name: 'Get started' }).click();
     await page.getByRole('tab', { name: 'Employer' }).click();
     await expect(page.getByText('Employer Registration')).toBeVisible();
   };

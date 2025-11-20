@@ -10,16 +10,16 @@ test.describe('STU-TS-004 Student Login @smoke', () => {
     await page.goto('http://localhost:5173/');
 
     // ----------------------------
-    // Open login dialog
+    // Open sign-in dialog
     // ----------------------------
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Fill credentials and submit
     // ----------------------------
     await page.getByRole('textbox', { name: 'Email' }).fill('student1@ku.ac.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Verify landing on browse jobs
@@ -44,10 +44,10 @@ test.describe('STU-TS-004 Student Login @smoke', () => {
   test('STU-TS-004-TC02: login fails with invalid password', async ({ page }) => {
     await page.goto('http://localhost:5173/');
 
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('student1@ku.ac.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('WrongPassword123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     await expect(page.getByText('Invalid credentials')).toBeVisible();
     await expect(page).not.toHaveURL(/\/student(\/|$)/);

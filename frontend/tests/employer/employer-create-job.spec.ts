@@ -17,9 +17,9 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
     await page.goto('http://localhost:5173/');
 
     // ----------------------------
-    // Go to Login
+    // Open Sign in modal
     // ----------------------------
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Fill credentials
@@ -30,7 +30,7 @@ test.describe('EMP-TS-006 Employer Create Job @smoke', () => {
     // ----------------------------
     // Submit login
     // ----------------------------
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
 
     // ----------------------------

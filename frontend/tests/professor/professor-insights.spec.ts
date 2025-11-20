@@ -7,10 +7,10 @@ const loginAndOpenInsights = async (page: any) => {
   // Arrange: sign in as professor
   // ----------------------------
   await page.goto(appUrl);
-  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('button', { name: 'Sign in' }).click();
   await page.getByRole('textbox', { name: 'Email' }).fill('prof@ku.th');
   await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-  await page.locator('form').getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('button', { name: 'Login' }).click();
   await page.waitForURL('**/professor', { waitUntil: 'networkidle' });
 
   // ----------------------------

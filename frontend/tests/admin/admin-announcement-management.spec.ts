@@ -14,14 +14,14 @@ test.describe('ADM-TS-005 Announcement management @regression', () => {
     // Arrange: open landing page and launch login dialog
     // ----------------------------
     await page.goto(appUrl);
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Act: submit admin credentials
     // ----------------------------
     await page.getByRole('textbox', { name: 'Email' }).fill('admin@ku.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Assert: guard redirects to admin dashboard

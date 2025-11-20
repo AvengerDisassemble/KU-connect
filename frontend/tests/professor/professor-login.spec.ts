@@ -17,10 +17,10 @@ test.describe('PROF-TS-003 Professor login @smoke', () => {
   test('PROF-TS-003-TC01: professor logs in and lands on dashboard', async ({ page }) => {
     await page.goto('http://localhost:5173/');
 
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('prof@ku.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     await page.waitForURL('**/professor', { waitUntil: 'networkidle' });
     await expect(page).toHaveURL(/\/professor$/);
@@ -39,10 +39,10 @@ test.describe('PROF-TS-003 Professor login @smoke', () => {
   test('PROF-TS-003-TC02: login fails with invalid password', async ({ page }) => {
     await page.goto('http://localhost:5173/');
 
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('prof@ku.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('WrongPassword123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     await expect(page.getByText('Invalid credentials')).toBeVisible();
     await expect(page).not.toHaveURL(/\/professor/);

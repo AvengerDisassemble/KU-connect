@@ -9,10 +9,10 @@ test.describe('EMP-TS-010 Employer notifications @regression', () => {
   // Mirrors the dashboard login helper from other employer specs.
   const loginAndOpenDashboard = async (page: any) => {
     await page.goto('http://localhost:5173/');
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
     await page.getByRole('textbox', { name: 'Email' }).fill('hr1@company.com');
     await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
     await page.waitForLoadState('networkidle');
     await page.waitForFunction(() => !!localStorage.getItem('user'));
     await page.goto('http://localhost:5173/employer');

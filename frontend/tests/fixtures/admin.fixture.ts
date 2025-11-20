@@ -78,6 +78,19 @@ type JobReportRecord = {
   } | null;
 };
 
+type ManagedUserRecord = {
+  id: string;
+  name: string;
+  surname: string;
+  email: string;
+  role: 'STUDENT' | 'EMPLOYER' | 'PROFESSOR' | 'ADMIN';
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+  verified: boolean;
+  createdAt: string;
+  hasTranscript?: boolean;
+  hasVerificationDoc?: boolean;
+};
+
 const mockUsers: Record<string, MockUser> = {
   'admin@ku.th': {
     id: 'admin-001',
@@ -259,6 +272,52 @@ const createInitialJobReports = (): JobReportRecord[] => [
 let jobDetails = createJobDetails();
 let jobReports = createInitialJobReports();
 let resolvedReportCount = 0;
+const createManagedUsers = (): ManagedUserRecord[] => [
+  {
+    id: 'pending-employer-1',
+    name: 'NewEm2',
+    surname: 'Test',
+    email: 'newem2@testcompany.com',
+    role: 'EMPLOYER',
+    status: 'PENDING',
+    verified: false,
+    hasVerificationDoc: true,
+    createdAt: '2025-01-15T08:00:00Z',
+  },
+  {
+    id: 'pending-employer-2',
+    name: 'NewEm',
+    surname: 'Test',
+    email: 'newem@testcompany.com',
+    role: 'EMPLOYER',
+    status: 'PENDING',
+    verified: false,
+    hasVerificationDoc: true,
+    createdAt: '2025-01-16T09:30:00Z',
+  },
+  {
+    id: 'approved-employer-1',
+    name: 'Existing',
+    surname: 'Employer',
+    email: 'existing.employer@example.com',
+    role: 'EMPLOYER',
+    status: 'APPROVED',
+    verified: true,
+    createdAt: '2024-11-10T12:00:00Z',
+  },
+  {
+    id: 'professor-1',
+    name: 'Dr. Preecha',
+    surname: 'Song',
+    email: 'preecha@ku.th',
+    role: 'PROFESSOR',
+    status: 'APPROVED',
+    verified: true,
+    createdAt: '2024-10-05T12:00:00Z',
+  },
+];
+
+let managedUsers = createManagedUsers();
 
 const adminDashboardMock = {
   users: {
@@ -467,6 +526,15 @@ const updateReportStats = () => {
   adminDashboardMock.reports.resolved = resolvedReportCount;
 };
 
+const updateManagedUserStats = () => {
+  adminDashboardMock.alerts.pendingApprovals = managedUsers.filter((user) => user.status === 'PENDING').length;
+};
+
+const resetManagedUsers = () => {
+  managedUsers = createManagedUsers();
+  updateManagedUserStats();
+};
+
 const resetModerationData = () => {
   jobDetails = createJobDetails();
   jobReports = createInitialJobReports();
@@ -501,10 +569,68 @@ const deleteJobRecord = (jobId: string) => {
   return detail;
 };
 
+const filterManagedUsers = (filters: {
+  status?: string;
+  role?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  let result = [...managedUsers];
+
+  if (filters.status) {
+    result = result.filter((user) => user.status === filters.status);
+  }
+
+  if (filters.role) {
+    result = result.filter((user) => user.role === filters.role);
+  }
+
+  const query = filters.search?.toLowerCase().trim();
+  if (query) {
+    result = result.filter((user) => {
+      const haystack = `${user.name} ${user.surname} ${user.email}`.toLowerCase();
+      return haystack.includes(query);
+    });
+  }
+
+  const limit = filters.limit ?? 20;
+  const page = filters.page && filters.page > 0 ? filters.page : 1;
+  const start = (page - 1) * limit;
+
+  return {
+    users: result.slice(start, start + limit),
+    total: result.length,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil(result.length / limit)),
+  };
+};
+
+const updateUserStatus = (userId: string, status: ManagedUserRecord['status']) => {
+  const record = managedUsers.find((user) => user.id === userId);
+  if (!record) {
+    return null;
+  }
+
+  record.status = status;
+  if (status === 'APPROVED') {
+    record.verified = true;
+  }
+
+  if (status === 'REJECTED' || status === 'SUSPENDED') {
+    record.verified = false;
+  }
+
+  updateManagedUserStats();
+  return record;
+};
+
 export const test = base.extend({
   page: async ({ page }, use) => {
     resetAnnouncements();
     resetModerationData();
+    resetManagedUsers();
 
     await page.route('**/api/**', async (route, request) => {
       const url = new URL(request.url());
@@ -624,11 +750,86 @@ export const test = base.extend({
         return;
       }
 
+      if (method === 'GET' && path.includes('/admin/users')) {
+        const status = url.searchParams.get('status') ?? undefined;
+        const role = url.searchParams.get('role') ?? undefined;
+        const search = url.searchParams.get('search') ?? undefined;
+        const limit = Number(url.searchParams.get('limit'));
+        const pageParam = Number(url.searchParams.get('page'));
+
+        const payload = filterManagedUsers({
+          status: status && status !== 'null' ? status : undefined,
+          role: role && role !== 'null' ? role : undefined,
+          search: search ?? undefined,
+          limit: Number.isFinite(limit) ? limit : undefined,
+          page: Number.isFinite(pageParam) ? pageParam : undefined,
+        });
+
+        await fulfillJson(route, 200, {
+          success: true,
+          message: 'Users retrieved successfully',
+          data: payload,
+        });
+        return;
+      }
+
+      const adminUserActionMatch = path.match(/\/(?:api\/)?admin\/users\/([^/]+)\/(approve|reject|suspend|activate)$/);
+      if (adminUserActionMatch && method === 'POST') {
+        const [, userId, action] = adminUserActionMatch;
+        let updated: ManagedUserRecord | null = null;
+        let message = 'Action completed';
+
+        if (action === 'approve' || action === 'activate') {
+          updated = updateUserStatus(userId, 'APPROVED');
+          message = 'User approved';
+        } else if (action === 'reject') {
+          updated = updateUserStatus(userId, 'REJECTED');
+          message = 'User rejected';
+        } else if (action === 'suspend') {
+          updated = updateUserStatus(userId, 'SUSPENDED');
+          message = 'User suspended';
+        }
+
+        if (!updated) {
+          await fulfillJson(route, 404, {
+            success: false,
+            message: 'User not found',
+          });
+          return;
+        }
+
+        await fulfillJson(route, 200, {
+          success: true,
+          message,
+          data: updated,
+        });
+        return;
+      }
+
       if (method === 'GET' && path.includes('/job/report/list')) {
         await fulfillJson(route, 200, {
           success: true,
           message: 'Reports fetched',
           data: jobReports,
+        });
+        return;
+      }
+
+      if (
+        method === 'GET' &&
+        path.includes('/documents/employer-verification/') &&
+        path.endsWith('/download')
+      ) {
+        const match = path.match(/\/(?:api\/)?documents\/employer-verification\/([^/]+)\/download$/);
+        const userId = match ? match[1] : 'verification';
+        const body = `Mock employer verification PDF for ${userId}`;
+        await route.fulfill({
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="verification-${userId}.pdf"`,
+          },
+          body,
         });
         return;
       }

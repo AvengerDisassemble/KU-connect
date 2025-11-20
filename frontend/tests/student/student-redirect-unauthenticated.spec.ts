@@ -11,7 +11,7 @@ test.describe('STU-TS-001 Student redirect unauthenticated @smoke', () => {
     await expect(page.getByRole('heading', { name: 'Login to KU-Connect' })).toBeVisible();
     await expect(page.getByText('Email', { exact: true })).toBeVisible();
     await expect(page.getByText('Password')).toBeVisible();
-    await expect(page.locator('form').getByRole('button', { name: 'Login' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Login' })).toBeVisible();
   };
 
   test('STU-TS-001-TC01: redirect unauthenticated from /student to /login', async ({ page }) => {

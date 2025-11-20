@@ -17,9 +17,9 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
     await page.goto('http://localhost:5173/');
 
     // ----------------------------
-    // Open login page from home
+    // Open sign-in modal from home
     // ----------------------------
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Fill employer credentials
@@ -30,7 +30,7 @@ test.describe('EMP-TS-005 Employer Profile management @regression', () => {
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Wait until profile page is loaded

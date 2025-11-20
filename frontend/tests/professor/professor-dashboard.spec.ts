@@ -7,14 +7,14 @@ const loginAsProfessor = async (page: any) => {
   // Arrange: open landing page and launch login
   // ----------------------------
   await page.goto(appUrl);
-  await page.getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('button', { name: 'Sign in' }).click();
 
   // ----------------------------
   // Act: submit professor credentials
   // ----------------------------
   await page.getByRole('textbox', { name: 'Email' }).fill('prof@ku.th');
   await page.getByRole('textbox', { name: 'Password' }).fill('Password123');
-  await page.locator('form').getByRole('button', { name: 'Login' }).click();
+  await page.getByRole('button', { name: 'Login' }).click();
 
   // ----------------------------
   // Assert: redirect lands on professor dashboard

@@ -12,7 +12,7 @@ test.describe('STU-TS-003 Student Registration @regression', () => {
     // ----------------------------
     // Open alumni registration
     // ----------------------------
-    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await page.getByRole('button', { name: 'Get started' }).click();
     await page.getByRole('button', { name: 'Register as Alumni' }).click();
 
     // ----------------------------
