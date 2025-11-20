@@ -22,7 +22,7 @@ All automated Playwright tests, combined with manual validation, were executed o
 
 | Category | Total | Passed | Failed | Blocked |
 |---------|-------|--------|--------|---------|
-| Employer Test Cases | 20 | 20 | 0 | 0 |
+| Employer Test Cases | 21 | 21 | 0 | 0 |
 | Student Test Cases | 11 | 11 | 0 | 0 |
 | Professor Test Cases | 8 | 8 | 0 | 0 |
 | Admin Test Cases | 13 | 13 | 0 | 0 |
