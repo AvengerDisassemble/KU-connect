@@ -8,6 +8,7 @@ import RegisterPage from "@/pages/public/register/RegisterPage";
 import NotFoundPage from "@/pages/public/NotFoundPage";
 import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
 import StudentProfilePage from "@/pages/student/profile/ProfilePage";
+import TranscriptUploadPage from "@/pages/student/profile/TranscriptUploadPage";
 import BrowseJobsPage from "@/pages/student/browse-jobs/BrowseJobsPage";
 import EmployerLayout from "@/components/layout/EmployerLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -47,10 +48,16 @@ const ProfessorBrowseJobsRoute: React.FC = () => (
   </ProfessorLayout>
 );
 
+const StudentLayout: React.FC<React.PropsWithChildren> = ({ children }) => (
+  <>
+    <Header />
+    <div className="flex-1">{children}</div>
+  </>
+);
+
 const App: React.FC = () => {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <Header />
       <div className="flex-1">
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -60,7 +67,9 @@ const App: React.FC = () => {
             path="/student"
             element={
               <Guard role="student">
-                <StudentDashboardPage />
+                <StudentLayout>
+                  <StudentDashboardPage />
+                </StudentLayout>
               </Guard>
             }
           />
@@ -68,7 +77,9 @@ const App: React.FC = () => {
             path="/student/profile/:userId"
             element={
               <Guard role="student">
-                <StudentProfilePage />
+                <StudentLayout>
+                  <StudentProfilePage />
+                </StudentLayout>
               </Guard>
             }
           />
@@ -76,7 +87,19 @@ const App: React.FC = () => {
             path="/student/browse-jobs"
             element={
               <Guard role="student">
-                <BrowseJobsPage />
+                <StudentLayout>
+                  <BrowseJobsPage />
+                </StudentLayout>
+              </Guard>
+            }
+          />
+          <Route
+            path="/student/upload-transcript"
+            element={
+              <Guard role="student">
+                <StudentLayout>
+                  <TranscriptUploadPage />
+                </StudentLayout>
               </Guard>
             }
           />

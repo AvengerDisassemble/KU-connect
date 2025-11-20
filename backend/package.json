@@ -15,7 +15,16 @@
     "test:verbose": "SHOW_LOGS=true jest --runInBand",
     "test:summary": "jest --verbose=false --runInBand",
     "test:failures": "jest --onlyFailures --verbose=false --runInBand",
-    "start": "node server.js"
+    "test:nfr": "jest --testPathPatterns=\"(security|performance|reliability)\" --runInBand --verbose",
+    "test:security": "jest --testPathPatterns=\"security\" --runInBand --verbose",
+    "test:performance": "jest --testPathPatterns=\"performance\" --runInBand --verbose",
+    "test:reliability": "jest --testPathPatterns=\"reliability\" --runInBand --verbose",
+    "test:coverage": "jest --coverage --runInBand",
+    "test:auth": "jest --testPathPatterns=\"auth\" --runInBand --verbose",
+    "load-test": "echo 'Install Artillery: npm install -g artillery' && echo 'Then run: artillery run load-test/artillery.yml'",
+    "load-test:quick": "artillery quick --count 10 --num 50 http://localhost:3000/api/jobs",
+    "start": "node server.js",
+    "start:test": "NODE_ENV=test node server.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.913.0",

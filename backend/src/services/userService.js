@@ -567,14 +567,36 @@ async function getAllUsers (filters = {}) {
       status: true,
       verified: true,
       createdAt: true,
-      updatedAt: true
+      updatedAt: true,
+      student: {
+        select: {
+          transcriptKey: true
+        }
+      },
+      hr: {
+        select: {
+          verificationDocKey: true
+        }
+      }
     },
     orderBy: {
       createdAt: 'desc'
     }
   })
 
-  return users
+  return users.map(user => ({
+    id: user.id,
+    name: user.name,
+    surname: user.surname,
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    verified: user.verified,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+    hasTranscript: Boolean(user.student?.transcriptKey),
+    hasVerificationDoc: Boolean(user.hr?.verificationDocKey)
+  }))
 }
 
 /**
@@ -608,8 +630,7 @@ async function searchUsers (filters = {}) {
   // Search by email
   if (search) {
     where.email = {
-      contains: search,
-      mode: 'insensitive'
+      contains: search
     }
   }
 

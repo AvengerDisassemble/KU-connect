@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Search, Menu, LogOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,12 +54,43 @@ const Header = () => {
     return null;
   }
 
+  const [shouldShow, setShouldShow] = useState(true);
+  const lastScroll = useRef(0);
+
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const current = window.scrollY || 0;
+        const delta = current - lastScroll.current;
+        if (current <= 32) {
+          setShouldShow(true);
+        } else if (delta < -4) {
+          setShouldShow(true);
+        } else if (delta > 4) {
+          setShouldShow(false);
+        }
+        lastScroll.current = current;
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const headerClasses = useMemo(
+    () =>
+      [
+        "sticky top-0 z-40 flex h-16 items-center justify-between border-b border-border bg-card/90 px-6 backdrop-blur transition-transform duration-200 supports-[backdrop-filter]:bg-card/70",
+        shouldShow ? "translate-y-0" : "-translate-y-full",
+      ].join(" "),
+    [shouldShow]
+  );
+
   return (
-    <header
-      ref={headerRef}
-      data-app-header="true"
-      className="h-16 bg-card border-b border-border flex items-center justify-between px-6"
-    >
+    <header ref={headerRef} data-app-header="true" className={headerClasses}>
       {/* Left: Logo */}
       <Link to="/student" className="flex items-center gap-2">
         <img src={Logo} alt="KU Connect Logo" className="h-12 w-auto" />

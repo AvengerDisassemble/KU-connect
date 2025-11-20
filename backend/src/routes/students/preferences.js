@@ -14,10 +14,13 @@ const { validateStudentPreferenceUpdate } = require('../../validators/studentPre
 // All routes require authentication
 router.use(auth.authMiddleware)
 
+// Apply strict rate limiter to all preference routes
+router.use(preferencesLimiter)
+
 // GET /api/students/preferences
 router.get('/', role.roleMiddleware(['STUDENT']), controller.getPreferences)
 
 // PATCH /api/students/preferences
-router.patch('/', preferencesLimiter, role.roleMiddleware(['STUDENT']), validateStudentPreferenceUpdate, controller.upsertPreferences)
+router.patch('/', role.roleMiddleware(['STUDENT']), validateStudentPreferenceUpdate, controller.upsertPreferences)
 
 module.exports = router

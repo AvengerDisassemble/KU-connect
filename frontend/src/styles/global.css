@@ -133,3 +133,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+.reveal {
+  opacity: 0;
+  transform: translateY(60px);
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
