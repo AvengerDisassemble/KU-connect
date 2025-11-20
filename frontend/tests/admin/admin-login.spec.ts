@@ -16,9 +16,9 @@ test.describe('ADM-TS-003 Admin login @smoke', () => {
     await page.goto(appUrl);
 
     // ----------------------------
-    // Open Login modal
+    // Open sign-in modal
     // ----------------------------
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Fill credentials
@@ -29,7 +29,7 @@ test.describe('ADM-TS-003 Admin login @smoke', () => {
     // ----------------------------
     // Submit login form
     // ----------------------------
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
   };
 
   /**
@@ -103,14 +103,14 @@ test.describe('ADM-TS-003 Admin login @smoke', () => {
     // Arrange: open login dialog
     // ----------------------------
     await page.goto(appUrl);
-    await page.getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     // ----------------------------
     // Act: submit incorrect password
     // ----------------------------
     await page.getByRole('textbox', { name: 'Email' }).fill('admin@ku.th');
     await page.getByRole('textbox', { name: 'Password' }).fill('WrongPassword123');
-    await page.locator('form').getByRole('button', { name: 'Login' }).click();
+    await page.getByRole('button', { name: 'Login' }).click();
 
     // ----------------------------
     // Assert: login fails and user remains on login page
