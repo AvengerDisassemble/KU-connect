@@ -26,7 +26,7 @@ All automated Playwright tests, combined with manual validation, were executed o
 | Student Test Cases | 11 | 11 | 0 | 0 |
 | Professor Test Cases | 8 | 8 | 0 | 0 |
 | Admin Test Cases | 13 | 13 | 0 | 0 |
-| **Total** | **52** | **52** | **0** | **0** |
+| **Total** | **53** | **53** | **0** | **0** |
 
 All test cases executed according to the **Frontend Test Plan** and **per-role scenario coverage**.  
 The system is considered **stable and functioning as expected**.
