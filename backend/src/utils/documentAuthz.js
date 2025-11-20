@@ -9,9 +9,9 @@ const prisma = require("../models/prisma");
  * Check if user can view a student's document (resume/transcript)
  * @param {Object} requester - Requesting user {id, role}
  * @param {string} targetUserId - Target user whose document is requested
- * @returns {boolean} True if authorized
+ * @returns {Promise<boolean>} True if authorized
  */
-function canViewStudentDocument(requester, targetUserId) {
+async function canViewStudentDocument(requester, targetUserId) {
   // Owner can view their own documents
   if (requester.id === targetUserId) {
     return true;
@@ -20,6 +20,37 @@ function canViewStudentDocument(requester, targetUserId) {
   // Admins can view any document
   if (requester.role === "ADMIN") {
     return true;
+  }
+
+  // HR can view student documents if the student has applied to any of their jobs
+  if (requester.role === "EMPLOYER") {
+    const hr = await prisma.hR.findUnique({
+      where: { userId: requester.id },
+      select: { id: true },
+    });
+
+    if (hr) {
+      const student = await prisma.student.findUnique({
+        where: { userId: targetUserId },
+        select: { id: true },
+      });
+
+      if (student) {
+        // Check if student has applied to any job owned by this HR
+        const application = await prisma.application.findFirst({
+          where: {
+            studentId: student.id,
+            job: {
+              hrId: hr.id,
+            },
+          },
+        });
+
+        if (application) {
+          return true;
+        }
+      }
+    }
   }
 
   return false;
@@ -63,19 +94,34 @@ async function canViewJobResume(requester, jobId, studentUserId) {
     return true;
   }
 
-  // HR who owns the job can view resumes for that job
+  // HR can view student documents if the student has applied to any of their jobs
   if (requester.role === "EMPLOYER") {
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
-      select: {
-        hr: {
-          select: { userId: true },
-        },
-      },
+    const hr = await prisma.hR.findUnique({
+      where: { userId: requester.id },
+      select: { id: true },
     });
 
-    if (job && job.hr && job.hr.userId === requester.id) {
-      return true;
+    if (hr) {
+      const student = await prisma.student.findUnique({
+        where: { userId: studentUserId },
+        select: { id: true },
+      });
+
+      if (student) {
+        // Check if student has applied to any job owned by this HR
+        const application = await prisma.application.findFirst({
+          where: {
+            studentId: student.id,
+            job: {
+              hrId: hr.id,
+            },
+          },
+        });
+
+        if (application) {
+          return true;
+        }
+      }
     }
   }
 

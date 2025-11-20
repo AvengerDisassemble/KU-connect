@@ -140,3 +140,45 @@ export const deleteJobResume = async (jobId: string): Promise<void> => {
     throw new Error(serverMsg);
   }
 };
+
+export const downloadJobResume = async (
+  jobId: string,
+  studentUserId: string
+): Promise<{ blob: Blob; filename: string }> => {
+  const url = `${BASE_URL}/jobs/${jobId}/resume/${studentUserId}/download`;
+  
+  const res = await authorizedFetch(url, {
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    let serverMsg = `HTTP ${res.status}`;
+    try {
+      const serverBody = await res.json();
+      if (serverBody?.message) {
+        serverMsg = `${serverMsg} – ${serverBody.message}`;
+      }
+    } catch {
+      const text = await res.text();
+      if (text) {
+        serverMsg = `${serverMsg} – ${text}`;
+      }
+    }
+    throw new Error(serverMsg);
+  }
+
+  const blob = await res.blob();
+  
+  // Extract filename from Content-Disposition header or use default
+  const contentDisposition = res.headers.get("Content-Disposition");
+  let filename = "resume.pdf";
+  
+  if (contentDisposition) {
+    const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+    if (filenameMatch) {
+      filename = filenameMatch[1];
+    }
+  }
+
+  return { blob, filename };
+};

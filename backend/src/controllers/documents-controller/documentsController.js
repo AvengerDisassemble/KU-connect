@@ -225,7 +225,8 @@ async function downloadResume(req, res) {
     const requester = req.user;
 
     // Authorization check
-    if (!canViewStudentDocument(requester, requestedUserId)) {
+    const isAuthorized = await canViewStudentDocument(requester, requestedUserId);
+    if (!isAuthorized) {
       logDocumentAccess({
         userId: requester.id,
         documentType: "resume",
@@ -324,7 +325,8 @@ async function downloadTranscript(req, res) {
     const requester = req.user;
 
     // Authorization check
-    if (!canViewStudentDocument(requester, requestedUserId)) {
+    const isAuthorized = await canViewStudentDocument(requester, requestedUserId);
+    if (!isAuthorized) {
       return res.status(403).json({
         success: false,
         message: "Access denied",

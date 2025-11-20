@@ -3,6 +3,8 @@ import { useState, type MouseEventHandler } from "react";
 import { Button } from "@/components/ui/button";
 import { ApplicantViewModal } from "./ApplicantViewModal";
 import type { JobApplication } from "@/services/jobs";
+import { downloadJobResume } from "@/services/jobResumes";
+import { toast } from "sonner";
 
 const formatDate = (iso: string): string => {
   const date = new Date(iso);
@@ -63,6 +65,32 @@ const ApplicantRow: React.FC<ApplicantRowProps> = ({
 
   const handleOpen: MouseEventHandler<HTMLButtonElement> = () => {
     setOpen(true);
+  };
+
+  const handleDownloadResume = async (_resumeId: string) => {
+    if (!user?.id) {
+      toast.error("Unable to download: student user ID not found");
+      return;
+    }
+
+    try {
+      const { blob, filename } = await downloadJobResume(application.jobId, user.id);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success("Resume downloaded successfully");
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to download resume");
+    }
   };
 
   return (
@@ -129,12 +157,12 @@ const ApplicantRow: React.FC<ApplicantRowProps> = ({
                 {
                   id: application.resume.id,
                   name: application.resume.link.split("/").pop() ?? "Resume",
-                  url: application.resume.link,
                   mimeType: "application/pdf",
                 },
               ]
             : []
         }
+        onDownloadResume={handleDownloadResume}
         onApprove={() => {
           void handleDecision("QUALIFIED");
         }}

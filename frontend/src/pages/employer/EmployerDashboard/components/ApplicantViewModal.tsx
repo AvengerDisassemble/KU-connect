@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 type StudentInterest = { id: string; name: string };
-type ResumeFile = { id: string; name: string; url: string; mimeType?: string };
+type ResumeFile = { id: string; name: string; url?: string; mimeType?: string };
 type DegreeType = { id: string; name: string };
 type UserLite = { id: string; name?: string | null; email?: string | null; image?: string | null };
 
@@ -33,6 +33,7 @@ export function ApplicantViewModal({
   onApprove,
   onReject,
   actionsDisabled = false,
+  onDownloadResume,
 }: {
   open: boolean;
   onOpenChange: (b: boolean) => void;
@@ -43,6 +44,7 @@ export function ApplicantViewModal({
   onApprove?: () => void;
   onReject?: () => void;
   actionsDisabled?: boolean;
+  onDownloadResume?: (resumeId: string) => void | Promise<void>;
 }) {
   const title = `${student?.user?.name ?? "Applicant"}${roleLabel ? ` — ${roleLabel}` : ""}`;
   const shortAddress = student?.address ? student.address.split(",")[0]?.trim() : undefined;
@@ -142,11 +144,20 @@ export function ApplicantViewModal({
                     ) : null}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button asChild size="sm">
-                      <a href={doc.url} download>
+                    {doc.url ? (
+                      <Button asChild size="sm">
+                        <a href={doc.url} download>
+                          Download
+                        </a>
+                      </Button>
+                    ) : onDownloadResume ? (
+                      <Button 
+                        size="sm"
+                        onClick={() => onDownloadResume(doc.id)}
+                      >
                         Download
-                      </a>
-                    </Button>
+                      </Button>
+                    ) : null}
                   </div>
                 </li>
               ))}
