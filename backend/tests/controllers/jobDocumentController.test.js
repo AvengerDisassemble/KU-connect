@@ -468,16 +468,30 @@ describe("Job Document Controller", () => {
   describe("GET /api/jobs/:jobId/resume/:studentUserId/download - Download job resume", () => {
     beforeEach(async () => {
       // Ensure a resume exists for testing
+      await prisma.application.deleteMany({
+        where: { studentId: studentId, jobId: jobId },
+      });
+
       await prisma.resume.deleteMany({
         where: { studentId: studentId, jobId: jobId },
       });
 
-      await prisma.resume.create({
+      const resume = await prisma.resume.create({
         data: {
           studentId: studentId,
           jobId: jobId,
           link: "job-resumes/test-job-resume.pdf",
           source: "UPLOADED",
+        },
+      });
+
+      // Create an application so HR can access the resume
+      await prisma.application.create({
+        data: {
+          studentId: studentId,
+          jobId: jobId,
+          resumeId: resume.id,
+          status: "PENDING",
         },
       });
     });
@@ -533,10 +547,18 @@ describe("Job Document Controller", () => {
       expect(response.status).toBe(404);
       expect(response.body.message).toContain("No resume found");
     });
+
+    afterEach(async () => {
+      // Clean up applications created in tests
+      await prisma.application.deleteMany({
+        where: { studentId: studentId, jobId: jobId },
+      });
+    });
   });
 
   // Clean up after all tests
   afterAll(async () => {
+    await prisma.application.deleteMany({});
     await prisma.$disconnect();
   });
 });
