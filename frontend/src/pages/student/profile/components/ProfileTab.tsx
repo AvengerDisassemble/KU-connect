@@ -219,6 +219,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                   size="icon"
                   onClick={() => setIsEditing(true)}
                   className="h-8 w-8"
+                  aria-label="Edit profile"
                 >
                   <Edit className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -379,6 +380,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
                               disabled={
                                 isLoadingDegrees || degreeOptions.length === 0
                               }
+                              aria-label="Degree Type"
                             >
                               <SelectValue
                                 placeholder={
