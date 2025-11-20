@@ -10,16 +10,16 @@ generator client {
 
 // Test SQLite datasource for local/test usage
 // Use SQLite for test/dev
-datasource test_db {
-  provider = "sqlite"
-  url      = env("TEST_DATABASE_URL")
-}
+// datasource test_db {
+//   provider = "sqlite"
+//   url      = env("TEST_DATABASE_URL")
+// }
 
 // Uncomment for production PostgreSQL
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
 
 // ------------------------------
 //  ENUMS
