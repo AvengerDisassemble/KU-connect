@@ -49,7 +49,7 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
     await page.getByRole('button', { name: /View application of/i }).first().click();
     await expect(page.getByText('Profile', { exact: true })).toBeVisible();
     await expect(page.getByText('Documents', { exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Download' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
 
     // ----------------------------
     // Approve and verify
@@ -84,7 +84,7 @@ test.describe('EMP-TS-009 Employer Manage Applicants @smoke', () => {
     await page.getByRole('button', { name: /View application of/i }).first().click();
     await expect(page.getByText('Profile', { exact: true })).toBeVisible();
     await expect(page.getByText('Documents', { exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Download' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Download' })).toBeVisible()
 
     // ----------------------------
     // Reject and verify
