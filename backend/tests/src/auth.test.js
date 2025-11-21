@@ -41,7 +41,7 @@ describe("Authentication Endpoints", () => {
         name: "John",
         surname: "Doe",
         email: "john.alumni.test@ku.th",
-        password: "Password123",
+        password: "KuConneCT!2025",
         degreeTypeId,
         address: "123 Test Street, Bangkok, Thailand",
       };
@@ -86,7 +86,7 @@ describe("Authentication Endpoints", () => {
         name: "Jane",
         surname: "Doe",
         email: "john.alumni.test@ku.th", // Same email as above
-        password: "Password123",
+        password: "KuConneCT!2025",
         degreeTypeId,
         address: "456 Test Street, Bangkok, Thailand",
       };
@@ -106,7 +106,7 @@ describe("Authentication Endpoints", () => {
         name: "Alice",
         surname: "Smith",
         email: "alice.enterprise.test@company.com",
-        password: "Password123",
+        password: "KuConneCT!2025",
         companyName: "Test Company Ltd.",
         address: "789 Business District, Bangkok, Thailand",
         phoneNumber: "02-999-1111",
@@ -146,7 +146,7 @@ describe("Authentication Endpoints", () => {
         .post("/api/login")
         .send({
           email: "john.alumni.test@ku.th",
-          password: "Password123",
+          password: "KuConneCT!2025",
         })
         .expect(200);
 
@@ -200,7 +200,7 @@ describe("Authentication Endpoints", () => {
           name: 'Suspended',
           surname: 'User',
           email: 'suspended.user@ku.th',
-          password: 'Password123',
+          password: 'KuConneCT!2025',
           degreeTypeId,
           address: '123 Test St'
         })
@@ -216,7 +216,7 @@ describe("Authentication Endpoints", () => {
         .post('/api/login')
         .send({
           email: 'suspended.user@ku.th',
-          password: 'Password123'
+          password: 'KuConneCT!2025'
         })
         .expect(403)
 
@@ -233,7 +233,7 @@ describe("Authentication Endpoints", () => {
       // Login to get tokens
       const loginResponse = await request(app).post("/api/login").send({
         email: "john.alumni.test@ku.th",
-        password: "Password123",
+        password: "KuConneCT!2025",
       });
 
       // Extract tokens from cookies

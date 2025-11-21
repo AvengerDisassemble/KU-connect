@@ -123,12 +123,33 @@ async function loginUser(email, password) {
       password: true,
       role: true,
       status: true,
-      verified: true
+      verified: true,
+      failedLoginAttempts: true,
+      lockedUntil: true
     }
   })
 
   if (!user) {
     throw new Error("Invalid credentials");
+  }
+
+  // Check if account is locked
+  if (user.lockedUntil && user.lockedUntil > new Date()) {
+    const remainingMinutes = Math.ceil((user.lockedUntil - new Date()) / 60000);
+    throw new Error(`Account locked due to multiple failed login attempts. Try again in ${remainingMinutes} minute(s).`);
+  }
+
+  // Reset lock if expired
+  if (user.lockedUntil && user.lockedUntil <= new Date()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null
+      }
+    });
+    user.failedLoginAttempts = 0;
+    user.lockedUntil = null;
   }
 
   // Block SUSPENDED users from logging in
@@ -146,7 +167,44 @@ async function loginUser(email, password) {
   // Verify password
   const isPasswordValid = await comparePassword(password, user.password);
   if (!isPasswordValid) {
-    throw new Error("Invalid credentials");
+    // Increment failed login attempts
+    const newFailedAttempts = user.failedLoginAttempts + 1;
+    const maxAttempts = 5;
+    const lockDurationMinutes = 15;
+
+    if (newFailedAttempts >= maxAttempts) {
+      // Lock account for 15 minutes
+      const lockedUntil = new Date(Date.now() + lockDurationMinutes * 60000);
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: newFailedAttempts,
+          lockedUntil: lockedUntil
+        }
+      });
+      throw new Error(`Too many failed login attempts. Account locked for ${lockDurationMinutes} minutes.`);
+    } else {
+      // Update failed attempts count
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginAttempts: newFailedAttempts
+        }
+      });
+      const attemptsRemaining = maxAttempts - newFailedAttempts;
+      throw new Error(`Invalid credentials. ${attemptsRemaining} attempt(s) remaining before account lock.`);
+    }
+  }
+
+  // Successful login - reset failed attempts
+  if (user.failedLoginAttempts > 0) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        failedLoginAttempts: 0,
+        lockedUntil: null
+      }
+    });
   }
 
   // Generate tokens
@@ -170,7 +228,7 @@ async function loginUser(email, password) {
   });
 
   // Remove password from response
-  const { password: _, ...userWithoutPassword } = user;
+  const { password: _, failedLoginAttempts: __, lockedUntil: ___, ...userWithoutPassword } = user;
 
   return {
     user: userWithoutPassword,

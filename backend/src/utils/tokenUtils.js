@@ -11,18 +11,27 @@ const REFRESH_TOKEN_EXPIRY = "7d";
 
 // Cookie encryption key - MUST be 32 bytes for AES-256
 // In production, this MUST be set in environment variables
-// For tests/development, use a deterministic fallback to avoid breaking on restarts
+// CRITICAL: Exit if not set in production to prevent session loss on restart
+if (!process.env.COOKIE_ENCRYPTION_KEY) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ FATAL: COOKIE_ENCRYPTION_KEY must be set in production environment');
+    console.error('Generate a key with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+    process.exit(1);
+  } else if (process.env.NODE_ENV === 'test') {
+    // Use deterministic key for tests
+    console.log('ℹ️  Using test COOKIE_ENCRYPTION_KEY');
+  } else {
+    // Development: warn but allow random key
+    console.warn('⚠️  WARNING: COOKIE_ENCRYPTION_KEY not set. Using random key (sessions will reset on restart)');
+    console.warn('⚠️  Generate a key with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"');
+  }
+}
+
 const COOKIE_ENCRYPTION_KEY = process.env.COOKIE_ENCRYPTION_KEY 
   ? Buffer.from(process.env.COOKIE_ENCRYPTION_KEY, 'hex')
   : process.env.NODE_ENV === 'test' 
-    ? Buffer.from('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 'hex') // Deterministic test key
-    : crypto.randomBytes(32); // Random key for development
-
-// Warn if using fallback key (but not in test mode to avoid noise)
-if (!process.env.COOKIE_ENCRYPTION_KEY && process.env.NODE_ENV !== 'test') {
-  console.warn('⚠️  WARNING: COOKIE_ENCRYPTION_KEY not set in environment. Using random key (will break on server restart).');
-  console.warn('⚠️  Generate a key with: node -e "console.log(crypto.randomBytes(32).toString(\'hex\'))"');
-}
+    ? Buffer.from('0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef', 'hex')
+    : crypto.randomBytes(32);
 
 /**
  * Generate an access token

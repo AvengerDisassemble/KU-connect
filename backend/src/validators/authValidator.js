@@ -1,6 +1,7 @@
 /**
  * Validation schemas for authentication endpoints
  */
+const { isPasswordBreached } = require('../utils/passwordUtils');
 
 /**
  * Validate email format
@@ -55,6 +56,33 @@ function validatePassword(password) {
 }
 
 /**
+ * Validate password strength and check if it's been breached (async version)
+ * @param {string} password - Password to validate
+ * @returns {Promise<Object>} Validation result with isValid and message
+ */
+async function validatePasswordWithBreachCheck(password) {
+  // First check password strength
+  const strengthCheck = validatePassword(password);
+  if (!strengthCheck.isValid) {
+    return strengthCheck;
+  }
+
+  // Then check if password has been breached
+  const breached = await isPasswordBreached(password);
+  if (breached) {
+    return {
+      isValid: false,
+      message: "This password has been found in data breaches and cannot be used. Please choose a different password.",
+    };
+  }
+
+  return {
+    isValid: true,
+    message: "Password is valid",
+  };
+}
+
+/**
  * Validate login request body
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -91,7 +119,7 @@ function validateLogin(req, res, next) {
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-function validateAlumniRegistration(req, res, next) {
+async function validateAlumniRegistration(req, res, next) {
   const { name, surname, email, password, degreeTypeId, address } = req.body;
   const errors = [];
 
@@ -112,7 +140,7 @@ function validateAlumniRegistration(req, res, next) {
   if (!password) {
     errors.push("Password is required");
   } else {
-    const passwordValidation = validatePassword(password);
+    const passwordValidation = await validatePasswordWithBreachCheck(password);
     if (!passwordValidation.isValid) {
       errors.push(passwordValidation.message);
     }
@@ -147,7 +175,7 @@ function validateAlumniRegistration(req, res, next) {
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-function validateEnterpriseRegistration(req, res, next) {
+async function validateEnterpriseRegistration(req, res, next) {
   const { name, surname, email, password, companyName, address, phoneNumber } =
     req.body;
   const errors = [];
@@ -169,7 +197,7 @@ function validateEnterpriseRegistration(req, res, next) {
   if (!password) {
     errors.push("Password is required");
   } else {
-    const passwordValidation = validatePassword(password);
+    const passwordValidation = await validatePasswordWithBreachCheck(password);
     if (!passwordValidation.isValid) {
       errors.push(passwordValidation.message);
     }
@@ -208,7 +236,7 @@ function validateEnterpriseRegistration(req, res, next) {
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-function validateStaffRegistration(req, res, next) {
+async function validateStaffRegistration(req, res, next) {
   const { name, surname, email, password, department } = req.body;
   const errors = [];
 
@@ -236,7 +264,7 @@ function validateStaffRegistration(req, res, next) {
     errors.push("Invalid email format");
   }
 
-  const passwordValidation = validatePassword(password);
+  const passwordValidation = await validatePasswordWithBreachCheck(password);
   if (!passwordValidation.isValid) {
     errors.push(passwordValidation.message);
   }
@@ -262,7 +290,7 @@ function validateStaffRegistration(req, res, next) {
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
  */
-function validateAdminRegistration(req, res, next) {
+async function validateAdminRegistration(req, res, next) {
   const { name, surname, email, password } = req.body;
   const errors = [];
 
@@ -288,7 +316,7 @@ function validateAdminRegistration(req, res, next) {
     errors.push("Invalid email format");
   }
 
-  const passwordValidation = validatePassword(password);
+  const passwordValidation = await validatePasswordWithBreachCheck(password);
   if (!passwordValidation.isValid) {
     errors.push(passwordValidation.message);
   }
@@ -312,4 +340,5 @@ module.exports = {
   validateAdminRegistration,
   isValidEmail,
   validatePassword,
+  validatePasswordWithBreachCheck,
 };
