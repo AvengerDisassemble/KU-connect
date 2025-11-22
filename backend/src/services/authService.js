@@ -1,6 +1,9 @@
 const prisma = require('../models/prisma')
 const { hashPassword, comparePassword } = require('../utils/passwordUtils')
 const { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateJwtId, getRefreshTokenExpiry } = require('../utils/tokenUtils')
+const mfaService = require('./mfaService')
+const sessionService = require('./sessionService')
+const jwt = require('jsonwebtoken')
 
 
 /**
@@ -111,7 +114,7 @@ async function registerUser(userData, roleSpecificData = {}) {
  * @param {string} password - User's password
  * @returns {Promise<Object>} User data and tokens
  */
-async function loginUser(email, password) {
+async function loginUser(email, password, req = null) {
   // Find user by email
   const user = await prisma.user.findUnique({
     where: { email },
@@ -125,7 +128,9 @@ async function loginUser(email, password) {
       status: true,
       verified: true,
       failedLoginAttempts: true,
-      lockedUntil: true
+      lockedUntil: true,
+      mfaEnabled: true,
+      mfaSecret: true
     }
   })
 
@@ -207,6 +212,137 @@ async function loginUser(email, password) {
     });
   }
 
+  // Check if MFA is enabled for this user
+  if (user.mfaEnabled && user.mfaSecret) {
+    // Generate temporary token for MFA verification (expires in 5 minutes)
+    const tempToken = jwt.sign(
+      {
+        id: user.id,
+        type: 'mfa_temp',
+        timestamp: Date.now()
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '5m' }
+    );
+
+    // Remove sensitive data from response
+    const { password: _, failedLoginAttempts: __, lockedUntil: ___, mfaSecret: ____, ...userWithoutPassword } = user;
+
+    return {
+      mfaRequired: true,
+      tempToken,
+      userId: user.id,
+      message: 'MFA verification required',
+    };
+  }
+
+  // Generate tokens for non-MFA users
+  const jwtId = generateJwtId();
+  const accessToken = generateAccessToken({
+    id: user.id,
+    role: user.role,
+  });
+  const refreshToken = generateRefreshToken({
+    id: user.id,
+    jti: jwtId,
+  });
+
+  // Store refresh token in database
+  await prisma.refreshToken.create({
+    data: {
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: getRefreshTokenExpiry(),
+    },
+  });
+
+  // Create session for non-MFA users
+  let sessionId = null;
+  if (req) {
+    try {
+      const session = await sessionService.createSession(user.id, req);
+      sessionId = session.id;
+    } catch (error) {
+      console.error('Failed to create session:', error.message);
+    }
+  }
+
+  // Remove password from response
+  const { password: _, failedLoginAttempts: __, lockedUntil: ___, mfaEnabled: ____, mfaSecret: _____, ...userWithoutPassword } = user;
+
+  return {
+    user: userWithoutPassword,
+    accessToken,
+    refreshToken,
+    sessionId,
+  };
+}
+
+/**
+ * Verify MFA code and complete login
+ * @param {string} tempToken - Temporary token from initial login
+ * @param {string} mfaCode - 6-digit TOTP code or recovery code
+ * @param {Object} req - Express request object for session tracking
+ * @returns {Promise<Object>} User data and tokens
+ */
+async function verifyMfaLogin(tempToken, mfaCode, req = null) {
+  // Verify temporary token
+  let decoded;
+  try {
+    decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
+    if (decoded.type !== 'mfa_temp') {
+      throw new Error('Invalid token type');
+    }
+  } catch (error) {
+    throw new Error('Invalid or expired temporary token');
+  }
+
+  // Get user with MFA details
+  const user = await prisma.user.findUnique({
+    where: { id: decoded.id },
+    select: {
+      id: true,
+      name: true,
+      surname: true,
+      email: true,
+      role: true,
+      status: true,
+      verified: true,
+      mfaEnabled: true,
+      mfaSecret: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  if (!user.mfaEnabled || !user.mfaSecret) {
+    throw new Error('MFA not enabled for this user');
+  }
+
+  // Check if account is suspended
+  if (user.status === 'SUSPENDED') {
+    throw new Error('Account suspended. Please contact administrator.');
+  }
+
+  // Try to verify as TOTP code first
+  let isValid = false;
+  let usedRecoveryCode = false;
+
+  if (mfaCode.length === 6 && /^\d{6}$/.test(mfaCode)) {
+    // 6-digit code - verify as TOTP
+    isValid = mfaService.verifyMfaToken(user.mfaSecret, mfaCode);
+  } else if (mfaCode.length === 8) {
+    // 8-character code - verify as recovery code
+    isValid = await mfaService.verifyRecoveryCode(user.id, mfaCode);
+    usedRecoveryCode = isValid;
+  }
+
+  if (!isValid) {
+    throw new Error('Invalid MFA code');
+  }
+
   // Generate tokens
   const jwtId = generateJwtId();
   const accessToken = generateAccessToken({
@@ -227,13 +363,36 @@ async function loginUser(email, password) {
     },
   });
 
-  // Remove password from response
-  const { password: _, failedLoginAttempts: __, lockedUntil: ___, ...userWithoutPassword } = user;
+  // Create session
+  let sessionId = null;
+  let isNewDevice = false;
+  if (req) {
+    try {
+      const session = await sessionService.createSession(user.id, req);
+      sessionId = session.id;
+      
+      // Check if this is a new device
+      const deviceId = sessionService.generateDeviceFingerprint(req);
+      isNewDevice = await sessionService.isNewDevice(user.id, deviceId);
+    } catch (error) {
+      console.error('Failed to create session:', error.message);
+    }
+  }
+
+  // Get remaining recovery codes count
+  const remainingRecoveryCodes = await mfaService.getRemainingRecoveryCodesCount(user.id);
+
+  // Remove sensitive data from response
+  const { mfaSecret: _, ...userWithoutSensitiveData } = user;
 
   return {
-    user: userWithoutPassword,
+    user: userWithoutSensitiveData,
     accessToken,
     refreshToken,
+    sessionId,
+    usedRecoveryCode,
+    remainingRecoveryCodes,
+    isNewDevice,
   };
 }
 
@@ -486,6 +645,7 @@ async function findOrCreateGoogleUser(googleProfile) {
 module.exports = {
   registerUser,
   loginUser,
+  verifyMfaLogin,
   refreshAccessToken,
   logoutUser,
   getUserById,

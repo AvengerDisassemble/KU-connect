@@ -105,6 +105,10 @@ model User {
   phoneNumber             String?
   failedLoginAttempts     Int                @default(0)
   lockedUntil             DateTime?
+  mfaEnabled              Boolean            @default(false)
+  mfaSecret               String?            // Encrypted TOTP secret
+  mfaEnrolledAt           DateTime?
+  mfaGracePeriodEnds      DateTime?          // Admin MFA enforcement grace period (7 days)
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
   professor               Professor?
@@ -117,6 +121,8 @@ model User {
   announcements           Announcement[]
   notifications           Notification[]       @relation("NotificationRecipient")
   sentNotifications       Notification[]       @relation("NotificationSender")
+  sessions                Session[]
+  recoveryCodes           RecoveryCode[]
   // Back-relation to saved jobs — allows querying what this user saved
   savedJobs     SavedJob[]
 }
@@ -128,6 +134,32 @@ model RefreshToken {
   createdAt DateTime @default(now())
   expiresAt DateTime
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  deviceId     String   // Browser fingerprint
+  ipAddress    String
+  userAgent    String
+  createdAt    DateTime @default(now())
+  lastActiveAt DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([deviceId])
+}
+
+model RecoveryCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String   @unique
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
 }
 
 model Account {

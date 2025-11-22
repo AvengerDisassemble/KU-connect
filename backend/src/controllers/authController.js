@@ -1,6 +1,7 @@
 const {
   registerUser,
   loginUser,
+  verifyMfaLogin,
   refreshAccessToken,
   logoutUser,
 } = require("../services/authService");
@@ -22,8 +23,20 @@ const login = asyncErrorHandler(async (req, res) => {
     });
   }
 
-  // Authenticate user
-  const result = await loginUser(email, password);
+  // Authenticate user (may return MFA requirement)
+  const result = await loginUser(email, password, req);
+
+  // Check if MFA is required
+  if (result.mfaRequired) {
+    // Return temporary token for MFA verification
+    return res.json({
+      success: true,
+      mfaRequired: true,
+      tempToken: result.tempToken,
+      userId: result.userId,
+      message: result.message || "MFA verification required",
+    });
+  }
 
   // Encrypt tokens before storing in cookies for security
   const encryptedAccessToken = encryptToken(result.accessToken);
@@ -49,6 +62,7 @@ const login = asyncErrorHandler(async (req, res) => {
     message: "Login successful",
     data: {
       user: result.user,
+      sessionId: result.sessionId,
     },
   });
 });
@@ -288,8 +302,75 @@ const getProfile = asyncErrorHandler(async (req, res) => {
   });
 });
 
+/**
+ * Verify MFA code and complete login
+ * POST /auth/mfa/verify-login
+ */
+const verifyMfa = asyncErrorHandler(async (req, res) => {
+  const { tempToken, mfaCode } = req.body;
+
+  // Validate input
+  if (!tempToken || !mfaCode) {
+    return res.status(400).json({
+      success: false,
+      message: "Temporary token and MFA code are required",
+    });
+  }
+
+  // Verify MFA and complete login
+  const result = await verifyMfaLogin(tempToken, mfaCode, req);
+
+  // Encrypt tokens before storing in cookies
+  const encryptedAccessToken = encryptToken(result.accessToken);
+  const encryptedRefreshToken = encryptToken(result.refreshToken);
+
+  // Set encrypted tokens in HTTP-only cookies
+  res.cookie("accessToken", encryptedAccessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 15 * 60 * 1000, // 15 minutes
+  });
+
+  res.cookie("refreshToken", encryptedRefreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
+  // Prepare response
+  const response = {
+    success: true,
+    message: "MFA verification successful",
+    data: {
+      user: result.user,
+      sessionId: result.sessionId,
+    },
+  };
+
+  // Add warnings if recovery code was used
+  if (result.usedRecoveryCode) {
+    response.warning = `Recovery code used. You have ${result.remainingRecoveryCodes} recovery code(s) remaining.`;
+    
+    if (result.remainingRecoveryCodes === 0) {
+      response.warning += " Please generate new recovery codes immediately.";
+    } else if (result.remainingRecoveryCodes <= 2) {
+      response.warning += " Consider generating new recovery codes soon.";
+    }
+  }
+
+  // Add new device notification
+  if (result.isNewDevice) {
+    response.info = "Login from new device detected.";
+  }
+
+  res.json(response);
+});
+
 module.exports = {
   login,
+  verifyMfa,
   registerAlumni,
   registerEnterprise,
   registerStaff,

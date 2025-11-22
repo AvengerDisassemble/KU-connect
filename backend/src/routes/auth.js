@@ -3,7 +3,22 @@ const {
   refreshToken,
   logout,
   getProfile,
+  verifyMfa,
 } = require("../controllers/authController");
+const {
+  enrollMfa,
+  verifyAndEnableMfa,
+  disableMfa,
+  getMfaStatus,
+  regenerateRecoveryCodes,
+} = require("../controllers/mfaController");
+const {
+  getUserSessions,
+  revokeSession,
+  revokeAllSessions,
+  checkSessionStatus,
+  updateActivity,
+} = require("../controllers/sessionController");
 const { authMiddleware } = require("../middlewares/authMiddleware");
 const { authLimiter } = require("../middlewares/rateLimitMiddleware");
 const passport = require("../utils/passport");
@@ -281,5 +296,90 @@ router.post("/logout", authLimiter, logout);
  * @access Private
  */
 router.get("/me", authLimiter, authMiddleware, getProfile);
+
+/**
+ * MFA Routes
+ */
+
+/**
+ * @route POST /auth/mfa/verify-login
+ * @desc Verify MFA code and complete login
+ * @access Public
+ */
+router.post("/mfa/verify-login", authLimiter, verifyMfa);
+
+/**
+ * @route POST /auth/mfa/enroll
+ * @desc Generate MFA secret and QR code for enrollment
+ * @access Private (authenticated users)
+ */
+router.post("/mfa/enroll", authLimiter, authMiddleware, enrollMfa);
+
+/**
+ * @route POST /auth/mfa/verify
+ * @desc Verify TOTP code and enable MFA
+ * @access Private (authenticated users)
+ */
+router.post("/mfa/verify", authLimiter, authMiddleware, verifyAndEnableMfa);
+
+/**
+ * @route POST /auth/mfa/disable
+ * @desc Disable MFA (requires password and current TOTP)
+ * @access Private (authenticated users)
+ */
+router.post("/mfa/disable", authLimiter, authMiddleware, disableMfa);
+
+/**
+ * @route GET /auth/mfa/status
+ * @desc Get MFA status for current user
+ * @access Private (authenticated users)
+ */
+router.get("/mfa/status", authLimiter, authMiddleware, getMfaStatus);
+
+/**
+ * @route POST /auth/mfa/regenerate-codes
+ * @desc Regenerate recovery codes (requires current TOTP)
+ * @access Private (authenticated users)
+ */
+router.post("/mfa/regenerate-codes", authLimiter, authMiddleware, regenerateRecoveryCodes);
+
+/**
+ * Session Management Routes
+ */
+
+/**
+ * @route GET /auth/sessions
+ * @desc Get all active sessions for current user
+ * @access Private (authenticated users)
+ */
+router.get("/sessions", authLimiter, authMiddleware, getUserSessions);
+
+/**
+ * @route DELETE /auth/sessions/all
+ * @desc Revoke all sessions for current user
+ * @access Private (authenticated users)
+ */
+router.delete("/sessions/all", authLimiter, authMiddleware, revokeAllSessions);
+
+/**
+ * @route DELETE /auth/sessions/:sessionId
+ * @desc Revoke a specific session
+ * @access Private (authenticated users)
+ */
+router.delete("/sessions/:sessionId", authLimiter, authMiddleware, revokeSession);
+
+/**
+ * @route GET /auth/session/status
+ * @desc Check if current session is still valid
+ * @access Private (authenticated users)
+ */
+router.get("/session/status", authLimiter, authMiddleware, checkSessionStatus);
+
+/**
+ * @route POST /auth/session/activity
+ * @desc Update session activity timestamp
+ * @access Private (authenticated users)
+ */
+router.post("/session/activity", authMiddleware, updateActivity);
 
 module.exports = router;
