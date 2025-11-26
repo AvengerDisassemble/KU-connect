@@ -31,10 +31,20 @@ async function getSaved(req, res) {
     const page = req.query.page || 1;
     const pageSize = req.query.pageSize || 20;
     const result = await savedService.listSavedJobs(userId, { page, pageSize });
+    req.log?.("info", "saved.list", {
+      userId,
+      ip: req.ip,
+      page,
+      pageSize,
+      count: result?.items?.length || result?.length,
+    });
     return res.status(200).json({ success: true, data: result });
   } catch (err) {
-    console.error(err);
-    console.error(err && err.stack);
+    req.log?.("error", "saved.list.error", {
+      userId: extractUserIdFromReq(req),
+      ip: req.ip,
+      error: err.message,
+    });
     return res
       .status(500)
       .json({
@@ -53,14 +63,22 @@ async function getSaved(req, res) {
  */
 async function postSaved(req, res) {
   try {
-    console.log("postSaved called with params=", req.params, "body=", req.body);
     const userId = extractUserIdFromReq(req);
     const jobId = String(req.body.jobId);
-    console.log("postSaved parsed userId, jobId=", userId, jobId);
     const saved = await savedService.addSavedJob(userId, jobId);
+    req.log?.("info", "saved.add", {
+      userId,
+      jobId,
+      ip: req.ip,
+    });
     return res.status(201).json({ success: true, data: saved });
   } catch (err) {
     if (err.code === "ALREADY_SAVED") {
+      req.log?.("warn", "saved.add.already_saved", {
+        userId: extractUserIdFromReq(req),
+        jobId: req.body?.jobId,
+        ip: req.ip,
+      });
       return res
         .status(409)
         .json({
@@ -69,6 +87,11 @@ async function postSaved(req, res) {
         });
     }
     if (err.code === "NOT_FOUND") {
+      req.log?.("warn", "saved.add.not_found", {
+        userId: extractUserIdFromReq(req),
+        jobId: req.body?.jobId,
+        ip: req.ip,
+      });
       return res
         .status(404)
         .json({
@@ -76,8 +99,12 @@ async function postSaved(req, res) {
           error: { code: "NOT_FOUND", message: "Job or user not found" },
         });
     }
-    console.error(err);
-    console.error(err && err.stack);
+    req.log?.("error", "saved.add.error", {
+      userId: extractUserIdFromReq(req),
+      jobId: req.body?.jobId,
+      ip: req.ip,
+      error: err.message,
+    });
     return res
       .status(500)
       .json({
@@ -99,9 +126,19 @@ async function deleteSaved(req, res) {
     const userId = extractUserIdFromReq(req);
     const jobId = String(req.body.jobId);
     await savedService.removeSavedJob(userId, jobId);
+    req.log?.("info", "saved.remove", {
+      userId,
+      jobId,
+      ip: req.ip,
+    });
     return res.status(204).send();
   } catch (err) {
     if (err.code === "NOT_FOUND") {
+      req.log?.("warn", "saved.remove.not_found", {
+        userId: extractUserIdFromReq(req),
+        jobId: req.body?.jobId,
+        ip: req.ip,
+      });
       return res
         .status(404)
         .json({
@@ -109,8 +146,12 @@ async function deleteSaved(req, res) {
           error: { code: "NOT_FOUND", message: "Saved job not found" },
         });
     }
-    console.error(err);
-    console.error(err && err.stack);
+    req.log?.("error", "saved.remove.error", {
+      userId: extractUserIdFromReq(req),
+      jobId: req.body?.jobId,
+      ip: req.ip,
+      error: err.message,
+    });
     return res
       .status(500)
       .json({
