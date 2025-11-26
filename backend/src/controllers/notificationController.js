@@ -26,13 +26,27 @@ async function getUserNotifications(req, res) {
       limit: parseInt(limit) || 20
     })
 
+    req.log?.('info', 'notification.list', {
+      userId,
+      ip: req.ip,
+      type,
+      unreadOnly: unreadOnly === 'true',
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 20,
+      count: result?.items?.length || result?.length
+    })
+
     res.status(200).json({
       success: true,
       message: 'Notifications retrieved successfully',
       data: result
     })
   } catch (error) {
-    console.error('Get notifications error:', error.message)
+    req.log?.('error', 'notification.list.error', {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message
+    })
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve notifications'
@@ -53,19 +67,34 @@ async function markAsRead(req, res) {
     const notification = await notificationService.markAsRead(notificationId, userId)
 
     if (!notification) {
+      req.log?.('warn', 'notification.read.not_found', {
+        userId,
+        notificationId,
+        ip: req.ip
+      })
       return res.status(404).json({
         success: false,
         message: 'Notification not found or unauthorized'
       })
     }
 
+    req.log?.('info', 'notification.read', {
+      userId,
+      notificationId,
+      ip: req.ip
+    })
     res.status(200).json({
       success: true,
       message: 'Notification marked as read',
       data: notification
     })
   } catch (error) {
-    console.error('Mark as read error:', error.message)
+    req.log?.('error', 'notification.read.error', {
+      userId: req.user?.id,
+      notificationId: req.params?.id,
+      ip: req.ip,
+      error: error.message
+    })
     res.status(500).json({
       success: false,
       message: 'Failed to mark notification as read'
@@ -86,13 +115,23 @@ async function markAllAsRead(req, res) {
 
     const count = await notificationService.markAllAsRead(userId, type)
 
+    req.log?.('info', 'notification.read_all', {
+      userId,
+      ip: req.ip,
+      type,
+      count
+    })
     res.status(200).json({
       success: true,
       message: `Marked ${count} notification(s) as read`,
       data: { count }
     })
   } catch (error) {
-    console.error('Mark all as read error:', error.message)
+    req.log?.('error', 'notification.read_all.error', {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message
+    })
     res.status(500).json({
       success: false,
       message: 'Failed to mark all notifications as read'
@@ -113,13 +152,23 @@ async function getUnreadCount(req, res) {
 
     const count = await notificationService.getUnreadCount(userId, type)
 
+    req.log?.('info', 'notification.unread.count', {
+      userId,
+      ip: req.ip,
+      type,
+      count
+    })
     res.status(200).json({
       success: true,
       message: 'Unread count retrieved successfully',
       data: { count }
     })
   } catch (error) {
-    console.error('Get unread count error:', error.message)
+    req.log?.('error', 'notification.unread.count.error', {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message
+    })
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve unread count'
@@ -140,19 +189,34 @@ async function deleteNotification(req, res) {
     const notification = await notificationService.deleteNotification(notificationId, userId)
 
     if (!notification) {
+      req.log?.('warn', 'notification.delete.not_found', {
+        userId,
+        notificationId,
+        ip: req.ip
+      })
       return res.status(404).json({
         success: false,
         message: 'Notification not found or unauthorized'
       })
     }
 
+    req.log?.('info', 'notification.delete', {
+      userId,
+      notificationId,
+      ip: req.ip
+    })
     res.status(200).json({
       success: true,
       message: 'Notification deleted successfully',
       data: notification
     })
   } catch (error) {
-    console.error('Delete notification error:', error.message)
+    req.log?.('error', 'notification.delete.error', {
+      userId: req.user?.id,
+      notificationId: req.params?.id,
+      ip: req.ip,
+      error: error.message
+    })
     res.status(500).json({
       success: false,
       message: 'Failed to delete notification'
@@ -171,13 +235,21 @@ async function getNotificationStats(req, res) {
 
     const stats = await notificationService.getNotificationStats(userId)
 
+    req.log?.('info', 'notification.stats', {
+      userId,
+      ip: req.ip
+    })
     res.status(200).json({
       success: true,
       message: 'Notification statistics retrieved successfully',
       data: stats
     })
   } catch (error) {
-    console.error('Get notification stats error:', error.message)
+    req.log?.('error', 'notification.stats.error', {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message
+    })
     res.status(500).json({
       success: false,
       message: 'Failed to retrieve notification statistics'
