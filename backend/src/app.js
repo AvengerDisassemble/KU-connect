@@ -9,6 +9,7 @@ const cookieParser = require("cookie-parser");
 const passport = require("./utils/passport");
 const routes = require("./routes");
 const { errorHandler } = require("./middlewares/errorHandler");
+const { requestLogger } = require("./middlewares/loggingMiddleware");
 
 const app = express();
 
@@ -22,8 +23,12 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
-app.use(morgan("dev"));
+// Keep concise console logging in development; structured logging handled separately
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
+}
 app.use(express.urlencoded({ extended: true }));
+app.use(requestLogger);
 
 // Initialize Passport (without sessions)
 app.use(passport.initialize());
