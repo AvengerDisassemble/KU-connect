@@ -22,6 +22,10 @@ async function updateProfile(req, res) {
 
     // Prevent email change at controller level - fail fast before database operations
     if (updateData.email) {
+      req.log?.("warn", "profile.update.email_blocked", {
+        userId,
+        ip: req.ip,
+      });
       return res.status(400).json({
         success: false,
         message: "Email cannot be changed. Please contact support.",
@@ -30,6 +34,10 @@ async function updateProfile(req, res) {
 
     const profile = await profileService.getProfileById(userId);
     if (!profile) {
+      req.log?.("warn", "profile.update.not_found", {
+        userId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -42,6 +50,10 @@ async function updateProfile(req, res) {
       if (profile.student && !profile.hr) resolvedRole = "student";
       else if (profile.hr && !profile.student) resolvedRole = "hr";
       else {
+        req.log?.("warn", "profile.update.role_undetermined", {
+          userId,
+          ip: req.ip,
+        });
         return res.status(400).json({
           success: false,
           message: "User role not determined",
@@ -66,8 +78,19 @@ async function updateProfile(req, res) {
       message: "Profile updated successfully",
       data: result,
     });
+
+    req.log?.("info", "profile.update.success", {
+      userId,
+      ip: req.ip,
+      role: resolvedRole,
+      fields: Object.keys(updateData || {}),
+    });
   } catch (error) {
-    console.error("Profile update error:", error);
+    req.log?.("error", "profile.update.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to update profile",
@@ -92,6 +115,11 @@ async function getProfile(req, res) {
 
     // Non-privileged users can only access their own profile
     if (requestedUserId !== userId && !privilegedRoles.includes(userRole)) {
+      req.log?.("warn", "profile.get.forbidden", {
+        userId,
+        requestedUserId,
+        ip: req.ip,
+      });
       return res.status(403).json({
         success: false,
         message: "Access denied: you are not authorized to view this profile",
@@ -101,11 +129,22 @@ async function getProfile(req, res) {
     const profile = await profileService.getProfileById(requestedUserId);
 
     if (!profile) {
+      req.log?.("warn", "profile.get.not_found", {
+        userId,
+        requestedUserId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "Profile not found",
       });
     }
+
+    req.log?.("info", "profile.get", {
+      userId,
+      requestedUserId,
+      ip: req.ip,
+    });
 
     res.status(200).json({
       success: true,
@@ -113,7 +152,12 @@ async function getProfile(req, res) {
       data: profile,
     });
   } catch (error) {
-    console.error("Get profile error:", error);
+    req.log?.("error", "profile.get.error", {
+      userId: req.user?.id,
+      requestedUserId: req.params?.userId,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to get profile",
@@ -131,13 +175,23 @@ async function listProfiles(req, res) {
   try {
     const profiles = await profileService.listProfiles();
 
+    req.log?.("info", "profile.list", {
+      userId: req.user?.id,
+      ip: req.ip,
+      count: profiles.length,
+    });
+
     res.status(200).json({
       success: true,
       message: "Profiles listed successfully",
       data: profiles,
     });
   } catch (error) {
-    console.error("List profiles error:", error);
+    req.log?.("error", "profile.list.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to list profiles",
@@ -154,6 +208,10 @@ async function listProfiles(req, res) {
 async function uploadAvatar(req, res) {
   try {
     if (!req.file) {
+      req.log?.("warn", "profile.avatar.upload.missing_file", {
+        userId: req.user?.id,
+        ip: req.ip,
+      });
       return res.status(400).json({
         success: false,
         message: "No file uploaded",
@@ -173,7 +231,11 @@ async function uploadAvatar(req, res) {
       try {
         await storageProvider.deleteFile(user.avatarKey);
       } catch (error) {
-        console.error("Failed to delete old avatar:", error.message);
+        req.log?.("warn", "profile.avatar.upload.cleanup_failed", {
+          userId,
+          ip: req.ip,
+          error: error.message,
+        });
         // Don't fail the request if old file deletion fails
       }
     }
@@ -197,8 +259,20 @@ async function uploadAvatar(req, res) {
       message: "Avatar uploaded successfully",
       data: { fileKey },
     });
+
+    req.log?.("info", "profile.avatar.upload.success", {
+      userId,
+      ip: req.ip,
+      fileKey,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+    });
   } catch (error) {
-    console.error("Avatar upload error:", error);
+    req.log?.("error", "profile.avatar.upload.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to upload avatar",
@@ -222,6 +296,10 @@ async function downloadAvatar(req, res) {
     });
 
     if (!user) {
+      req.log?.("warn", "profile.avatar.download.not_found_user", {
+        requestedUserId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -229,6 +307,10 @@ async function downloadAvatar(req, res) {
     }
 
     if (!user.avatarKey) {
+      req.log?.("warn", "profile.avatar.download.missing", {
+        requestedUserId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "No avatar found for this user",
@@ -241,6 +323,10 @@ async function downloadAvatar(req, res) {
     );
 
     if (signedUrl) {
+      req.log?.("info", "profile.avatar.download.redirect", {
+        requestedUserId,
+        ip: req.ip,
+      });
       return res.redirect(signedUrl);
     }
 
@@ -255,8 +341,18 @@ async function downloadAvatar(req, res) {
     res.setHeader("X-Content-Type-Options", "nosniff");
 
     stream.pipe(res);
+
+    req.log?.("info", "profile.avatar.download.stream", {
+      requestedUserId,
+      ip: req.ip,
+      fileKey: user.avatarKey,
+    });
   } catch (error) {
-    console.error("Download avatar error:", error);
+    req.log?.("error", "profile.avatar.download.error", {
+      requestedUserId: req.params?.userId,
+      ip: req.ip,
+      error: error.message,
+    });
 
     if (error.message && error.message.includes("File not found")) {
       return res.status(404).json({
@@ -377,6 +473,11 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
       } else if (stat.status === 'REJECTED') {
         applicationStats.rejected = count
       }
+    })
+
+    req.log?.("info", "profile.dashboard.student", {
+      userId,
+      ip: req.ip
     })
 
     // Build student response
@@ -541,6 +642,13 @@ const getDashboardData = asyncErrorHandler(async (req, res) => {
       }
     })
 
+    req.log?.("info", "profile.dashboard.employer", {
+      userId,
+      ip: req.ip,
+      hrId: hr.id,
+      companyName: hr.companyName
+    })
+
     // Build employer response
     return res.status(200).json({
       success: true,
@@ -588,4 +696,3 @@ module.exports = {
   downloadAvatar,
   getDashboardData
 }
-
