@@ -84,10 +84,10 @@ const PrivacyPolicyPage = () => {
             “Delete my account” option. For other privacy questions, contact our
             support team at{" "}
             <a
-              href="mailto:privacy@ku-connect.example.com"
+              href="mailto:privacy@ku-connect.com"
               className="text-primary underline-offset-2 hover:underline"
             >
-              privacy@ku-connect.example.com
+              privacy@ku-connect.com
             </a>
             .
           </p>
