@@ -29,6 +29,8 @@ import {
   type UpdateEmployerProfileRequest,
 } from "@/services/employerProfile";
 import { EMPLOYER_PROFILE_DRAFT_KEY } from "@/lib/constants/storageKeys";
+import { ConsentCheckbox } from "@/components/ConsentCheckbox";
+import { buildPrivacyConsentPayload } from "@/types/privacy";
 
 const PASSWORD_RULES = [
   {
@@ -232,6 +234,8 @@ const EmployerRegistration = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasConsent, setHasConsent] = useState(false);
+  const [showConsentError, setShowConsentError] = useState(false);
   const stepContainerRef = useRef<HTMLDivElement>(null);
   const passwordStrength = getPasswordStrength(formData.password);
   const passwordRuleViolations =
@@ -252,6 +256,7 @@ const EmployerRegistration = () => {
   const requiredFieldsValid = REQUIRED_FIELDS.every(
     (field) => !getFieldValidationMessage(field, getFieldValue(field)),
   );
+  const canSubmit = requiredFieldsValid && hasConsent;
   const passwordAssistiveIds: string[] = [];
   if (formData.password) {
     passwordAssistiveIds.push("password-strength");
@@ -367,6 +372,14 @@ const EmployerRegistration = () => {
       return;
     }
 
+    if (!hasConsent) {
+      setShowConsentError(true);
+      toast.error(
+        "Please confirm the privacy consent before submitting your application."
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     setErrors({});
 
@@ -389,6 +402,7 @@ const EmployerRegistration = () => {
         address: formData.address.trim(),
         phoneNumber: formData.phoneNumber.trim(),
         ...(industryValue ? { industry: industryValue } : {}),
+        privacyConsent: buildPrivacyConsentPayload(hasConsent),
       };
 
       const response = await registerEmployer(payload);
@@ -940,6 +954,26 @@ const EmployerRegistration = () => {
               uploaded after you sign in to the employer profile.
             </div>
 
+            <div className="rounded-lg border border-border/70 bg-muted/30 p-4 space-y-2">
+              <ConsentCheckbox
+                id="employer-privacy-consent"
+                checked={hasConsent}
+                onChange={(value) => {
+                  setHasConsent(value);
+                  if (value) {
+                    setShowConsentError(false);
+                  }
+                }}
+                required
+              />
+              {!hasConsent && showConsentError && (
+                <p className="text-sm text-destructive" role="alert">
+                  Please confirm your consent to personal data processing to
+                  continue.
+                </p>
+              )}
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 variant="outline"
@@ -953,7 +987,7 @@ const EmployerRegistration = () => {
               <Button
                 onClick={handleSubmit}
                 className="flex-1 h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"
-                disabled={isSubmitting || !requiredFieldsValid}
+                disabled={isSubmitting || !canSubmit}
               >
                 {isSubmitting ? "Submitting..." : "Submit for Verification"}
               </Button>

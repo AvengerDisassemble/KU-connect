@@ -38,6 +38,8 @@ async function main() {
       role: 'ADMIN',
       status: 'APPROVED',
       verified: true,
+      dataProcessingConsent: true,
+      privacyPolicyAcceptedAt: new Date(),
       admin: { create: {} },
     },
   });
@@ -58,6 +60,8 @@ async function main() {
       role: 'EMPLOYER',
       status: 'APPROVED',
       verified: true,
+      dataProcessingConsent: true,
+      privacyPolicyAcceptedAt: new Date(),
       hr: {
         create: {
           companyName: 'Acme Corporation',
@@ -98,6 +102,8 @@ async function main() {
       role: 'STUDENT',
       status: 'APPROVED',
       verified: true,
+      dataProcessingConsent: true,
+      privacyPolicyAcceptedAt: new Date(),
       student: {
         create: {
           degreeTypeId: bachelor.id,
@@ -258,6 +264,8 @@ async function main() {
       role: 'EMPLOYER',
       status: 'APPROVED',
       verified: true,
+      dataProcessingConsent: true,
+      privacyPolicyAcceptedAt: new Date(),
       hr: {
         create: {
           companyName,

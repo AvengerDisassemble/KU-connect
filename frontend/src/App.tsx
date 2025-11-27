@@ -6,6 +6,7 @@ import LandingPage from "@/pages/public/LandingPage";
 import LoginPage from "@/pages/public/login/LoginPage";
 import RegisterPage from "@/pages/public/register/RegisterPage";
 import NotFoundPage from "@/pages/public/NotFoundPage";
+import PrivacyPolicyPage from "@/pages/public/PrivacyPolicyPage";
 import StudentDashboardPage from "@/pages/student/dashboard/DashboardPage";
 import StudentProfilePage from "@/pages/student/profile/ProfilePage";
 import TranscriptUploadPage from "@/pages/student/profile/TranscriptUploadPage";
@@ -63,6 +64,7 @@ const App: React.FC = () => {
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />}></Route>
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
           <Route
             path="/student"
             element={

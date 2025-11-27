@@ -18,6 +18,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { registerAlumni, login, setAuthSession } from "@/services/auth";
 import { API_BASE } from "@/services/api";
 import { fetchDegreeTypes } from "@/services/degree";
+import { ConsentCheckbox } from "@/components/ConsentCheckbox";
+import { buildPrivacyConsentPayload } from "@/types/privacy";
 const getRoleDestination = (role?: string) => {
   switch (role) {
     case "student":
@@ -89,6 +91,8 @@ const StudentRegistration = () => {
   const [degreeOptions, setDegreeOptions] = useState<DegreeOption[]>([]);
   const [isLoadingDegrees, setIsLoadingDegrees] = useState(false);
   const [degreeFetchError, setDegreeFetchError] = useState<string | null>(null);
+  const [hasConsent, setHasConsent] = useState(false);
+  const [consentTouched, setConsentTouched] = useState(false);
 
   const apiOrigin = useMemo(() => {
     try {
@@ -236,6 +240,14 @@ const StudentRegistration = () => {
   const handleAlumniSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!hasConsent) {
+      setConsentTouched(true);
+      toast.error(
+        "You must consent to our Privacy Policy before creating an account."
+      );
+      return;
+    }
+
     try {
       const validatedData = alumniSchema.parse(formData);
 
@@ -251,6 +263,7 @@ const StudentRegistration = () => {
             address: validatedData.address,
             degreeTypeId: validatedData.degreeTypeId,
             phoneNumber: validatedData.phoneNumber,
+            privacyConsent: buildPrivacyConsentPayload(hasConsent),
           });
 
           // Step 2: Login
@@ -694,11 +707,33 @@ const StudentRegistration = () => {
           </div>
         )}
       </div>
+      <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-4">
+        <ConsentCheckbox
+          id="student-privacy-consent"
+          checked={hasConsent}
+          onChange={(value) => {
+            setHasConsent(value);
+            if (value) {
+              setConsentTouched(false);
+            }
+          }}
+          required
+        />
+        {!hasConsent && consentTouched && (
+          <p className="text-sm text-destructive" role="alert">
+            Please confirm your consent to personal data processing to continue.
+          </p>
+        )}
+      </div>
       <div className="flex flex-col sm:flex-row gap-3">
         <Button
           type="button"
           variant="outline"
-          onClick={() => setIsAlumni(false)}
+          onClick={() => {
+            setIsAlumni(false);
+            setHasConsent(false);
+            setConsentTouched(false);
+          }}
           className="flex-1 h-11 sm:h-12 touch-manipulation"
         >
           Back
@@ -706,6 +741,7 @@ const StudentRegistration = () => {
         <Button
           type="submit"
           className="flex-1 h-11 sm:h-12 bg-primary hover:bg-primary/90 touch-manipulation"
+          disabled={!hasConsent}
         >
           Create Account
         </Button>

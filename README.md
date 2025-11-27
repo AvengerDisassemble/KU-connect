@@ -43,7 +43,7 @@ Node.js 18+ • Express.js 5.1.0 • Prisma 6.16.3 • PostgreSQL 14+ • JWT 9.
 
 ## Development Progress
 
-### 14-Week Development Timeline
+### 14-Week Development Timeline (Completed)
 
 | Week | Milestone | Status | Completion |
 |------|-----------|--------|------------|
@@ -53,18 +53,15 @@ Node.js 18+ • Express.js 5.1.0 • Prisma 6.16.3 • PostgreSQL 14+ • JWT 9.
 | 7 | Job Posting System | ✅ Complete | 100% |
 | 8 | Application & Search | ✅ Complete | 100% |
 | 9 | Authentication & Notifications | ✅ Complete | 100% |
-| 10 | Admin & Professor Features | 🚧 In Progress | 60% |
-| 12 | Platform Monitoring & Analytics | 📝 Planned | 0% |
-| 14 | Testing, Launch & Handover | 📝 Planned | 0% |
+| 10 | Admin & Professor Features | ✅ Complete | 100% |
+| 12 | Platform Monitoring & Analytics | ✅ Complete | 100% |
+| 14 | Testing, Launch & Handover | ✅ Complete | 100% |
 
 **Legend**: ✅ Complete | 🚧 In Progress | 📝 Planned
 
-### Current Sprint Focus (Week 10)
-- 🚧 Administrative user approval system for students and employers
-- 🚧 Job posting approval and moderation system
-- 🚧 Professor dashboard with student insights
-- 🚧 Platform monitoring tools and spam prevention
-- 📝 Analytics data collection system
+### Current Status
+- ✅ All planned milestones delivered.
+- ✅ Platform ready for launch/hand-over.
 
 ### Feature Status
 
@@ -77,11 +74,11 @@ Node.js 18+ • Express.js 5.1.0 • Prisma 6.16.3 • PostgreSQL 14+ • JWT 9.
 | **Job Management** | Search & Filtering | ✅ Complete | 7 |
 | **Applications** | Submit & Track | ✅ Complete | 8 |
 | **Notifications** | Email & In-app | ✅ Complete | 9 |
-| **Admin Tools** | User Approval System | 🚧 In Progress | 10 |
-| **Admin Tools** | Job Moderation | 🚧 In Progress | 10 |
-| **Professor Dashboard** | Student Insights | 🚧 In Progress | 10 |
-| **Monitoring** | Activity Tracking | 📝 Planned | 12 |
-| **Analytics** | Dashboard & Reports | 📝 Planned | 12 |
+| **Admin Tools** | User Approval System | ✅ Complete | 10 |
+| **Admin Tools** | Job Moderation | ✅ Complete | 10 |
+| **Professor Dashboard** | Student Insights | ✅ Complete | 10 |
+| **Monitoring** | Activity Tracking | ✅ Complete | 12 |
+| **Analytics** | Dashboard & Reports | ✅ Complete | 12 |
 
 **[View Detailed Milestone](https://github.com/AvengerDisassemble/KU-connect/wiki/Project-Development-Plan)**
 
@@ -89,41 +86,40 @@ Node.js 18+ • Express.js 5.1.0 • Prisma 6.16.3 • PostgreSQL 14+ • JWT 9.
 
 ## Quick Start
 
+### Installation & Run (Backend + Frontend)
+1. Clone the repo and install dependencies
+   ```bash
+   git clone https://github.com/AvengerDisassemble/KU-connect.git
+   cd KU-connect
+   cd backend && npm install
+   cd ../frontend && npm install
+   ```
+2. Configure environment (backend)
+   ```bash
+   cd ../backend
+   cp .env.example .env
+   # Fill in DB, JWT secrets, COOKIE_ENCRYPTION_KEY, storage/email configs
+   ```
+3. Prepare the database (PostgreSQL 14+ required)
+   ```bash
+   npx prisma migrate dev
+   npx prisma generate
+   ```
+4. Run dev servers
+   ```bash
+   # Terminal 1 - Backend
+   cd backend && npm run start
+   # Terminal 2 - Frontend
+   cd frontend && npm run dev
+   ```
+5. Access the app
+   - Frontend: http://localhost:5173  
+   - API: http://localhost:3000
+
 ### Prerequisites
 - Node.js 18.0+
 - PostgreSQL 14.0+
 - Git
-
-### Installation
-
-```bash
-# Clone and install
-git clone https://github.com/AvengerDisassemble/KU-connect.git
-cd KU-connect
-
-# Install dependencies
-cd backend && npm install
-cd ../frontend && npm install
-
-# Setup database
-cd ../backend
-cp .env.example .env
-# Edit .env with your configuration
-npx prisma migrate dev
-npx prisma generate
-```
-
-### Run Development Servers
-
-```bash
-# Terminal 1 - Backend (port 3000)
-cd backend && npm run start
-
-# Terminal 2 - Frontend (port 5173)
-cd frontend && npm run dev
-```
-
-**Access**: Frontend at http://localhost:5173 | API at http://localhost:3000
 
 ---
 
