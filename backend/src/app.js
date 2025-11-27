@@ -2,7 +2,6 @@
  * @module app
  */
 const express = require("express");
-const helmet = require("helmet");
 const cors = require("cors");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
@@ -13,7 +12,6 @@ const { requestLogger } = require("./middlewares/loggingMiddleware");
 
 const app = express();
 
-app.use(helmet());
 
 app.use(
   cors({
