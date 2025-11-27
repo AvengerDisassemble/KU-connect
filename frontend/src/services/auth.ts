@@ -1,4 +1,5 @@
 import { BASE_URL } from "@/lib/config";
+import type { PrivacyConsent } from "@/types/privacy";
 
 export const AUTH_EVENT = "ku-connect-auth";
 
@@ -90,6 +91,7 @@ export interface RegisterData {
   address: string;
   degreeTypeId: string;
   phoneNumber: string;
+  privacyConsent?: PrivacyConsent;
 }
 
 export interface RegisterEmployerData {
@@ -102,6 +104,7 @@ export interface RegisterEmployerData {
   address: string;
   contactEmail?: string;
   industry?: string;
+  privacyConsent?: PrivacyConsent;
 }
 
 /**
