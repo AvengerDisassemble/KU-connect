@@ -37,6 +37,7 @@ test.describe('STU-TS-003 Student Registration @regression', () => {
     // ----------------------------
     // Submit and verify welcome
     // ----------------------------
+    await page.getByRole('checkbox', { name: 'I consent to the processing' }).click();
     await page.getByRole('button', { name: 'Create Account' }).click();
     const registerRes = await registerResponsePromise;
     expect(registerRes.ok()).toBeTruthy();
