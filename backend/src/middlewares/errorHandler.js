@@ -1,3 +1,5 @@
+const { serializeError, withContext } = require("../utils/logger");
+
 /**
  * Global error handler middleware
  * @param {Error} err - Error object
@@ -6,21 +8,13 @@
  * @param {Function} next - Express next function
  */
 function errorHandler(err, req, res, next) {
-  // Log error safely without exposing sensitive information
-  // Only log error type, message, and code in production
-  if (process.env.NODE_ENV === "production") {
-    console.error("Error occurred:", {
-      name: err.name,
-      message: err.message,
-      code: err.code,
-      status: err.status,
+  const scopedLog =
+    req?.log ||
+    withContext({
+      correlationId: req?.correlationId,
+      method: req?.method,
+      path: req?.originalUrl,
     });
-  } else {
-    // Full error details in development for debugging
-    // Limit stack trace depth to avoid exposing too much information
-    const stack = err.stack ? err.stack.split('\n').slice(0, 5).join('\n') : ''
-    console.error('Error:', err.message, '\nStack:', stack)
-  }
 
   // Default error
   let error = {
@@ -139,6 +133,13 @@ function errorHandler(err, req, res, next) {
   if (err.status) {
     error.statusCode = err.status
   }
+
+  const level = error.statusCode >= 500 ? "error" : "warn";
+  scopedLog(level, "request.error", {
+    statusCode: error.statusCode,
+    userId: req?.user?.id,
+    error: serializeError(err),
+  });
 
   res.status(error.statusCode).json({
     success: false,

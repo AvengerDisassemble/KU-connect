@@ -15,6 +15,12 @@ const { asyncErrorHandler } = require('../middlewares/errorHandler')
 const getPendingUsersHandler = asyncErrorHandler(async (req, res) => {
   const users = await userService.listPendingUsers()
 
+  req.log?.('info', 'admin.users.pending', {
+    userId: req.user?.id,
+    count: users.length,
+    ip: req.ip
+  })
+
   res.json({
     success: true,
     message: 'Pending users retrieved successfully',
@@ -32,6 +38,12 @@ const approveUserHandler = asyncErrorHandler(async (req, res) => {
 
   const user = await userService.updateUserStatus(userId, 'APPROVED')
 
+  req.log?.('security', 'admin.user.approve', {
+    userId: req.user?.id,
+    targetUserId: userId,
+    ip: req.ip
+  })
+
   res.json({
     success: true,
     message: 'User approved successfully',
@@ -48,6 +60,12 @@ const rejectUserHandler = asyncErrorHandler(async (req, res) => {
   const { userId } = req.params
 
   const user = await userService.updateUserStatus(userId, 'REJECTED')
+
+  req.log?.('security', 'admin.user.reject', {
+    userId: req.user?.id,
+    targetUserId: userId,
+    ip: req.ip
+  })
 
   res.json({
     success: true,
@@ -67,6 +85,12 @@ const suspendUserHandler = asyncErrorHandler(async (req, res) => {
   // Pass admin ID to prevent self-suspension
   const user = await userService.suspendUser(userId, req.user.id)
 
+  req.log?.('security', 'admin.user.suspend', {
+    userId: req.user?.id,
+    targetUserId: userId,
+    ip: req.ip
+  })
+
   res.json({
     success: true,
     message: 'User suspended successfully',
@@ -83,6 +107,12 @@ const activateUserHandler = asyncErrorHandler(async (req, res) => {
   const { userId } = req.params
 
   const user = await userService.activateUser(userId)
+
+  req.log?.('security', 'admin.user.activate', {
+    userId: req.user?.id,
+    targetUserId: userId,
+    ip: req.ip
+  })
 
   res.json({
     success: true,
@@ -105,6 +135,13 @@ const listUsersHandler = asyncErrorHandler(async (req, res) => {
 
   const users = await userService.getAllUsers(filters)
 
+  req.log?.('info', 'admin.users.list', {
+    userId: req.user?.id,
+    filters,
+    count: users.length,
+    ip: req.ip
+  })
+
   res.json({
     success: true,
     message: 'Users retrieved successfully',
@@ -120,6 +157,11 @@ const listUsersHandler = asyncErrorHandler(async (req, res) => {
 const getDashboardHandler = asyncErrorHandler(async (req, res) => {
   const stats = await userService.getDashboardStats()
 
+  req.log?.('info', 'admin.dashboard.fetch', {
+    userId: req.user?.id,
+    ip: req.ip
+  })
+
   res.json({
     success: true,
     message: 'Dashboard statistics retrieved successfully',
@@ -134,6 +176,12 @@ const getDashboardHandler = asyncErrorHandler(async (req, res) => {
  */
 const searchUsersHandler = asyncErrorHandler(async (req, res) => {
   const result = await userService.searchUsers(req.body)
+
+  req.log?.('info', 'admin.users.search', {
+    userId: req.user?.id,
+    filters: Object.keys(req.body || {}).length,
+    ip: req.ip
+  })
 
   res.json({
     success: true,
@@ -176,6 +224,13 @@ const createProfessorHandler = asyncErrorHandler(async (req, res) => {
 
   const result = await adminService.createProfessorUser(professorData)
 
+  req.log?.('security', 'admin.professor.create', {
+    userId: req.user?.id,
+    targetEmail: email,
+    department,
+    ip: req.ip
+  })
+
   res.status(201).json({
     success: true,
     message: 'Professor account created successfully',
@@ -194,4 +249,3 @@ module.exports = {
   searchUsersHandler,
   createProfessorHandler
 }
-

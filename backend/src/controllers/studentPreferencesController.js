@@ -15,6 +15,12 @@ const getPreferences = asyncErrorHandler(async (req, res) => {
 
   const preference = await studentPreferenceService.getPreferenceByUserId(userId)
 
+   req.log?.('info', 'preferences.get', {
+     userId,
+     ip: req.ip,
+     exists: Boolean(preference)
+   })
+
   res.status(200).json({
     success: true,
     data: preference
@@ -30,6 +36,16 @@ const upsertPreferences = asyncErrorHandler(async (req, res) => {
   const { desiredLocation, minSalary, industry, jobType, remoteWork } = req.body
 
   const preference = await studentPreferenceService.upsertPreferenceByUserId(userId, {
+    desiredLocation,
+    minSalary,
+    industry,
+    jobType,
+    remoteWork
+  })
+
+  req.log?.('info', 'preferences.upsert', {
+    userId,
+    ip: req.ip,
     desiredLocation,
     minSalary,
     industry,
