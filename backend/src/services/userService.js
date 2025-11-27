@@ -677,6 +677,124 @@ async function searchUsers (filters = {}) {
   }
 }
 
+/**
+ * Delete a user account and all associated personal data (PDPA Right to Erasure)
+ * @param {string} userId - User ID to delete
+ * @param {string} requesterId - ID of the user making the request
+ * @returns {Promise<void>}
+ */
+async function deleteAccount(userId, requesterId) {
+  // Get the user to be deleted
+  const userToDelete = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, role: true, avatarKey: true }
+  });
+
+  if (!userToDelete) {
+    throw new Error('User not found');
+  }
+
+  // Get the requester to check authorization
+  const requester = await prisma.user.findUnique({
+    where: { id: requesterId },
+    select: { id: true, role: true }
+  });
+
+  if (!requester) {
+    throw new Error('Requester not found');
+  }
+
+  // Authorization check: users can delete their own account, admins can delete others
+  if (userId !== requesterId && requester.role !== 'ADMIN') {
+    throw new Error('Unauthorized to delete this account');
+  }
+
+  // Perform deletion in a transaction
+  await prisma.$transaction(async (tx) => {
+    // Delete role-specific data based on user role
+    if (userToDelete.role === 'STUDENT') {
+      // Delete student preferences
+      await tx.studentPreference.deleteMany({ where: { studentId: userId } });
+      
+      // Delete student interests
+      await tx.studentInterest.deleteMany({ where: { studentId: userId } });
+      
+      // Delete resumes
+      await tx.resume.deleteMany({ where: { studentId: userId } });
+      
+      // Delete applications
+      await tx.application.deleteMany({ where: { studentId: userId } });
+      
+      // Delete student record
+      await tx.student.deleteMany({ where: { userId } });
+    } else if (userToDelete.role === 'EMPLOYER') {
+      // Get all jobs for this employer to delete related data
+      const jobs = await tx.job.findMany({
+        where: { hrId: userId },
+        select: { id: true }
+      });
+      
+      const jobIds = jobs.map(job => job.id);
+      
+      if (jobIds.length > 0) {
+        // Delete all job-related data
+        await tx.requirement.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.qualification.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.responsibility.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.benefit.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.studentInterest.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.resume.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.application.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.jobReport.deleteMany({ where: { jobId: { in: jobIds } } });
+        await tx.savedJob.deleteMany({ where: { jobId: { in: jobIds } } });
+        
+        // Delete jobs
+        await tx.job.deleteMany({ where: { hrId: userId } });
+      }
+      
+      // Delete HR record
+      await tx.hR.deleteMany({ where: { userId } });
+    } else if (userToDelete.role === 'PROFESSOR') {
+      // Delete professor record
+      await tx.professor.deleteMany({ where: { userId } });
+    } else if (userToDelete.role === 'ADMIN') {
+      // Delete admin record
+      await tx.admin.deleteMany({ where: { userId } });
+    }
+
+    // Delete saved jobs by this user
+    await tx.savedJob.deleteMany({ where: { userId } });
+    
+    // Delete job reports by this user
+    await tx.jobReport.deleteMany({ where: { userId } });
+    
+    // Delete notifications (both sent and received)
+    await tx.notification.deleteMany({
+      where: {
+        OR: [
+          { userId },
+          { senderId: userId }
+        ]
+      }
+    });
+    
+    // Delete announcements created by this user
+    await tx.announcement.deleteMany({ where: { createdBy: userId } });
+    
+    // Delete OAuth accounts
+    await tx.account.deleteMany({ where: { userId } });
+    
+    // Delete refresh tokens
+    await tx.refreshToken.deleteMany({ where: { userId } });
+    
+    // Finally, delete the user
+    await tx.user.delete({ where: { id: userId } });
+  });
+
+  // Note: File deletion (avatars, resumes, etc.) should be handled separately
+  // if the application stores files on disk or cloud storage
+}
+
 module.exports = {
   listPendingUsers,
   updateUserStatus,
@@ -684,5 +802,6 @@ module.exports = {
   activateUser,
   getDashboardStats,
   getAllUsers,
-  searchUsers
+  searchUsers,
+  deleteAccount
 }

@@ -82,7 +82,7 @@ const login = asyncErrorHandler(async (req, res) => {
  * POST /register/alumni
  */
 const registerAlumni = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, degreeTypeId, address } = req.body;
+  const { name, surname, email, password, degreeTypeId, address, privacyConsent } = req.body;
 
   // Validate input
   if (!name || !surname || !email || !password || !degreeTypeId || !address) {
@@ -101,6 +101,7 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
       email,
       password,
       role: "STUDENT",
+      privacyConsent,
     },
     {
       degreeTypeId, // Keep as string (cuid)
@@ -129,7 +130,7 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
  * POST /register/enterprise
  */
 const registerEnterprise = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, companyName, address, phoneNumber } =
+  const { name, surname, email, password, companyName, address, phoneNumber, privacyConsent } =
     req.body;
 
   // Validate input
@@ -157,6 +158,7 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
       email,
       password,
       role: "EMPLOYER",
+      privacyConsent,
     },
     {
       companyName,
@@ -186,7 +188,7 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
  * POST /register/staff
  */
 const registerStaff = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, department } = req.body;
+  const { name, surname, email, password, department, privacyConsent } = req.body;
 
   // Register staff as PROFESSOR
   const user = await registerUser(
@@ -196,6 +198,7 @@ const registerStaff = asyncErrorHandler(async (req, res) => {
       email,
       password,
       role: "PROFESSOR",
+      privacyConsent,
     },
     {
       department,
@@ -223,7 +226,7 @@ const registerStaff = asyncErrorHandler(async (req, res) => {
  * POST /register/admin
  */
 const registerAdmin = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password } = req.body;
+  const { name, surname, email, password, privacyConsent } = req.body;
 
   // Register admin as ADMIN
   const user = await registerUser({
@@ -232,6 +235,7 @@ const registerAdmin = asyncErrorHandler(async (req, res) => {
     email,
     password,
     role: "ADMIN",
+    privacyConsent,
   });
 
   res.status(201).json({

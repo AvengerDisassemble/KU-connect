@@ -10,6 +10,9 @@ describe("Staff Registration", () => {
         email: `john.professor.${Date.now()}@university.edu`,
         password: "SecurePass123",
         department: "Computer Science",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -56,6 +59,9 @@ describe("Staff Registration", () => {
         email: `john.invalid2.${Date.now()}@university.edu`,
         password: "SecurePass123",
         department: "A", // too short
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -76,6 +82,9 @@ describe("Staff Registration", () => {
         email: `john.weak.${Date.now()}@university.edu`,
         password: "weak",
         department: "Computer Science",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -97,6 +106,9 @@ describe("Staff Registration", () => {
         email: email,
         password: "SecurePass123",
         department: "Computer Science",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       // First registration should succeed
@@ -125,6 +137,9 @@ describe("Admin Registration", () => {
         surname: "Admin",
         email: `jane.admin.${Date.now()}@university.edu`,
         password: "AdminPass123",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -185,6 +200,9 @@ describe("Admin Registration", () => {
         surname: "Admin",
         email: `jane.weak.${Date.now()}@university.edu`,
         password: "weak",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -205,6 +223,9 @@ describe("Admin Registration", () => {
         surname: "Admin",
         email: email,
         password: "AdminPass123",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       // First registration should succeed
