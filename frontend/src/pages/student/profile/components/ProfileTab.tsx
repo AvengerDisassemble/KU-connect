@@ -34,6 +34,7 @@ import { fetchDegreeTypes, type DegreeType } from "@/services/degree";
 import { phoneSchema } from "@/pages/public/register/components/phoneSchema";
 import ResumeSection from "./ResumeSection";
 import { ProfileContentSkeleton } from "./LoadingSkeleton";
+import { DeleteAccountModal } from "@/components/DeleteAccountModal";
 
 const profileSchema = z.object({
   name: z.string().min(1, "First name is required").max(50),
@@ -68,6 +69,7 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
   const [degreeOptions, setDegreeOptions] = useState<DegreeType[]>([]);
   const [isLoadingDegrees, setIsLoadingDegrees] = useState(false);
   const [degreeError, setDegreeError] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const {
@@ -488,6 +490,36 @@ const ProfileTab = ({ userId }: ProfileTabProps) => {
         userId={userId}
         resumeKey={profile?.student?.resumeKey ?? null}
         updatedAt={profile?.student?.updatedAt ?? profile?.updatedAt ?? null}
+      />
+
+      <Card className="mt-8 border-destructive/40 bg-destructive/5">
+        <CardHeader>
+          <CardTitle className="text-xl">Delete my account</CardTitle>
+          <CardDescription>
+            Permanently remove your KU Connect profile, uploaded documents, and
+            activity history.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            This action cannot be undone. If you delete your account, you will
+            lose access to saved applications and preferences. You can always
+            create a new account later if you change your mind.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={() => setIsDeleteModalOpen(true)}
+            disabled={!userId}
+          >
+            Delete my account
+          </Button>
+        </CardContent>
+      </Card>
+
+      <DeleteAccountModal
+        userId={userId}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
       />
     </div>
   );
