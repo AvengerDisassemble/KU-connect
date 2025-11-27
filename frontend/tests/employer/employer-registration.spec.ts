@@ -21,6 +21,8 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
     const continueButton = page.getByRole('button', { name: 'Continue' });
     await continueButton.scrollIntoViewIfNeeded();
     await continueButton.waitFor({ state: 'visible', timeout: 60000 });
+    await expect(continueButton).toBeEnabled({ timeout: 60000 });
+    await page.waitForTimeout(500); // Small buffer for any async updates
     await continueButton.click({ timeout: 60000 });
   };
 
@@ -74,7 +76,8 @@ test.describe('EMP-TS-003 Employer Registration @regression', () => {
       },
       { timeout: 60000 }
     );
-
+    
+    await page.getByRole('checkbox', { name: 'I consent to the processing' }).click();
     const submitButton = page.getByRole('button', { name: 'Submit for Verification' });
     await expect(submitButton).toBeEnabled({ timeout: 60000 });
     await submitButton.click();

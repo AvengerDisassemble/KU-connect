@@ -15,10 +15,13 @@ import {
   getEmployerProfile,
   type EmployerProfileResponse,
 } from "@/services/employerProfile";
+import { Button } from "@/components/ui/button";
+import { DeleteAccountModal } from "@/components/DeleteAccountModal";
 
 export default function EmployerProfilePage() {
   const { userId } = useParams<{ userId: string }>();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const qc = useQueryClient();
 
   const { data: profile, isLoading: isProfileLoading } =
@@ -155,7 +158,6 @@ export default function EmployerProfilePage() {
       contentClassName="bg-muted/20"
     >
       <div className="mx-auto max-w-6xl space-y-6">
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <CompanyInfoForm userId={userId} />
@@ -177,7 +179,35 @@ export default function EmployerProfilePage() {
             <VerificationChecklist items={verificationItems} />
           </div>
         </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 lg:col-span-2">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">Delete my account</h2>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Permanently remove your employer account, company data, and
+                pending job postings. This cannot be undone.
+              </p>
+            </div>
+            <div className="mt-4">
+              <Button
+                variant="destructive"
+                onClick={() => setIsDeleteModalOpen(true)}
+                disabled={!userId}
+                className="w-full sm:w-auto"
+              >
+                Delete my account
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <DeleteAccountModal
+        userId={userId}
+        open={isDeleteModalOpen}
+        onOpenChange={setIsDeleteModalOpen}
+      />
     </EmployerLayout>
   );
 }

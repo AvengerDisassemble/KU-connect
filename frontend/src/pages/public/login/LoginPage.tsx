@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import Logo from "@/assets/logo.png";
 import { toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
+import { ConsentCheckbox } from "@/components/ConsentCheckbox";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ const LoginPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [oauthError, setOauthError] = useState<string | null>(null);
+  const [hasOAuthConsent, setHasOAuthConsent] = useState(false);
 
   const apiOrigin = useMemo(() => {
     try {
@@ -173,7 +175,7 @@ const LoginPage = () => {
         type="button"
         variant="outline"
         onClick={handleGoogleLogin}
-        disabled={isPopupOpen || isSubmitting}
+        disabled={isPopupOpen || isSubmitting || !hasOAuthConsent}
         className="w-full h-12 flex items-center justify-center gap-2"
       >
         <svg
@@ -201,6 +203,14 @@ const LoginPage = () => {
         </svg>
         Continue with Google
       </Button>
+      <div className="rounded-md border border-border/70 bg-muted/20 p-3 text-sm">
+        <ConsentCheckbox
+          id="login-oauth-consent"
+          checked={hasOAuthConsent}
+          onChange={setHasOAuthConsent}
+          required
+        />
+      </div>
       {oauthError && <p className="text-sm text-destructive">{oauthError}</p>}
 
       <div className="relative">
