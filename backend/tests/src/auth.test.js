@@ -44,6 +44,9 @@ describe("Authentication Endpoints", () => {
         password: "Password123",
         degreeTypeId,
         address: "123 Test Street, Bangkok, Thailand",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -89,6 +92,9 @@ describe("Authentication Endpoints", () => {
         password: "Password123",
         degreeTypeId,
         address: "456 Test Street, Bangkok, Thailand",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -110,6 +116,9 @@ describe("Authentication Endpoints", () => {
         companyName: "Test Company Ltd.",
         address: "789 Business District, Bangkok, Thailand",
         phoneNumber: "02-999-1111",
+        privacyConsent: {
+          dataProcessingConsent: true
+        }
       };
 
       const response = await request(app)
@@ -202,7 +211,10 @@ describe("Authentication Endpoints", () => {
           email: 'suspended.user@ku.th',
           password: 'Password123',
           degreeTypeId,
-          address: '123 Test St'
+          address: '123 Test St',
+          privacyConsent: {
+            dataProcessingConsent: true
+          }
         })
 
       // Suspend the user

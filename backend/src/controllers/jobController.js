@@ -26,13 +26,23 @@ async function listJobs(req, res) {
     const filters = req.body;
 
     const result = await jobService.listJobs(filters);
+    req.log?.("info", "job.list", {
+      userId: req.user?.id,
+      ip: req.ip,
+      filterKeys: Object.keys(filters || {}).length,
+      count: Array.isArray(result?.jobs || result) ? (result.jobs || result).length : undefined,
+    });
     res.status(200).json({
       success: true,
       message: "Jobs retrieved successfully",
       data: result,
     });
   } catch (error) {
-    console.error("List jobs error:", error.message);
+    req.log?.("error", "job.list.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to list jobs",
@@ -48,13 +58,24 @@ async function searchJobs(req, res) {
   try {
     const query = req.params.query;
     const result = await jobService.searchJobs(query);
+    req.log?.("info", "job.search", {
+      userId: req.user?.id,
+      ip: req.ip,
+      query,
+      count: Array.isArray(result) ? result.length : undefined,
+    });
     res.status(200).json({
       success: true,
       message: "Search completed successfully",
       data: result,
     });
   } catch (error) {
-    console.error("Search jobs error:", error.message);
+    req.log?.("error", "job.search.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      query: req.params?.query,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to search jobs",
@@ -71,11 +92,22 @@ async function getJobById(req, res) {
     const jobId = req.params.id;
     const job = await jobService.getJobById(jobId);
     if (!job) {
+      req.log?.("warn", "job.detail.not_found", {
+        userId: req.user?.id,
+        ip: req.ip,
+        jobId,
+      });
       return res.status(404).json({
         success: false,
         message: "Job not found",
       });
     }
+
+    req.log?.("info", "job.detail", {
+      userId: req.user?.id,
+      ip: req.ip,
+      jobId,
+    });
 
     res.status(200).json({
       success: true,
@@ -83,7 +115,12 @@ async function getJobById(req, res) {
       data: job,
     });
   } catch (error) {
-    console.error("Get job by ID error:", error.message);
+    req.log?.("error", "job.detail.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      jobId: req.params?.id,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to get job",
@@ -106,6 +143,10 @@ async function createJob(req, res) {
     });
 
     if (!hr) {
+      req.log?.("warn", "job.create.unauthorized_no_hr_profile", {
+        userId,
+        ip: req.ip,
+      });
       return res.status(403).json({
         success: false,
         message: "You must have an HR profile to post a job",
@@ -119,8 +160,20 @@ async function createJob(req, res) {
       message: "Job created successfully",
       data: job,
     });
+
+    req.log?.("info", "job.create.success", {
+      userId,
+      hrId: hr.id,
+      companyName: hr.companyName,
+      jobId: job.id,
+      ip: req.ip,
+    });
   } catch (error) {
-    console.error("Create job error:", error.message);
+    req.log?.("error", "job.create.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(error.status || 500).json({
       success: false,
       message: error.message || "Failed to create job",
@@ -143,6 +196,11 @@ async function updateJob(req, res) {
       select: { id: true },
     });
     if (!hr) {
+      req.log?.("warn", "job.update.unauthorized_no_hr_profile", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(403).json({
         success: false,
         message: "Only HR users can update jobs",
@@ -162,8 +220,20 @@ async function updateJob(req, res) {
       message: "Job updated successfully",
       data: updated,
     });
+
+    req.log?.("info", "job.update.success", {
+      userId,
+      jobId,
+      hrId: hr.id,
+      ip: req.ip,
+    });
   } catch (error) {
-    console.error("Update job error:", error.message);
+    req.log?.("error", "job.update.error", {
+      userId: req.user?.id,
+      jobId: req.params?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(error.status || 500).json({
       success: false,
       message: error.message || "Failed to update job",
@@ -186,6 +256,11 @@ async function applyToJob(req, res) {
     });
 
     if (!student) {
+      req.log?.("warn", "job.apply.unauthorized_no_student_profile", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(403).json({
         success: false,
         message: "Only students can apply to jobs",
@@ -204,7 +279,11 @@ async function applyToJob(req, res) {
         jobId
       })
     } catch (notificationError) {
-      console.error('Failed to send employer notification:', notificationError.message)
+      req.log?.("warn", "job.apply.notification_failed", {
+        userId,
+        jobId,
+        error: notificationError.message,
+      });
       // Continue - application was successful even if notification failed
     }
 
@@ -213,8 +292,20 @@ async function applyToJob(req, res) {
       message: "Job application submitted successfully",
       data: application,
     });
+
+    req.log?.("info", "job.apply.success", {
+      userId,
+      jobId,
+      studentId: student.id,
+      ip: req.ip,
+    });
   } catch (error) {
-    console.error("Apply to job error:", error.message);
+    req.log?.("error", "job.apply.error", {
+      userId: req.user?.id,
+      jobId: req.params?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(error.status || 500).json({
       success: false,
       message: error.message || "Failed to apply for job",
@@ -236,6 +327,11 @@ async function getApplicants(req, res) {
       select: { id: true },
     });
     if (!hr) {
+      req.log?.("warn", "job.applicants.unauthorized_no_hr_profile", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(403).json({
         success: false,
         message: "Only HR users can view applicants",
@@ -255,8 +351,20 @@ async function getApplicants(req, res) {
       message: "Applicants retrieved successfully",
       data: applicants,
     });
+
+    req.log?.("info", "job.applicants.fetch.success", {
+      userId,
+      jobId,
+      applicantCount: applicants?.length,
+      ip: req.ip,
+    });
   } catch (error) {
-    console.error("Get applicants error:", error.message);
+    req.log?.("error", "job.applicants.fetch.error", {
+      userId: req.user?.id,
+      jobId: req.params?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to retrieve applicants",
@@ -286,6 +394,11 @@ async function manageApplication(req, res) {
       select: { id: true },
     });
     if (!hr) {
+      req.log?.("warn", "job.manage_application.unauthorized_no_hr_profile", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(403).json({
         success: false,
         message: "Only HR users can manage applications",
@@ -327,7 +440,12 @@ async function manageApplication(req, res) {
         })
       }
     } catch (notificationError) {
-      console.error('Failed to send student notification:', notificationError.message)
+      req.log?.("warn", "job.manage_application.notification_failed", {
+        userId,
+        jobId,
+        applicationId,
+        error: notificationError.message,
+      });
       // Continue - application status was updated successfully
     }
 
@@ -336,8 +454,22 @@ async function manageApplication(req, res) {
       message: `Application ${status.toLowerCase()} successfully`,
       data: result,
     });
+
+    req.log?.("info", "job.manage_application.success", {
+      userId,
+      jobId,
+      applicationId,
+      status,
+      ip: req.ip,
+    });
   } catch (error) {
-    console.error("Manage application error:", error.message);
+    req.log?.("error", "job.manage_application.error", {
+      userId: req.user?.id,
+      jobId: req.params?.id,
+      applicationId: req.body?.applicationId,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(error.status || 500).json({
       success: false,
       message: error.message || "Failed to update application status",
@@ -361,8 +493,20 @@ async function deleteJob(req, res) {
       message: "Job deleted successfully",
       data: deleted,
     });
+
+    req.log?.("info", "job.delete.success", {
+      jobId,
+      userId: requester?.id,
+      role: requester?.role,
+      ip: req.ip,
+    });
   } catch (error) {
-    console.error("Delete job error:", error.message);
+    req.log?.("error", "job.delete.error", {
+      userId: req.user?.id,
+      jobId: req.params?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(error.status || 500).json({
       success: false,
       message: error.message || "Failed to delete job",
@@ -377,13 +521,23 @@ async function deleteJob(req, res) {
 async function filterJobs(req, res) {
   try {
     const data = await jobService.filterJobs(req.query);
+    req.log?.("info", "job.filter", {
+      userId: req.user?.id,
+      ip: req.ip,
+      filterKeys: Object.keys(req.query || {}).length,
+      count: Array.isArray(data) ? data.length : undefined,
+    });
     res.json({
       success: true,
       message: "Jobs filtered successfully",
       data,
     });
   } catch (err) {
-    console.error("Filter jobs error:", err.message);
+    req.log?.("error", "job.filter.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: err.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to filter jobs",
@@ -403,6 +557,10 @@ async function getMyApplications(req, res) {
 
     // Handle empty state
     if (applications.length === 0) {
+      req.log?.("info", "job.applications.empty", {
+        userId,
+        ip: req.ip,
+      });
       return res.status(200).json({
         success: true,
         message: "No applications submitted yet",
@@ -410,13 +568,23 @@ async function getMyApplications(req, res) {
       });
     }
 
+    req.log?.("info", "job.applications.list", {
+      userId,
+      ip: req.ip,
+      count: applications.length,
+    });
+
     res.status(200).json({
       success: true,
       message: "Applications retrieved successfully",
       data: applications,
     });
   } catch (error) {
-    console.error("Get my applications error:", error.message);
+    req.log?.("error", "job.applications.error", {
+      userId: req.user?.id,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(error.status || 500).json({
       success: false,
       message: error.message || "Failed to retrieve applications",

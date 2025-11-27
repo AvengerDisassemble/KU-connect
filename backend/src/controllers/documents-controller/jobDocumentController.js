@@ -27,7 +27,7 @@ async function isHrOwnerOfJob(user, job) {
 
     return hr && hr.id === job.hrId;
   } catch (error) {
-    console.error("Error checking HR ownership:", error);
+    // Swallow and return false; caller logs if needed
     return false;
   }
 }
@@ -56,6 +56,11 @@ async function upsertJobResume(req, res) {
     ]);
 
     if (!job) {
+      req.log?.("warn", "job.resume.upsert.job_not_found", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "Job not found",
@@ -63,6 +68,11 @@ async function upsertJobResume(req, res) {
     }
 
     if (!student) {
+      req.log?.("warn", "job.resume.upsert.student_not_found", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "Student profile not found",
@@ -73,6 +83,12 @@ async function upsertJobResume(req, res) {
     const mode = req.body?.mode || (req.file ? "upload" : "profile");
 
     if (!["profile", "upload"].includes(mode)) {
+      req.log?.("warn", "job.resume.upsert.invalid_mode", {
+        userId,
+        jobId,
+        mode,
+        ip: req.ip,
+      });
       return res.status(400).json({
         success: false,
         message: 'Invalid mode. Must be "profile" or "upload"',
@@ -85,6 +101,11 @@ async function upsertJobResume(req, res) {
     if (mode === "profile") {
       // Use profile resume
       if (!student.resumeKey) {
+        req.log?.("warn", "job.resume.upsert.profile_missing", {
+          userId,
+          jobId,
+          ip: req.ip,
+        });
         return res.status(400).json({
           success: false,
           message:
@@ -153,11 +174,30 @@ async function upsertJobResume(req, res) {
     ) {
       try {
         await storageProvider.deleteFile(existing.link);
-        console.log(`Deleted old job resume file: ${existing.link}`);
+        req.log?.("info", "job.resume.cleanup_old", {
+          userId,
+          jobId,
+          oldKey: existing.link,
+          ip: req.ip,
+        });
       } catch (error) {
-        console.error("Failed to delete old job resume:", error.message);
+        req.log?.("warn", "job.resume.cleanup_failed", {
+          userId,
+          jobId,
+          ip: req.ip,
+          error: error.message,
+        });
       }
     }
+
+    req.log?.("info", "job.resume.upsert.success", {
+      userId,
+      jobId,
+      studentId: student.id,
+      fileKey,
+      source,
+      ip: req.ip,
+    });
 
     res.status(200).json({
       success: true,
@@ -169,7 +209,12 @@ async function upsertJobResume(req, res) {
       },
     });
   } catch (error) {
-    console.error("Upsert job resume error:", error);
+    req.log?.("error", "job.resume.upsert.error", {
+      userId: req.user?.id,
+      jobId: req.params?.jobId,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to save job resume",
@@ -195,6 +240,11 @@ async function deleteJobResume(req, res) {
     });
 
     if (!student) {
+      req.log?.("warn", "job.resume.delete.student_not_found", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "Student profile not found",
@@ -213,6 +263,11 @@ async function deleteJobResume(req, res) {
     });
 
     if (!resume) {
+      req.log?.("warn", "job.resume.delete.not_found", {
+        userId,
+        jobId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "No resume found for this job application",
@@ -233,18 +288,38 @@ async function deleteJobResume(req, res) {
     if (resume.source === "UPLOADED" && resume.link !== student.resumeKey) {
       try {
         await storageProvider.deleteFile(resume.link);
-        console.log(`Deleted job resume file: ${resume.link}`);
+        req.log?.("info", "job.resume.delete.cleanup_file", {
+          userId,
+          jobId,
+          fileKey: resume.link,
+          ip: req.ip,
+        });
       } catch (error) {
-        console.error("Failed to delete job resume file:", error.message);
+        req.log?.("warn", "job.resume.delete.cleanup_failed", {
+          userId,
+          jobId,
+          ip: req.ip,
+          error: error.message,
+        });
       }
     }
 
+    req.log?.("info", "job.resume.delete.success", {
+      userId,
+      jobId,
+      ip: req.ip,
+    });
     res.status(200).json({
       success: true,
       message: "Job resume deleted successfully",
     });
   } catch (error) {
-    console.error("Delete job resume error:", error);
+    req.log?.("error", "job.resume.delete.error", {
+      userId: req.user?.id,
+      jobId: req.params?.jobId,
+      ip: req.ip,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to delete job resume",
@@ -279,6 +354,9 @@ async function downloadJobResume(req, res) {
         success: false,
         reason: `Access denied for job ${jobId}`,
         ip: req.ip,
+        logger: req.log,
+        correlationId: req.correlationId,
+        userAgent: req.get("user-agent"),
       });
 
       return res.status(403).json({
@@ -312,6 +390,12 @@ async function downloadJobResume(req, res) {
     });
 
     if (!resume || !resume.link) {
+      req.log?.("warn", "job.resume.download.not_found", {
+        userId: requester.id,
+        jobId,
+        studentUserId,
+        ip: req.ip,
+      });
       return res.status(404).json({
         success: false,
         message: "No resume found for this job application",
@@ -326,12 +410,21 @@ async function downloadJobResume(req, res) {
       action: "download",
       success: true,
       ip: req.ip,
+      logger: req.log,
+      correlationId: req.correlationId,
+      userAgent: req.get("user-agent"),
     });
 
     // Try signed URL first (S3), fallback to streaming (local)
     const signedUrl = await storageProvider.getSignedDownloadUrl(resume.link);
 
     if (signedUrl) {
+      req.log?.("info", "job.resume.download.redirect", {
+        userId: requester.id,
+        jobId,
+        studentUserId,
+        ip: req.ip,
+      });
       return res.redirect(signedUrl);
     }
 
@@ -349,8 +442,22 @@ async function downloadJobResume(req, res) {
     res.setHeader("X-Content-Type-Options", "nosniff");
 
     stream.pipe(res);
+
+    req.log?.("info", "job.resume.download.stream", {
+      userId: requester.id,
+      jobId,
+      studentUserId,
+      fileKey: resume.link,
+      ip: req.ip,
+    });
   } catch (error) {
-    console.error("Download job resume error:", error);
+    req.log?.("error", "job.resume.download.error", {
+      userId: req.user?.id,
+      jobId: req.params?.jobId,
+      studentUserId: req.params?.studentUserId,
+      ip: req.ip,
+      error: error.message,
+    });
 
     if (error.message.includes("File not found")) {
       return res.status(404).json({

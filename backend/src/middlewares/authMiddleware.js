@@ -1,5 +1,6 @@
 const { verifyAccessToken, decryptToken } = require("../utils/tokenUtils");
 const { getUserById } = require("../services/authService");
+const { serializeError, withContext } = require("../utils/logger");
 
 /**
  * Middleware to authenticate requests using JWT tokens
@@ -71,7 +72,17 @@ async function authMiddleware(req, res, next) {
     req.user = user;
     next();
   } catch (error) {
-    console.error("Auth middleware error:", error);
+    const scopedLog =
+      req?.log ||
+      withContext({
+        correlationId: req?.correlationId,
+        path: req?.originalUrl,
+      });
+    scopedLog("error", "auth.middleware.error", {
+      userId: req?.user?.id,
+      ip: req.ip,
+      error: serializeError(error),
+    });
     return res.status(500).json({
       success: false,
       message: "Internal server error",
@@ -117,7 +128,16 @@ async function optionalAuthMiddleware(req, res, next) {
     next();
   } catch (error) {
     // Log error but don't block request
-    console.error("Optional auth middleware error:", error);
+    const scopedLog =
+      req?.log ||
+      withContext({
+        correlationId: req?.correlationId,
+        path: req?.originalUrl,
+      });
+    scopedLog("warn", "auth.optional_middleware.error", {
+      ip: req.ip,
+      error: serializeError(error),
+    });
     next();
   }
 }

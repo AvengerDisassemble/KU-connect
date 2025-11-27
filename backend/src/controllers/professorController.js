@@ -21,6 +21,12 @@ const getDashboard = async (req, res, next) => {
     }
     
     const data = await professorService.getDashboardAnalytics(filters)
+
+    req.log?.('info', 'professor.dashboard', {
+      userId: req.user?.id,
+      ip: req.ip,
+      filterKeys: Object.keys(filters || {}).filter(Boolean).length
+    })
     
     res.json({
       success: true,
@@ -52,6 +58,13 @@ const getStudents = async (req, res, next) => {
     }
     
     const data = await professorService.getStudentList(params)
+
+    req.log?.('info', 'professor.students.list', {
+      userId: req.user?.id,
+      ip: req.ip,
+      filterKeys: Object.keys(params || {}).filter(Boolean).length,
+      count: data?.items?.length || data?.length
+    })
     
     res.json({
       success: true,
@@ -73,6 +86,12 @@ const getStudentById = async (req, res, next) => {
     const { studentId } = req.params
     
     const data = await professorService.getStudentDetail(studentId)
+
+    req.log?.('info', 'professor.student.detail', {
+      userId: req.user?.id,
+      ip: req.ip,
+      studentId
+    })
     
     res.json({
       success: true,

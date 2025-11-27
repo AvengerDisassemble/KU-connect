@@ -11,6 +11,7 @@ const { generateAccessToken, generateRefreshToken, verifyRefreshToken, generateJ
  * @param {string} userData.email - User's email
  * @param {string} userData.password - User's password
  * @param {string} userData.role - User's role (STUDENT, PROFESSOR, EMPLOYER, ADMIN)
+ * @param {Object} userData.privacyConsent - PDPA consent data
  * @param {Object} [roleSpecificData] - Additional data specific to the role
  * @returns {Promise<Object>} The created user (without password)
  */
@@ -22,6 +23,11 @@ async function registerUser(userData, roleSpecificData = {}) {
 
   if (existingUser) {
     throw new Error("Email already registered");
+  }
+
+  // Validate PDPA consent
+  if (!userData.privacyConsent || userData.privacyConsent.dataProcessingConsent !== true) {
+    throw new Error("PDPA consent required");
   }
 
   // Hash password
@@ -37,7 +43,9 @@ async function registerUser(userData, roleSpecificData = {}) {
         password: hashedPassword,
         role: userData.role,
         status: userData.role === 'ADMIN' ? 'APPROVED' : 'PENDING', // Admins auto-approved, others pending
-        verified: userData.role === 'ADMIN' // Admins are pre-verified
+        verified: userData.role === 'ADMIN', // Admins are pre-verified
+        dataProcessingConsent: true,
+        privacyPolicyAcceptedAt: new Date()
       },
       select: {
         id: true,
@@ -380,6 +388,8 @@ async function findOrCreateGoogleUser(googleProfile) {
         role: "STUDENT", // Default role
         status: "APPROVED", // OAuth users are pre-approved (KU students verified by Google OAuth)
         verified: true, // OAuth users are pre-verified
+        dataProcessingConsent: true, // OAuth users implicitly consent
+        privacyPolicyAcceptedAt: new Date()
       },
       select: {
         id: true,

@@ -92,7 +92,7 @@ function validateLogin(req, res, next) {
  * @param {Function} next - Express next function
  */
 function validateAlumniRegistration(req, res, next) {
-  const { name, surname, email, password, degreeTypeId, address } = req.body;
+  const { name, surname, email, password, degreeTypeId, address, privacyConsent } = req.body;
   const errors = [];
 
   if (!name || name.trim().length < 2) {
@@ -130,6 +130,13 @@ function validateAlumniRegistration(req, res, next) {
     errors.push("Address must be at least 5 characters long");
   }
 
+  // Validate PDPA consent
+  if (!privacyConsent || typeof privacyConsent !== 'object') {
+    errors.push("PDPA consent is required");
+  } else if (privacyConsent.dataProcessingConsent !== true) {
+    errors.push("PDPA consent required");
+  }
+
   if (errors.length > 0) {
     return res.status(400).json({
       success: false,
@@ -148,7 +155,7 @@ function validateAlumniRegistration(req, res, next) {
  * @param {Function} next - Express next function
  */
 function validateEnterpriseRegistration(req, res, next) {
-  const { name, surname, email, password, companyName, address, phoneNumber } =
+  const { name, surname, email, password, companyName, address, phoneNumber, privacyConsent } =
     req.body;
   const errors = [];
 
@@ -191,6 +198,13 @@ function validateEnterpriseRegistration(req, res, next) {
     );
   }
 
+  // Validate PDPA consent
+  if (!privacyConsent || typeof privacyConsent !== 'object') {
+    errors.push("PDPA consent is required");
+  } else if (privacyConsent.dataProcessingConsent !== true) {
+    errors.push("PDPA consent required");
+  }
+
   if (errors.length > 0) {
     return res.status(400).json({
       success: false,
@@ -209,7 +223,7 @@ function validateEnterpriseRegistration(req, res, next) {
  * @param {Function} next - Express next function
  */
 function validateStaffRegistration(req, res, next) {
-  const { name, surname, email, password, department } = req.body;
+  const { name, surname, email, password, department, privacyConsent } = req.body;
   const errors = [];
 
   // Check for missing required fields first
@@ -245,6 +259,13 @@ function validateStaffRegistration(req, res, next) {
     errors.push("Department must be at least 2 characters long");
   }
 
+  // Validate PDPA consent
+  if (!privacyConsent || typeof privacyConsent !== 'object') {
+    errors.push("PDPA consent is required");
+  } else if (privacyConsent.dataProcessingConsent !== true) {
+    errors.push("PDPA consent required");
+  }
+
   if (errors.length > 0) {
     return res.status(400).json({
       success: false,
@@ -263,7 +284,7 @@ function validateStaffRegistration(req, res, next) {
  * @param {Function} next - Express next function
  */
 function validateAdminRegistration(req, res, next) {
-  const { name, surname, email, password } = req.body;
+  const { name, surname, email, password, privacyConsent } = req.body;
   const errors = [];
 
   // Check for missing required fields first
@@ -291,6 +312,13 @@ function validateAdminRegistration(req, res, next) {
   const passwordValidation = validatePassword(password);
   if (!passwordValidation.isValid) {
     errors.push(passwordValidation.message);
+  }
+
+  // Validate PDPA consent
+  if (!privacyConsent || typeof privacyConsent !== 'object') {
+    errors.push("PDPA consent is required");
+  } else if (privacyConsent.dataProcessingConsent !== true) {
+    errors.push("PDPA consent required");
   }
 
   if (errors.length > 0) {

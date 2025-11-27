@@ -20,6 +20,10 @@ const { logDocumentAccess } = require("../../utils/auditLogger");
 async function uploadResume(req, res) {
   try {
     if (!req.file) {
+      req.log?.("warn", "documents.resume.upload.missing_file", {
+        ip: req.ip,
+        userId: req.user?.id,
+      });
       return res.status(400).json({
         success: false,
         message: "No file uploaded",
@@ -46,7 +50,11 @@ async function uploadResume(req, res) {
       try {
         await storageProvider.deleteFile(student.resumeKey);
       } catch (error) {
-        console.error("Failed to delete old resume:", error.message);
+        req.log?.("warn", "documents.resume.upload.cleanup_failed", {
+          ip: req.ip,
+          userId,
+          error: error.message,
+        });
       }
     }
 
@@ -69,8 +77,20 @@ async function uploadResume(req, res) {
       message: "Resume uploaded successfully",
       data: { fileKey },
     });
+
+    req.log?.("info", "documents.resume.upload.success", {
+      ip: req.ip,
+      userId,
+      fileKey,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+    });
   } catch (error) {
-    console.error("Resume upload error:", error);
+    req.log?.("error", "documents.resume.upload.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to upload resume",
@@ -87,6 +107,10 @@ async function uploadResume(req, res) {
 async function uploadTranscript(req, res) {
   try {
     if (!req.file) {
+      req.log?.("warn", "documents.transcript.upload.missing_file", {
+        ip: req.ip,
+        userId: req.user?.id,
+      });
       return res.status(400).json({
         success: false,
         message: "No file uploaded",
@@ -112,7 +136,11 @@ async function uploadTranscript(req, res) {
       try {
         await storageProvider.deleteFile(student.transcriptKey);
       } catch (error) {
-        console.error("Failed to delete old transcript:", error.message);
+        req.log?.("warn", "documents.transcript.upload.cleanup_failed", {
+          ip: req.ip,
+          userId,
+          error: error.message,
+        });
       }
     }
 
@@ -135,8 +163,20 @@ async function uploadTranscript(req, res) {
       message: "Transcript uploaded successfully",
       data: { fileKey },
     });
+
+    req.log?.("info", "documents.transcript.upload.success", {
+      ip: req.ip,
+      userId,
+      fileKey,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+    });
   } catch (error) {
-    console.error("Transcript upload error:", error);
+    req.log?.("error", "documents.transcript.upload.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to upload transcript",
@@ -153,6 +193,10 @@ async function uploadTranscript(req, res) {
 async function uploadEmployerVerification(req, res) {
   try {
     if (!req.file) {
+      req.log?.("warn", "documents.employer_verification.upload.missing_file", {
+        ip: req.ip,
+        userId: req.user?.id,
+      });
       return res.status(400).json({
         success: false,
         message: "No file uploaded",
@@ -178,9 +222,14 @@ async function uploadEmployerVerification(req, res) {
       try {
         await storageProvider.deleteFile(hr.verificationDocKey);
       } catch (error) {
-        console.error(
-          "Failed to delete old verification document:",
-          error.message,
+        req.log?.(
+          "warn",
+          "documents.employer_verification.upload.cleanup_failed",
+          {
+            ip: req.ip,
+            userId,
+            error: error.message,
+          },
         );
       }
     }
@@ -204,8 +253,20 @@ async function uploadEmployerVerification(req, res) {
       message: "Employer verification document uploaded successfully",
       data: { fileKey },
     });
+
+    req.log?.("info", "documents.employer_verification.upload.success", {
+      ip: req.ip,
+      userId,
+      fileKey,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+    });
   } catch (error) {
-    console.error("Employer verification upload error:", error);
+    req.log?.("error", "documents.employer_verification.upload.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to upload employer verification document",
@@ -235,6 +296,9 @@ async function downloadResume(req, res) {
         success: false,
         reason: "Access denied",
         ip: req.ip,
+        logger: req.log,
+        correlationId: req.correlationId,
+        userAgent: req.get("user-agent"),
       });
 
       return res.status(403).json({
@@ -270,6 +334,9 @@ async function downloadResume(req, res) {
       action: "download",
       success: true,
       ip: req.ip,
+      logger: req.log,
+      correlationId: req.correlationId,
+      userAgent: req.get("user-agent"),
     });
 
     // Try signed URL first (S3), fallback to streaming (local)
@@ -297,7 +364,11 @@ async function downloadResume(req, res) {
 
     stream.pipe(res);
   } catch (error) {
-    console.error("Download resume error:", error);
+    req.log?.("error", "documents.resume.download.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
 
     if (error.message.includes("File not found")) {
       return res.status(404).json({
@@ -327,6 +398,19 @@ async function downloadTranscript(req, res) {
     // Authorization check
     const isAuthorized = await canViewStudentDocument(requester, requestedUserId);
     if (!isAuthorized) {
+      logDocumentAccess({
+        userId: requester.id,
+        documentType: "transcript",
+        documentOwner: requestedUserId,
+        action: "download",
+        success: false,
+        reason: "Access denied",
+        ip: req.ip,
+        logger: req.log,
+        correlationId: req.correlationId,
+        userAgent: req.get("user-agent"),
+      });
+
       return res.status(403).json({
         success: false,
         message: "Access denied",
@@ -352,6 +436,18 @@ async function downloadTranscript(req, res) {
       });
     }
 
+    logDocumentAccess({
+      userId: requester.id,
+      documentType: "transcript",
+      documentOwner: requestedUserId,
+      action: "download",
+      success: true,
+      ip: req.ip,
+      logger: req.log,
+      correlationId: req.correlationId,
+      userAgent: req.get("user-agent"),
+    });
+
     // Try signed URL first (S3), fallback to streaming (local)
     const signedUrl = await storageProvider.getSignedDownloadUrl(
       student.transcriptKey,
@@ -376,7 +472,11 @@ async function downloadTranscript(req, res) {
 
     stream.pipe(res);
   } catch (error) {
-    console.error("Download transcript error:", error);
+    req.log?.("error", "documents.transcript.download.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
 
     if (error.message.includes("File not found")) {
       return res.status(404).json({
@@ -405,6 +505,19 @@ async function downloadEmployerVerification(req, res) {
 
     // Authorization check
     if (!canViewHRDocument(requester, requestedUserId)) {
+      logDocumentAccess({
+        userId: requester.id,
+        documentType: "employer-verification",
+        documentOwner: requestedUserId,
+        action: "download",
+        success: false,
+        reason: "Access denied",
+        ip: req.ip,
+        logger: req.log,
+        correlationId: req.correlationId,
+        userAgent: req.get("user-agent"),
+      });
+
       return res.status(403).json({
         success: false,
         message: "Access denied",
@@ -430,6 +543,18 @@ async function downloadEmployerVerification(req, res) {
       });
     }
 
+    logDocumentAccess({
+      userId: requester.id,
+      documentType: "employer-verification",
+      documentOwner: requestedUserId,
+      action: "download",
+      success: true,
+      ip: req.ip,
+      logger: req.log,
+      correlationId: req.correlationId,
+      userAgent: req.get("user-agent"),
+    });
+
     // Try signed URL first (S3), fallback to streaming (local)
     const signedUrl = await storageProvider.getSignedDownloadUrl(
       hr.verificationDocKey,
@@ -454,7 +579,11 @@ async function downloadEmployerVerification(req, res) {
 
     stream.pipe(res);
   } catch (error) {
-    console.error("Download employer verification error:", error);
+    req.log?.("error", "documents.employer_verification.download.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
 
     if (error.message.includes("File not found")) {
       return res.status(404).json({
@@ -479,6 +608,10 @@ async function downloadEmployerVerification(req, res) {
 async function uploadStudentVerification(req, res) {
   try {
     if (!req.file) {
+      req.log?.("warn", "documents.student_verification.upload.missing_file", {
+        ip: req.ip,
+        userId: req.user?.id,
+      });
       return res.status(400).json({
         success: false,
         message: "No file uploaded",
@@ -519,9 +652,14 @@ async function uploadStudentVerification(req, res) {
       try {
         await storageProvider.deleteFile(student.verificationDocKey);
       } catch (error) {
-        console.error(
-          "Failed to delete old student verification:",
-          error.message,
+        req.log?.(
+          "warn",
+          "documents.student_verification.upload.cleanup_failed",
+          {
+            ip: req.ip,
+            userId,
+            error: error.message,
+          },
         );
       }
     }
@@ -546,8 +684,20 @@ async function uploadStudentVerification(req, res) {
       message:
         "Student verification document uploaded successfully. Pending admin review.",
     });
+
+    req.log?.("info", "documents.student_verification.upload.success", {
+      ip: req.ip,
+      userId,
+      fileKey,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+    });
   } catch (error) {
-    console.error("Upload student verification error:", error);
+    req.log?.("error", "documents.student_verification.upload.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
     res.status(500).json({
       success: false,
       message: "Failed to upload student verification document",
@@ -576,6 +726,9 @@ async function downloadStudentVerification(req, res) {
         success: false,
         reason: "Access denied",
         ip: req.ip,
+        logger: req.log,
+        correlationId: req.correlationId,
+        userAgent: req.get("user-agent"),
       });
 
       return res.status(403).json({
@@ -604,6 +757,9 @@ async function downloadStudentVerification(req, res) {
       action: "download",
       success: true,
       ip: req.ip,
+      logger: req.log,
+      correlationId: req.correlationId,
+      userAgent: req.get("user-agent"),
     });
 
     // Try signed URL first (S3), fallback to streaming (local)
@@ -630,7 +786,11 @@ async function downloadStudentVerification(req, res) {
 
     stream.pipe(res);
   } catch (error) {
-    console.error("Download student verification error:", error);
+    req.log?.("error", "documents.student_verification.download.error", {
+      ip: req.ip,
+      userId: req.user?.id,
+      error: error.message,
+    });
 
     if (error.message.includes("File not found")) {
       return res.status(404).json({

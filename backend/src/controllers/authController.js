@@ -16,6 +16,11 @@ const login = asyncErrorHandler(async (req, res) => {
 
   // Validate input
   if (!email || !password) {
+    req.log?.("warn", "auth.login.validation_failed", {
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
+      email,
+    });
     return res.status(400).json({
       success: false,
       message: "Email and password are required",
@@ -23,7 +28,18 @@ const login = asyncErrorHandler(async (req, res) => {
   }
 
   // Authenticate user
-  const result = await loginUser(email, password);
+  let result;
+  try {
+    result = await loginUser(email, password);
+  } catch (err) {
+    req.log?.("security", "auth.login.failure", {
+      email,
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
+      reason: err.message,
+    });
+    throw err;
+  }
 
   // Encrypt tokens before storing in cookies for security
   const encryptedAccessToken = encryptToken(result.accessToken);
@@ -51,6 +67,14 @@ const login = asyncErrorHandler(async (req, res) => {
       user: result.user,
     },
   });
+
+  req.log?.("security", "auth.login.success", {
+    userId: result.user.id,
+    email,
+    role: result.user.role,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
 });
 
 /**
@@ -58,7 +82,7 @@ const login = asyncErrorHandler(async (req, res) => {
  * POST /register/alumni
  */
 const registerAlumni = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, degreeTypeId, address } = req.body;
+  const { name, surname, email, password, degreeTypeId, address, privacyConsent } = req.body;
 
   // Validate input
   if (!name || !surname || !email || !password || !degreeTypeId || !address) {
@@ -77,6 +101,7 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
       email,
       password,
       role: "STUDENT",
+      privacyConsent,
     },
     {
       degreeTypeId, // Keep as string (cuid)
@@ -91,6 +116,13 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
       user,
     },
   });
+
+  req.log?.("security", "auth.register.alumni", {
+    userId: user.id,
+    email,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
 });
 
 /**
@@ -98,7 +130,7 @@ const registerAlumni = asyncErrorHandler(async (req, res) => {
  * POST /register/enterprise
  */
 const registerEnterprise = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, companyName, address, phoneNumber } =
+  const { name, surname, email, password, companyName, address, phoneNumber, privacyConsent } =
     req.body;
 
   // Validate input
@@ -126,6 +158,7 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
       email,
       password,
       role: "EMPLOYER",
+      privacyConsent,
     },
     {
       companyName,
@@ -141,6 +174,13 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
       user,
     },
   });
+
+  req.log?.("security", "auth.register.enterprise", {
+    userId: user.id,
+    email,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
 });
 
 /**
@@ -148,7 +188,7 @@ const registerEnterprise = asyncErrorHandler(async (req, res) => {
  * POST /register/staff
  */
 const registerStaff = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password, department } = req.body;
+  const { name, surname, email, password, department, privacyConsent } = req.body;
 
   // Register staff as PROFESSOR
   const user = await registerUser(
@@ -158,6 +198,7 @@ const registerStaff = asyncErrorHandler(async (req, res) => {
       email,
       password,
       role: "PROFESSOR",
+      privacyConsent,
     },
     {
       department,
@@ -171,6 +212,13 @@ const registerStaff = asyncErrorHandler(async (req, res) => {
       user,
     },
   });
+
+  req.log?.("security", "auth.register.staff", {
+    userId: user.id,
+    email,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
 });
 
 /**
@@ -178,7 +226,7 @@ const registerStaff = asyncErrorHandler(async (req, res) => {
  * POST /register/admin
  */
 const registerAdmin = asyncErrorHandler(async (req, res) => {
-  const { name, surname, email, password } = req.body;
+  const { name, surname, email, password, privacyConsent } = req.body;
 
   // Register admin as ADMIN
   const user = await registerUser({
@@ -187,6 +235,7 @@ const registerAdmin = asyncErrorHandler(async (req, res) => {
     email,
     password,
     role: "ADMIN",
+    privacyConsent,
   });
 
   res.status(201).json({
@@ -195,6 +244,13 @@ const registerAdmin = asyncErrorHandler(async (req, res) => {
     data: {
       user,
     },
+  });
+
+  req.log?.("security", "auth.register.admin", {
+    userId: user.id,
+    email,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
   });
 });
 
@@ -210,6 +266,10 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
   if (req.cookies?.refreshToken) {
     refreshToken = decryptToken(req.cookies.refreshToken);
     if (!refreshToken) {
+      req.log?.("security", "auth.refresh.invalid_cookie_token", {
+        ip: req.ip,
+        userAgent: req.get("user-agent"),
+      });
       return res.status(401).json({
         success: false,
         message: "Invalid refresh token",
@@ -218,6 +278,10 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
   }
 
   if (!refreshToken) {
+    req.log?.("security", "auth.refresh.missing_token", {
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
+    });
     return res.status(401).json({
       success: false,
       message: "Refresh token required",
@@ -246,6 +310,12 @@ const refreshToken = asyncErrorHandler(async (req, res) => {
       // Clients that can't use cookies should use the login endpoint with Authorization header
     },
   });
+
+  req.log?.("security", "auth.refresh.success", {
+    userId: result.user.id,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
+  });
 });
 
 /**
@@ -272,6 +342,12 @@ const logout = asyncErrorHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Logout successful",
+  });
+
+  req.log?.("security", "auth.logout", {
+    userId: req.user?.id,
+    ip: req.ip,
+    userAgent: req.get("user-agent"),
   });
 });
 
